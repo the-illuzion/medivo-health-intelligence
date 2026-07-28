@@ -24,19 +24,19 @@ docs/               → Platform architectural and API specifications
 
 To ensure each domain can be independently extracted into microservices without schema refactoring, the database enforces **13 PostgreSQL schemas**:
 
-1. `auth_domain` - JWT, OAuth, session state
-2. `customer_domain` - Customer profile, preferences
-3. `skin_analysis_domain` - AI scan reports, face match landmarks
-4. `health_metrics_domain` - Health score calculations, trend metrics
-5. `routines_domain` - Morning/Evening checklist schedules, streaks
-6. `products_domain` - Skincare catalog, AI formulas matching
-7. `ecommerce_domain` - Orders, cart, payment integration
-8. `appointments_domain` - Dermatologist slots, telehealth bookings
-9. `doctor_domain` - Provider credentials, availability
-10. `reports_domain` - Clinical PDF generators, HIPAA audit logs
-11. `notifications_domain` - Push alerts, routine reminders
-12. `analytics_domain` - Engagement metrics, trend aggregations
-13. `admin_domain` - Platform governance, audit control
+1. `auth_schema` — JWT, OAuth, session state, credentials
+2. `user_schema` — User accounts, roles, preferences
+3. `profile_schema` — Health profiles, skin types, goals
+4. `skin_schema` — AI scan results, face match landmarks, image references
+5. `ai_schema` — Model versions, prediction logs, training metadata
+6. `report_schema` — Clinical PDF generation, health reports, HIPAA audit logs
+7. `health_schema` — Health scores, metrics, trend calculations
+8. `doctor_schema` — Provider credentials, specializations, availability
+9. `appointment_schema` — Booking slots, telehealth sessions, consultation history
+10. `commerce_schema` — Product catalog, cart, orders, fulfillment
+11. `payment_schema` — Payment transactions, subscriptions, invoices
+12. `notification_schema` — Push alerts, emails, routine reminders, preferences
+13. `analytics_schema` — Engagement metrics, feature usage, trend aggregations
 
 > **Rule**: Zero cross-schema SQL `JOIN`s are permitted. Cross-domain data communication occurs exclusively through API service layers or domain events.
 

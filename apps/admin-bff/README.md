@@ -27,19 +27,19 @@ pnpm install
 ### Development
 To start the development process or watcher for this specific module:
 ```bash
-pnpm --filter README.md dev
+pnpm --filter @medivo/admin-bff dev
 ```
 
 ### Building
 To build this package for production:
 ```bash
-pnpm --filter README.md build
+pnpm --filter @medivo/admin-bff build
 ```
 
 ### Testing
 Run the test suite specifically for this module:
 ```bash
-pnpm --filter README.md test
+pnpm --filter @medivo/admin-bff test
 ```
 
 ## Contributing
