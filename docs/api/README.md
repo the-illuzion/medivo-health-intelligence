@@ -1,50 +1,50 @@
-# API Documentation
+# API Specification & BFF Contracts
 
-## Description
-Endpoint specifications, authentication, error codes, examples.
-This module is a critical part of the Medivo Health Intelligence Platform ecosystem, designed to ensure high performance, type safety, and scalability. It integrates seamlessly with the rest of the monorepo.
+## Overview
+All API endpoints across Medivo Health Intelligence Platform enforce strict Zod schema validation and type safety.
 
-## Technology Stack
-- **Core**: Markdown
-- **Dependencies**: N/A
-- **Runtime**: Node.js / Browser (depending on target)
-- **Typing**: TypeScript for end-to-end type safety
+---
 
-## Architecture Overview
-This module follows the established Clean Architecture principles of the monorepo.
-Dependencies are carefully managed to prevent circular references and maintain strict module boundaries.
-Internal logic is encapsulated, and only necessary interfaces are exposed via the `index.ts` entry point.
+## Customer BFF Endpoint Architecture (`customer-bff`)
 
-## Getting Started
+### 1. Health Score & AI Summary
+- **Endpoint**: `GET /api/v1/customer/dashboard`
+- **Response**:
+  ```json
+  {
+    "healthScore": 87,
+    "skinScore": 84,
+    "delta": 4,
+    "aiSummary": "Your skin hydration is up 6% this week...",
+    "metrics": [
+      { "label": "Hydration", "score": 76, "unit": "%", "delta": 8 }
+    ]
+  }
+  ```
 
-### Installation
-Since this is part of the monorepo, dependencies are managed via `pnpm` at the root level.
-```bash
-# From the root directory
-pnpm install
-```
+### 2. AI Face Match Analysis
+- **Endpoint**: `POST /api/v1/customer/scan`
+- **Body**: WebRTC frame canvas stream or base64 image payload.
+- **Response**:
+  ```json
+  {
+    "scanId": "scan_98241",
+    "overallScore": 87,
+    "confidence": 0.984,
+    "landmarks": { "dots": 9, "meshStatus": "aligned" },
+    "metrics": { "hydration": 76, "pigmentation": 84, "darkCircles": 73 }
+  }
+  ```
 
-### Development
-To start the development process or watcher for this specific module:
-```bash
-pnpm --filter README.md dev
-```
+### 3. AI Coach Chat Stream
+- **Endpoint**: `POST /api/v1/customer/coach/chat`
+- **Body**: `{ "message": "How can I improve my dark circles?" }`
+- **Response**: Server-Sent Events (SSE) streaming smart clinical advice.
 
-### Building
-To build this package for production:
-```bash
-pnpm --filter README.md build
-```
+### 4. Routines & Step Toggles
+- **Endpoint**: `PATCH /api/v1/customer/routines/:stepId/toggle`
+- **Body**: `{ "completed": true }`
 
-### Testing
-Run the test suite specifically for this module:
-```bash
-pnpm --filter README.md test
-```
-
-## Contributing
-Please refer to the root `README.md` and the `docs/CONTRIBUTING.md` for guidelines on how to contribute to this module.
-Ensure all tests and linters pass before submitting a Pull Request.
-
-## Status
-🚧 Under Active Development\n
+### 5. Dermatologist Telehealth Appointments
+- **Endpoint**: `POST /api/v1/customer/consultations/book`
+- **Body**: `{ "doctorId": 1, "slot": "3:30 PM", "date": "2026-07-30" }`

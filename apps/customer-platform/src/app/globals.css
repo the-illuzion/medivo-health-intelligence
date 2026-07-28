@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-ink: #1E1B4B;
+  --color-ink-soft: #312E81;
+  --color-text-sec: #57534E;
+  --color-text-tert: #78716C;
+  --color-text-faint: #A8A29E;
+  --color-card-bg: #FFFFFF;
+  --color-card-border: #F1F0F7;
+  --bg-gradient: linear-gradient(160deg, #EEF2FF 0%, #FAFAFC 42%, #ECFDF5 100%);
+  --card-shadow: 0 4px 16px rgba(49,46,129,0.06);
+}
+
+html.dark {
+  color-scheme: dark;
+  --color-ink: #F8FAFC;
+  --color-ink-soft: #A5B4FC;
+  --color-text-sec: #CBD5E1;
+  --color-text-tert: #94A3B8;
+  --color-text-faint: #64748B;
+  --color-card-bg: #1E293B;
+  --color-card-border: #334155;
+  --bg-gradient: linear-gradient(160deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes appShimmerMove {
+  0% { background-position: -300% 0; }
+  100% { background-position: 300% 0; }
+}
+
+@keyframes appFadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes appPopIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  65% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes appSoftPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes appScanline {
+  0% { top: 16%; opacity: 0; }
+  8% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { top: 82%; opacity: 0; }
+}
+
+@keyframes appDotReveal {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  60% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+  100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes appTypingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+.app-shimmer {
+  background: linear-gradient(90deg, #EEF0F7 25%, #F8F9FC 40%, #EEF0F7 60%);
+  background-size: 300% 100%;
+  animation: appShimmerMove 1.5s ease-in-out infinite;
+}
+
+html.dark .app-shimmer {
+  background: linear-gradient(90deg, #1E293B 25%, #334155 40%, #1E293B 60%);
+  background-size: 300% 100%;
+}
+
+.app-fade {
+  animation: appFadeUp 0.5s ease both;
+}
+
+.app-pop {
+  animation: appPopIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.app-pulse {
+  animation: appSoftPulse 1.8s ease-in-out infinite;
+}
+
+.app-scanline {
+  animation: appScanline 2.4s ease-in-out infinite;
+}
+
+.coach-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #B7B4C7;
+  display: inline-block;
+  animation: appTypingBounce 1.2s ease-in-out infinite;
+}
+
+.coach-input:focus {
+  box-shadow: 0 0 0 2px rgba(67,56,202,0.35);
+}
+
+.hover-lift {
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+@media (hover: hover) {
+  .hover-lift:hover {
+    box-shadow: 0 10px 28px rgba(0,0,0,0.2) !important;
+    transform: translateY(-3px) !important;
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Dark Theme Global Rules */
+html.dark body {
+  background-color: #0F172A;
+  color: #F8FAFC;
+}
+
+html.dark nav {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border-color: rgba(51, 65, 85, 0.6) !important;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.6) !important;
+}
+
+html.dark header {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+html.dark aside {
+  background: #0F172A !important;
+  border-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+html.dark .bg-white {
+  background-color: #1E293B !important;
+  color: #F8FAFC !important;
+  border-color: #334155 !important;
+}
+
+html.dark .bg-slate-50 {
+  background-color: #0F172A !important;
+}
+
+html.dark .bg-stone-50,
+html.dark .bg-stone-100\/70,
+html.dark .bg-stone-100\/80,
+html.dark .bg-stone-100 {
+  background-color: #334155 !important;
+  color: #F1F5F9 !important;
+}
+
+html.dark .text-stone-800,
+html.dark .text-stone-700,
+html.dark .text-stone-600 {
+  color: #E2E8F0 !important;
+}
+
+html.dark .text-stone-500,
+html.dark .text-stone-400 {
+  color: #94A3B8 !important;
+}
+
+html.dark .border-stone-100,
+html.dark .border-stone-200\/80,
+html.dark .border-stone-200\/60,
+html.dark .border-indigo-100 {
+  border-color: #334155 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shimmer, .app-fade, .app-pop, .app-pulse, .app-scanline, .coach-dot, .hover-lift {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition: none !important;
+  }
+}

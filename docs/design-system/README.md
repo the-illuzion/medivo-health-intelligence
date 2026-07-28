@@ -1,50 +1,30 @@
-# Design System Documentation
+# Design System Specification
 
-## Description
-Component catalog, usage guidelines, design tokens.
-This module is a critical part of the Medivo Health Intelligence Platform ecosystem, designed to ensure high performance, type safety, and scalability. It integrates seamlessly with the rest of the monorepo.
+## Overview
+The Medivo Design System provides atomic design components, responsive layout grids, dark-mode CSS tokens, and custom micro-animations built with Vanilla CSS and TailwindCSS.
 
-## Technology Stack
-- **Core**: Markdown
-- **Dependencies**: N/A
-- **Runtime**: Node.js / Browser (depending on target)
-- **Typing**: TypeScript for end-to-end type safety
+---
 
-## Architecture Overview
-This module follows the established Clean Architecture principles of the monorepo.
-Dependencies are carefully managed to prevent circular references and maintain strict module boundaries.
-Internal logic is encapsulated, and only necessary interfaces are exposed via the `index.ts` entry point.
+## Token Specifications
 
-## Getting Started
+### Color Tokens
+- `INK` (`var(--color-ink)`): Primary high-contrast text (`#1E1B4B` in Light, `#F8FAFC` in Dark).
+- `INK_SOFT` (`var(--color-ink-soft)`): Soft indigo accent (`#312E81` in Light, `#A5B4FC` in Dark).
+- `TEXT_SECONDARY` (`var(--color-text-sec)`): Secondary body text (`#57534E` in Light, `#CBD5E1` in Dark).
+- `TEXT_TERTIARY` (`var(--color-text-tert)`): Subtitles & metadata (`#78716C` in Light, `#94A3B8` in Dark).
+- `BG_GRADIENT` (`var(--bg-gradient)`): Adaptive page background gradient.
+- `CARD_SHADOW` (`var(--card-shadow)`): Elevation box shadows.
 
-### Installation
-Since this is part of the monorepo, dependencies are managed via `pnpm` at the root level.
-```bash
-# From the root directory
-pnpm install
-```
+---
 
-### Development
-To start the development process or watcher for this specific module:
-```bash
-pnpm --filter README.md dev
-```
+## Theme Switcher Architecture (System, Dark, Light)
+- **Single Toggle Button**: `<ThemeToggleButton />` cycles through `System` → `Dark` → `Light`.
+- **System Preference Sync**: Listens to `window.matchMedia('(prefers-color-scheme: dark)')` when set to System.
+- **Persistence**: Saved in `localStorage` under `medivo_theme`.
 
-### Building
-To build this package for production:
-```bash
-pnpm --filter README.md build
-```
+---
 
-### Testing
-Run the test suite specifically for this module:
-```bash
-pnpm --filter README.md test
-```
-
-## Contributing
-Please refer to the root `README.md` and the `docs/CONTRIBUTING.md` for guidelines on how to contribute to this module.
-Ensure all tests and linters pass before submitting a Pull Request.
-
-## Status
-🚧 Under Active Development\n
+## Responsive Layout System
+- **Mobile (<768px)**: Touch-optimized bottom navigation (`BottomNav`), single-column card stack.
+- **Tablet (768px - 1023px)**: 2 to 3 column grid layouts, adaptive header.
+- **Desktop (1024px+)**: Fixed left sidebar navigation (`DesktopSidebar`), sticky top bar (`DesktopHeader`), 4-column metric grids.

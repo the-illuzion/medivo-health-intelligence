@@ -1,50 +1,50 @@
-# Product Documentation
+# Product Specification — Customer Portal
 
-## Description
-Feature specifications, user flows, business rules.
-This module is a critical part of the Medivo Health Intelligence Platform ecosystem, designed to ensure high performance, type safety, and scalability. It integrates seamlessly with the rest of the monorepo.
+## Executive Overview
+The **Medivo Customer Portal** (`apps/customer-platform`) is an AI-powered health and skin intelligence web & mobile experience designed for seamless user engagement, real-time facial camera scanning, telehealth scheduling, and routine tracking.
 
-## Technology Stack
-- **Core**: Markdown
-- **Dependencies**: N/A
-- **Runtime**: Node.js / Browser (depending on target)
-- **Typing**: TypeScript for end-to-end type safety
+---
 
-## Architecture Overview
-This module follows the established Clean Architecture principles of the monorepo.
-Dependencies are carefully managed to prevent circular references and maintain strict module boundaries.
-Internal logic is encapsulated, and only necessary interfaces are exposed via the `index.ts` entry point.
+## 9 Customer Portal Screens Specifications
 
-## Getting Started
+1. **Dashboard (`dashboard`)**:
+   - SVG Score ring with count-up animation (`87/100`).
+   - AI Summary Card with contextual daily insights.
+   - 5 Quick Action pills (**Face Scan**, **AI Coach**, **Routines**, **Consult**, **Shop**).
+   - 4-column Health Metrics grid (Hydration, Wrinkles, Pigmentation, Oil Balance, Texture, Dark Circles).
+   - Weekly / Monthly Recharts area trend graph.
 
-### Installation
-Since this is part of the monorepo, dependencies are managed via `pnpm` at the root level.
-```bash
-# From the root directory
-pnpm install
-```
+2. **AI Face Match (`faceMatch`)**:
+   - WebRTC live camera integration (`navigator.mediaDevices.getUserMedia`).
+   - Facial bounding box, 9 landmark mesh dots, vertical glowing scanline.
+   - Progressive scan messages and score generation.
 
-### Development
-To start the development process or watcher for this specific module:
-```bash
-pnpm --filter README.md dev
-```
+3. **Scan Report (`scanReport`)**:
+   - Detailed metric breakdown with animated progress bars.
+   - AI clinical analysis overview & personalized action plan.
 
-### Building
-To build this package for production:
-```bash
-pnpm --filter README.md build
-```
+4. **AI Coach (`coach`)**:
+   - Conversational chat interface with bouncing 3-dot typing indicator.
+   - Quick suggestion pills and auto-scrolling response stream.
 
-### Testing
-Run the test suite specifically for this module:
-```bash
-pnpm --filter README.md test
-```
+5. **History (`history`)**:
+   - 8-week area chart side-by-side with chronologically grouped monthly scan entries.
 
-## Contributing
-Please refer to the root `README.md` and the `docs/CONTRIBUTING.md` for guidelines on how to contribute to this module.
-Ensure all tests and linters pass before submitting a Pull Request.
+6. **Routines (`routines`)**:
+   - Morning & Evening skincare routine tabs.
+   - 12-Day Streak banner ("🔥 12 Day Streak").
+   - Step-by-step checklist with instant completion toggles.
 
-## Status
-🚧 Under Active Development\n
+7. **Products Marketplace (`products`)**:
+   - Category filter pills ('All', 'Cleansers', 'Serums', 'Moisturizers', 'SPF').
+   - SVG bottle glyph product cards with star ratings and Add-to-Bag buttons.
+
+8. **Dermatologist Consultations (`consultations`)**:
+   - Upcoming HD video appointment card.
+   - Board-certified doctor directory cards with time slot selector & reservation modal.
+
+9. **Profile & HIPAA Settings (`profile`)**:
+   - User card, skin type, active goals.
+   - HIPAA Data Privacy & AI analysis consent manager.
+   - Apple Health / Google Fit sync toggles.
+   - 3-mode App Theme Switcher (**System**, **Dark**, **Light**).

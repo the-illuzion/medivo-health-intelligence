@@ -1,50 +1,25 @@
-# Architecture Decision Records
+# Architecture Decision Records (ADRs)
 
-## Description
-Architecture Decision Records index. Links to all ADRs.
-This module is a critical part of the Medivo Health Intelligence Platform ecosystem, designed to ensure high performance, type safety, and scalability. It integrates seamlessly with the rest of the monorepo.
+## Index of Decisions
 
-## Technology Stack
-- **Core**: Markdown
-- **Dependencies**: N/A
-- **Runtime**: Node.js / Browser (depending on target)
-- **Typing**: TypeScript for end-to-end type safety
+### ADR 001: Monorepo Architecture with Turborepo & pnpm Workspaces
+- **Status**: Accepted
+- **Context**: The Medivo platform comprises customer platforms, doctor portals, admin panels, and backend microservices sharing types, UI components, and domain business logic.
+- **Decision**: Adopt Turborepo and `pnpm` workspaces with strict dependency rules (`apps → packages → types`).
+- **Consequences**: Fast incremental builds, shared type safety across frontend and backend BFFs.
 
-## Architecture Overview
-This module follows the established Clean Architecture principles of the monorepo.
-Dependencies are carefully managed to prevent circular references and maintain strict module boundaries.
-Internal logic is encapsulated, and only necessary interfaces are exposed via the `index.ts` entry point.
+---
 
-## Getting Started
+### ADR 002: Modular Monolith with 13 Schema-per-Domain Isolation
+- **Status**: Accepted
+- **Context**: Need microservice scalability without the early network overhead of distributed microservices.
+- **Decision**: Structure PostgreSQL into 13 isolated domain schemas with zero cross-schema SQL JOINs.
+- **Consequences**: Easy future extraction of any schema into an independent microservice when scaling demands require it.
 
-### Installation
-Since this is part of the monorepo, dependencies are managed via `pnpm` at the root level.
-```bash
-# From the root directory
-pnpm install
-```
+---
 
-### Development
-To start the development process or watcher for this specific module:
-```bash
-pnpm --filter README.md dev
-```
-
-### Building
-To build this package for production:
-```bash
-pnpm --filter README.md build
-```
-
-### Testing
-Run the test suite specifically for this module:
-```bash
-pnpm --filter README.md test
-```
-
-## Contributing
-Please refer to the root `README.md` and the `docs/CONTRIBUTING.md` for guidelines on how to contribute to this module.
-Ensure all tests and linters pass before submitting a Pull Request.
-
-## Status
-🚧 Under Active Development\n
+### ADR 003: Single Button 3-Mode Theme Switcher (System, Dark, Light)
+- **Status**: Accepted
+- **Context**: Provide effortless dark mode toggling across mobile and desktop without cluttering headers.
+- **Decision**: Implement a single button cycling through System, Dark, and Light modes backed by CSS variables.
+- **Consequences**: Consistent, high-contrast dark theme rendering across all 9 Customer Portal screens.
