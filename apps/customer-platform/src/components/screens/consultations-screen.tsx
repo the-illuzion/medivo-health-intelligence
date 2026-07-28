@@ -14,9 +14,10 @@ interface ConsultationsProps {
   onBack: () => void;
   onPush?: (screen: ScreenKey) => void;
   onSwitchTab?: (tab: ScreenKey) => void;
+  showBack?: boolean;
 }
 
-export function Consultations({ onBack, onSwitchTab }: ConsultationsProps) {
+export function Consultations({ onBack, onSwitchTab, showBack = true }: ConsultationsProps) {
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string>('');
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
@@ -41,7 +42,7 @@ export function Consultations({ onBack, onSwitchTab }: ConsultationsProps) {
   return (
     <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-900" style={{ fontFamily: FONT_STACK }}>
       <div className="relative mx-auto max-w-md md:max-w-3xl lg:max-w-6xl" style={{ paddingBottom: '120px' }}>
-        <SimpleHeader title="Dermatologist Consultations" onBack={onBack} />
+        <SimpleHeader title="Dermatologist Consultations" onBack={onBack} showBack={showBack} />
 
         {/* Upcoming Video Appointment Banner */}
         {appointmentsData.length > 0 && (
@@ -113,7 +114,7 @@ export function Consultations({ onBack, onSwitchTab }: ConsultationsProps) {
                     {doc.name.split(' ')[1]?.[0] || 'D'}
                   </div>
                   <div>
-                    <h3 className="text-base font-bold" style={{ color: INK }}>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                       {doc.name}
                     </h3>
                     <p className="text-xs text-stone-400 dark:text-stone-400 mb-1">{doc.title}</p>
@@ -139,7 +140,7 @@ export function Consultations({ onBack, onSwitchTab }: ConsultationsProps) {
 
               <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-slate-700">
                 <div>
-                  <span className="text-lg font-bold" style={{ color: INK }}>
+                  <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
                     ${doc.price}
                   </span>
                   <span className="text-xs text-stone-400"> / session</span>
@@ -163,7 +164,7 @@ export function Consultations({ onBack, onSwitchTab }: ConsultationsProps) {
               {!bookingConfirmed ? (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold" style={{ color: INK }}>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                       Book Consultation
                     </h3>
                     <button
@@ -183,7 +184,7 @@ export function Consultations({ onBack, onSwitchTab }: ConsultationsProps) {
                       {selectedDoctor.name.split(' ')[1]?.[0]}
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold" style={{ color: INK }}>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                         {selectedDoctor.name}
                       </h4>
                       <p className="text-xs text-stone-400">{selectedDoctor.specialty} · ${selectedDoctor.price}</p>
@@ -224,7 +225,7 @@ export function Consultations({ onBack, onSwitchTab }: ConsultationsProps) {
                   <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-3">
                     <CheckCircle2 size={24} />
                   </div>
-                  <h3 className="text-lg font-bold mb-1" style={{ color: INK }}>
+                  <h3 className="text-lg font-bold mb-1 text-slate-900 dark:text-slate-100">
                     Appointment Confirmed!
                   </h3>
                   <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">

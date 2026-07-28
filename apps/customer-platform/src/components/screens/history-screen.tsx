@@ -18,18 +18,19 @@ interface HistoryProps {
   onBack: () => void;
   onPush: (next: ScreenKey) => void;
   onSwitchTab?: (tab: ScreenKey) => void;
+  showBack?: boolean;
 }
 
-export function History({ onBack, onPush, onSwitchTab }: HistoryProps) {
+export function History({ onBack, onPush, onSwitchTab, showBack = true }: HistoryProps) {
   return (
     <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-900" style={{ fontFamily: FONT_STACK }}>
       <div className="relative mx-auto max-w-md md:max-w-3xl lg:max-w-6xl" style={{ paddingBottom: '120px' }}>
-        <SimpleHeader title="Scan History" onBack={onBack} />
+        <SimpleHeader title="Scan History" onBack={onBack} showBack={showBack} />
 
         <div className="px-6 pt-2 mb-6 lg:grid lg:grid-cols-12 lg:gap-6">
           {/* Trend Chart Card */}
           <div className="lg:col-span-6 bg-white dark:bg-slate-800 p-5 rounded-3xl border border-stone-100 dark:border-slate-700 mb-6 lg:mb-0" style={{ boxShadow: CARD_SHADOW }}>
-            <h3 className="text-sm font-bold mb-4" style={{ color: INK }}>
+            <h3 className="text-sm font-bold mb-4 text-slate-900 dark:text-slate-100">
               8-Week Health Score Trend
             </h3>
             <div style={{ width: '100%', height: 200 }}>
@@ -41,7 +42,7 @@ export function History({ onBack, onPush, onSwitchTab }: HistoryProps) {
                       <stop offset="100%" stopColor="#4338CA" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid vertical={false} stroke="#F1F0F7" />
+                  <CartesianGrid vertical={false} stroke="var(--color-card-border)" />
                   <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#A8A29E', fontSize: 11 }} />
                   <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
                   <Tooltip content={<ChartTooltip />} />
@@ -74,7 +75,7 @@ export function History({ onBack, onPush, onSwitchTab }: HistoryProps) {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-bold" style={{ color: INK }}>
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                               Score: {entry.healthScore}
                             </h4>
                             <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">

@@ -42,12 +42,25 @@ export default function CustomerPlatformPage() {
 
   const pushScreen = (next: ScreenKey) => setStack((s) => [...s, next]);
   const switchTab = (next: ScreenKey) => setStack([next]);
-  const goBack = () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
+  
+  // Intelligent back navigation fallback: if stack length is 1 and not on dashboard, return to dashboard!
+  const goBack = () => {
+    setStack((s) => {
+      if (s.length > 1) {
+        return s.slice(0, -1);
+      }
+      if (s[0] !== 'dashboard') {
+        return ['dashboard'];
+      }
+      return s;
+    });
+  };
 
-  const navProps = { onPush: pushScreen, onSwitchTab: switchTab, onBack: goBack };
+  const canGoBack = stack.length > 1 || screen !== 'dashboard';
+  const navProps = { onPush: pushScreen, onSwitchTab: switchTab, onBack: goBack, showBack: canGoBack };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Desktop Navigation Shell */}
       <DesktopSidebar active={screen} onSwitchTab={switchTab} onPush={pushScreen} />
       <DesktopHeader

@@ -14,9 +14,10 @@ interface ProductsProps {
   onBack: () => void;
   onPush?: (screen: ScreenKey) => void;
   onSwitchTab?: (tab: ScreenKey) => void;
+  showBack?: boolean;
 }
 
-export function Products({ onBack, onSwitchTab }: ProductsProps) {
+export function Products({ onBack, onSwitchTab, showBack = true }: ProductsProps) {
   const [selectedCat, setSelectedCat] = useState('All');
   const [addedIds, setAddedIds] = useState<number[]>([]);
 
@@ -32,7 +33,7 @@ export function Products({ onBack, onSwitchTab }: ProductsProps) {
   return (
     <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-900" style={{ fontFamily: FONT_STACK }}>
       <div className="relative mx-auto max-w-md md:max-w-3xl lg:max-w-6xl" style={{ paddingBottom: '120px' }}>
-        <SimpleHeader title="Marketplace" onBack={onBack} />
+        <SimpleHeader title="Marketplace" onBack={onBack} showBack={showBack} />
 
         {/* AI Recommendation Banner */}
         <div className="px-6 pt-2 mb-6">
@@ -103,7 +104,7 @@ export function Products({ onBack, onSwitchTab }: ProductsProps) {
                     {p.tag}
                   </span>
 
-                  <h3 className="text-base font-bold mt-3 mb-1" style={{ color: INK }}>
+                  <h3 className="text-base font-bold mt-3 mb-1 text-slate-900 dark:text-slate-100">
                     {p.name}
                   </h3>
 
@@ -117,7 +118,7 @@ export function Products({ onBack, onSwitchTab }: ProductsProps) {
                 </div>
 
                 <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-slate-700">
-                  <span className="text-lg font-bold" style={{ color: INK }}>
+                  <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
                     ${p.price}
                   </span>
                   <button

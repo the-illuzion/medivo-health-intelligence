@@ -13,13 +13,14 @@ import { ScreenKey } from '../../types';
 interface ScanReportProps {
   onBack: () => void;
   onPush: (screen: ScreenKey) => void;
+  showBack?: boolean;
 }
 
-export function ScanReport({ onBack, onPush }: ScanReportProps) {
+export function ScanReport({ onBack, onPush, showBack = true }: ScanReportProps) {
   return (
     <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-900" style={{ fontFamily: FONT_STACK }}>
       <div className="relative mx-auto max-w-md md:max-w-3xl lg:max-w-5xl" style={{ paddingBottom: '120px' }}>
-        <SimpleHeader title="Scan Report" onBack={onBack} />
+        <SimpleHeader title="Scan Report" onBack={onBack} showBack={showBack} />
 
         {/* Hero Score Overview */}
         <div className="px-6 pt-2 mb-6 lg:grid lg:grid-cols-12 lg:gap-6">
@@ -69,7 +70,7 @@ export function ScanReport({ onBack, onPush }: ScanReportProps) {
 
         {/* Detailed Metrics Breakdown Grid */}
         <div className="px-6 mb-8">
-          <h3 className="text-base font-bold mb-4" style={{ color: INK }}>
+          <h3 className="text-base font-bold mb-4 text-slate-900 dark:text-slate-100">
             Detailed Metric Breakdown
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -82,7 +83,7 @@ export function ScanReport({ onBack, onPush }: ScanReportProps) {
                       <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-slate-700 flex items-center justify-center text-indigo-700 dark:text-indigo-300">
                         <Icon size={16} />
                       </div>
-                      <span className="text-xs font-bold" style={{ color: INK }}>
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                         {m.label}
                       </span>
                     </div>
@@ -92,7 +93,7 @@ export function ScanReport({ onBack, onPush }: ScanReportProps) {
                   </div>
 
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xl font-extrabold" style={{ color: INK }}>
+                    <span className="text-xl font-extrabold text-slate-900 dark:text-slate-100">
                       {m.score}{m.unit || ''}
                     </span>
                     <div className="w-32 bg-stone-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
@@ -111,7 +112,7 @@ export function ScanReport({ onBack, onPush }: ScanReportProps) {
 
         {/* Recommendations */}
         <div className="px-6">
-          <h3 className="text-base font-bold mb-3" style={{ color: INK }}>
+          <h3 className="text-base font-bold mb-3 text-slate-900 dark:text-slate-100">
             Personalized Action Plan
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

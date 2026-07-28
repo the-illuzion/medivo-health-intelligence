@@ -15,9 +15,10 @@ interface ProfileProps {
   onBack: () => void;
   onPush?: (screen: ScreenKey) => void;
   onSwitchTab?: (tab: ScreenKey) => void;
+  showBack?: boolean;
 }
 
-export function Profile({ onBack, onSwitchTab }: ProfileProps) {
+export function Profile({ onBack, onSwitchTab, showBack = true }: ProfileProps) {
   const [profile, setProfile] = useState(userProfileData);
   const { theme, setTheme } = useTheme();
 
@@ -38,9 +39,9 @@ export function Profile({ onBack, onSwitchTab }: ProfileProps) {
   }
 
   return (
-    <div className="min-h-screen w-full" style={{ background: BG_GRADIENT, fontFamily: FONT_STACK }}>
+    <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-900" style={{ fontFamily: FONT_STACK }}>
       <div className="relative mx-auto max-w-md md:max-w-3xl lg:max-w-5xl" style={{ paddingBottom: '120px' }}>
-        <SimpleHeader title="Profile & Settings" onBack={onBack} />
+        <SimpleHeader title="Profile & Settings" onBack={onBack} showBack={showBack} />
 
         {/* User Card */}
         <div className="px-6 pt-2 mb-6">
@@ -53,7 +54,7 @@ export function Profile({ onBack, onSwitchTab }: ProfileProps) {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-0.5">
-                <h2 className="text-lg font-bold" style={{ color: INK }}>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                   {profile.name}
                 </h2>
                 <span className="bg-indigo-100 dark:bg-slate-700 text-indigo-800 dark:text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -76,7 +77,7 @@ export function Profile({ onBack, onSwitchTab }: ProfileProps) {
           <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-stone-100 dark:border-slate-700" style={{ boxShadow: CARD_SHADOW }}>
             <div className="flex items-center gap-2 mb-2">
               <Sun size={18} className="text-amber-500" />
-              <h3 className="text-sm font-bold" style={{ color: INK }}>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 App Theme Preference
               </h3>
             </div>
@@ -129,7 +130,7 @@ export function Profile({ onBack, onSwitchTab }: ProfileProps) {
           <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-stone-100 dark:border-slate-700" style={{ boxShadow: CARD_SHADOW }}>
             <div className="flex items-center gap-2 mb-4">
               <Activity size={18} color="#4338CA" />
-              <h3 className="text-sm font-bold" style={{ color: INK }}>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Active Health Goals
               </h3>
             </div>
@@ -147,7 +148,7 @@ export function Profile({ onBack, onSwitchTab }: ProfileProps) {
           <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-stone-100 dark:border-slate-700" style={{ boxShadow: CARD_SHADOW }}>
             <div className="flex items-center gap-2 mb-2">
               <Shield size={18} color="#059669" />
-              <h3 className="text-sm font-bold" style={{ color: INK }}>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Privacy & HIPAA Consent
               </h3>
             </div>
@@ -156,7 +157,7 @@ export function Profile({ onBack, onSwitchTab }: ProfileProps) {
             </p>
             <div className="flex items-center justify-between p-3 rounded-2xl bg-stone-50 dark:bg-slate-700 border border-stone-200/60 dark:border-slate-600">
               <div>
-                <span className="text-xs font-bold" style={{ color: INK }}>
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                   AI Analysis Data Consent
                 </span>
                 <p className="text-[11px] text-stone-400">Granted & Versioned</p>
@@ -181,7 +182,7 @@ export function Profile({ onBack, onSwitchTab }: ProfileProps) {
           <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-stone-100 dark:border-slate-700" style={{ boxShadow: CARD_SHADOW }}>
             <div className="flex items-center gap-2 mb-4">
               <Lock size={18} color="#0EA5E9" />
-              <h3 className="text-sm font-bold" style={{ color: INK }}>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Health Apps & Devices
               </h3>
             </div>
@@ -226,7 +227,7 @@ export function Profile({ onBack, onSwitchTab }: ProfileProps) {
           <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-stone-100 dark:border-slate-700" style={{ boxShadow: CARD_SHADOW }}>
             <div className="flex items-center gap-2 mb-4">
               <Bell size={18} color="#D97706" />
-              <h3 className="text-sm font-bold" style={{ color: INK }}>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 Notification Preferences
               </h3>
             </div>
