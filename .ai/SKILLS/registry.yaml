@@ -1,0 +1,54 @@
+version: "1.0"
+project: medivo-health-intelligence
+skills:
+  core:
+    - name: brainstorm
+      path: core/brainstorm.md
+      description: Structured brainstorming for features and solutions
+    - name: find-skills
+      path: core/find-skills.md
+      description: Discover relevant skills for a task
+    - name: planning
+      path: core/planning.md
+      description: Create implementation plans
+    - name: research
+      path: core/research.md
+      description: Research technologies and patterns
+    - name: problem-solving
+      path: core/problem-solving.md
+      description: Systematic problem analysis and resolution
+  design:
+    - name: frontend-design
+      path: design/frontend-design.md
+      description: Frontend architecture and component design
+    - name: ux-review
+      path: design/ux-review.md
+      description: UX evaluation and improvement
+    - name: accessibility-review
+      path: design/accessibility-review.md
+      description: Accessibility audit and compliance
+    - name: design-system
+      path: design/design-system.md
+      description: Design system development and maintenance
+  engineering:
+    - name: backend-development
+      path: engineering/backend-development.md
+      description: Backend service development
+    - name: database-design
+      path: engineering/database-design.md
+      description: Database schema and query design
+    - name: security-review
+      path: engineering/security-review.md
+      description: Security audit and hardening
+    - name: testing
+      path: engineering/testing.md
+      description: Test strategy and implementation
+    - name: debugging
+      path: engineering/debugging.md
+      description: Systematic debugging approach
+    - name: performance-analysis
+      path: engineering/performance-analysis.md
+      description: Performance profiling and optimization
+    - name: deployment
+      path: engineering/deployment.md
+      description: Deployment and infrastructure

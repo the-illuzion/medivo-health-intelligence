@@ -1,0 +1,124 @@
+---
+description: AI Engineering Operating System for Medivo Health Intelligence Platform
+globs:
+  - "**/*"
+alwaysApply: true
+---
+# Medivo AI Engineering Operating System
+
+## 1. PROJECT OVERVIEW
+**Project:** Medivo Health Intelligence Platform
+**Vision:** A premium, AI-powered digital health ecosystem designed to securely manage, analyze, and optimize patient health data.
+**Goal:** Medivo provides an intelligent interface for patients, providers, and clinical researchers, leveraging advanced AI agents and robust data pipelines to deliver actionable health intelligence, predictive analytics, and personalized care pathways. 
+**Design Philosophy:** World-class aesthetics, modern UI/UX, and extreme reliability.
+
+## 2. BOOT SEQUENCE (CRITICAL)
+As an AI Agent operating within this repository, you **MUST** follow this boot sequence upon initialization.
+The `.ai/` directory is your **SINGLE SOURCE OF TRUTH**. Do not rely on assumptions; read these files in order:
+1. `👉 .ai/BOOT/AI_BOOTSTRAP.md` - Your absolute first step. Contains current sprint goals and immediate context.
+2. `.ai/GOVERNANCE/AI_CONSTITUTION.md` - The immutable laws of the project, including strict architectural invariants.
+3. `.ai/MEMORY/PROJECT_MEMORY.md` - High-level architectural decisions, technical debt logs, and long-term history.
+4. `.ai/MEMORY/SESSION_STATE.md` - The current active session context, WIP tasks, and blocked items.
+5. `.ai/MEMORY/HANDOFF.md` - Read the handoff from the previous agent to pick up exactly where they left off.
+
+## 3. ARCHITECTURE SUMMARY
+Medivo utilizes a **Modular Monolith** architecture tailored for strict domain isolation and high scalability.
+- **Modular Monolith:** All backend services live within a single deployable unit but are strictly separated by domain boundaries at the code level. This gives us the simplicity of a monolith with the strict boundaries of microservices.
+- **Domain-Driven Design (DDD):** The codebase is partitioned by business subdomains (e.g., Patient, Clinical, Billing). Each domain encapsulates its own models, repositories, and use cases.
+- **Clean Architecture:** Inner layers (Entities, Use Cases) have no dependencies on outer layers (Web, DB, UI).
+- **Backend-for-Frontend (BFF):** Each client (Web App, Mobile App) has a dedicated BFF layer that aggregates data from domains and formats it specifically for that client's UI needs.
+- **Schema-per-Domain:** We use a single PostgreSQL cluster, but **each domain has its own independent schema**. This strictly enforces database-level isolation.
+- **Event-Driven Inter-Domain Communication:** Domains communicate asynchronously via events (Redis/BullMQ) to maintain loose coupling.
+
+## 4. TECHNOLOGY STACK
+| Category | Technology | Usage Details |
+|---|---|---|
+| **Frontend** | Next.js (App Router), React 18 | SSR, Routing, API Routes |
+| **Styling** | TailwindCSS, shadcn/ui, Radix UI | Utility-first, Accessible primitives, premium aesthetics |
+| **Backend** | Node.js, TypeScript | API layer, Domain Logic, Background Workers |
+| **Database** | PostgreSQL | Schema-per-domain. Prisma/Drizzle as ORM |
+| **Cache & PubSub** | Redis | Session state, Rate limiting, Event Bus |
+| **Queue** | BullMQ | Background jobs, asynchronous processing |
+| **Storage** | AWS S3 (or S3-compatible) | Secure document and imaging storage |
+| **Validation** | Zod | End-to-end type safety and I/O boundary parsing |
+| **Mobile** | React Native (Expo) | Cross-platform mobile application |
+
+## 5. MONOREPO STRUCTURE
+We use a structured monorepo approach (e.g., Turborepo/PNPM Workspaces):
+```text
+medivo-health-intelligence/
+├── apps/                 # Deployable applications
+│   ├── web/              # Main patient/provider web portal (Next.js)
+│   ├── mobile/           # React Native Expo app
+│   └── admin/            # Internal administrative dashboard
+├── packages/             # Shared internal libraries
+│   ├── design-system/    # **ONLY PLACE for Atomic Design components** (Buttons, Cards)
+│   ├── core-types/       # Shared TS interfaces and Zod schemas
+│   └── config/           # ESLint, Prettier, TSConfig bases
+├── services/             # Backend modular monolith domains
+│   ├── patient/          # Patient domain logic & schema
+│   ├── clinical/         # Clinical/Medical records domain
+│   └── analytics/        # AI & Data analytics domain
+├── tooling/              # Custom scripts, DB migrations, CLI tools
+├── docs/                 # General non-AI architecture documentation
+└── .ai/                  # **AI OS Single Source of Truth**
+```
+
+## 6. CRITICAL RULES (NON-NEGOTIABLE)
+- **TypeScript Strict Mode:** The project runs with `strict: true`. **NO `any` types are allowed.** Use `unknown` if a type is truly dynamic, and narrow it using Zod or type guards.
+- **Zod Validation Everywhere:** All external inputs, API payloads, database reads, and environment variables MUST be validated through Zod schemas. No raw parsing.
+- **Strict Database Boundaries:** 
+  - Schema-per-domain means you **CANNOT perform SQL JOINs across domains**.
+  - To combine data (e.g., Patient + Clinical), fetch separately in the BFF layer or Use Case, or use eventually consistent materialized views via events.
+- **Repository Pattern:** Controllers and Use Cases NEVER write SQL or ORM queries directly. They must inject and use Repositories.
+- **Atomic Design Restriction:** Atomic Design (Atoms, Molecules, Organisms) is strictly limited to `packages/design-system`.
+- **Domain-Driven Feature Architecture in Apps:** Inside `apps/web/`, organize code by features (`features/appointments/`, `features/billing/`). Do NOT use atomic design (e.g., no `components/atoms/` in `apps/`).
+- **No Cross-Domain Internal Imports:** A domain in `services/patient` cannot import internal files from `services/clinical`. It must import via the domain's public `index.ts` API contract.
+
+## 7. CODE GENERATION GUIDELINES
+- **Naming Conventions:**
+  - `PascalCase` for Classes, Interfaces, Types, and React Components (e.g., `PatientRecord`, `Button`).
+  - `camelCase` for variables, functions, methods, and React Hooks (e.g., `fetchPatient`, `usePatientData`).
+  - `UPPER_SNAKE_CASE` for global environment variables and constants.
+  - `kebab-case.ts` for standard files, but React component files should use `PascalCase.tsx`.
+- **File Organization:** Co-locate tests, styles, and types with their feature or component (e.g., `Button.tsx`, `Button.test.tsx`).
+- **Imports:** 
+  - Order: Node built-ins, external packages, internal packages (`@medivo/*`), relative paths.
+  - Avoid deep relative paths (e.g., `../../../../utils`). Use path aliases.
+- **Error Handling:** 
+  - Never swallow errors with empty `catch` blocks.
+  - Use custom Error classes (e.g., `ValidationError`, `DomainError`) and handle them globally at the middleware/BFF layer.
+  - Always log structured JSON errors.
+
+## 8. DOMAIN BOUNDARIES
+- **Patient Domain:** Owns demographic data, authentication links, patient profiles, and user preferences.
+- **Clinical Domain:** Owns medical history, lab results, prescriptions, and provider notes. Highly sensitive.
+- **Billing Domain:** Owns invoices, insurance claims, and payment processing.
+- **Cross-Domain Handling:** If the Patient portal needs a patient's lab results, the BFF calls the Patient Domain for the profile and the Clinical Domain for the labs, aggregating the response.
+
+## 9. TESTING REQUIREMENTS
+- **Unit Tests (Vitest/Jest):** Required for all business logic, utils, and Zod schemas. Target 85%+ coverage for pure functions and use cases.
+- **Integration Tests:** Required for all Repository implementations to ensure correct ORM/Database interaction against a test database container.
+- **E2E Tests (Playwright/Cypress):** Required for critical user journeys (e.g., Login, Booking an Appointment, Viewing Lab Results).
+- **Health-Specific Testing:** Test boundary conditions for sensitive data (e.g., attempting to access another patient's records must yield a 403, tested explicitly).
+
+## 10. MEMORY MANAGEMENT & AGENT STATE
+As an AI agent, you must act as a seamless extension of the operating system:
+- **`SESSION_STATE.md`:** Update this file at the start and end of every major logical chunk of work. Record what is WIP, what is blocked, and what was just completed.
+- **`PROJECT_MEMORY.md`:** If you make a significant architectural choice (e.g., adding a new library, creating a new domain), log it here with the rationale.
+- **`CHANGE_HISTORY.md` (if applicable):** Append brief changelogs for complex refactors.
+- **`HANDOFF.md`:** When your task is done or your context window/session is ending, write a detailed handoff to the next agent so they know exactly what to do next without hallucinating.
+
+## 11. SKILL DISCOVERY
+- Medivo provides custom skills in `.agents/skills/` (for Antigravity) or equivalent directories.
+- Always check the skill registry to see if there is an automated way to run tests, lint code, or deploy the DB schema before doing it manually.
+- Use `grep_search` to find scripts in the `tooling/` directory before writing ad-hoc bash commands.
+
+## 12. SECURITY & COMPLIANCE REQUIREMENTS
+- **HIPAA Awareness:** This is a health platform. Patient Data (PHI - Protected Health Information) must NEVER be logged to the console or stored in plain text.
+- **Encryption:** All data at rest must be encrypted. Use environment variables for all secrets; never hardcode credentials.
+- **Consent:** All data sharing between certain domains (e.g., external research) requires explicit, recorded patient consent.
+- **Authentication:** Use robust JWT/Session strategies. Ensure every API route validates the user's roles and permissions before executing domain logic.
+
+## 13. CROSS-AGENT COMPATIBILITY
+This project uses `AGENTS.md` (open standard, Linux Foundation / AAIF) as the universal AI agent configuration. Cursor should treat both this file and `AGENTS.md` as authoritative. In case of conflict, `.ai/GOVERNANCE/AI_CONSTITUTION.md` takes precedence.
