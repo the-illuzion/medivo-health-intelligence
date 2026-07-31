@@ -4,8 +4,12 @@ import { Feather } from '@expo/vector-icons';
 import { ScreenKey } from '@medivo/types';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { CameraScanScreen } from './screens/CameraScanScreen';
+import { ScanReportScreen } from './screens/ScanReportScreen';
 import { AICoachScreen } from './screens/AICoachScreen';
+import { HistoryScreen } from './screens/HistoryScreen';
 import { RoutinesScreen } from './screens/RoutinesScreen';
+import { ProductsScreen } from './screens/ProductsScreen';
+import { ConsultationsScreen } from './screens/ConsultationsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 
 interface ErrorBoundaryProps {
@@ -57,12 +61,16 @@ function MainApp() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FAFAFC" translucent={false} />
       
-      {/* Primary Screen Canvas View */}
+      {/* Primary Screen Canvas View (All 9 Web Portal Screens Natively Supported) */}
       <View style={styles.screenContainer}>
         {activeTab === 'dashboard' && <DashboardScreen onNavigate={(screen) => setActiveTab(screen)} />}
         {activeTab === 'faceMatch' && <CameraScanScreen onNavigate={(screen) => setActiveTab(screen)} />}
+        {activeTab === 'scanReport' && <ScanReportScreen onNavigate={(screen) => setActiveTab(screen)} />}
         {activeTab === 'coach' && <AICoachScreen />}
+        {activeTab === 'history' && <HistoryScreen onNavigate={(screen) => setActiveTab(screen)} />}
         {activeTab === 'routines' && <RoutinesScreen />}
+        {activeTab === 'products' && <ProductsScreen />}
+        {activeTab === 'consultations' && <ConsultationsScreen />}
         {activeTab === 'profile' && <ProfileScreen />}
       </View>
 
@@ -73,7 +81,7 @@ function MainApp() {
           onPress={() => setActiveTab('dashboard')}
           activeOpacity={0.7}
         >
-          <Feather name="home" size={22} color={activeTab === 'dashboard' ? '#4338CA' : '#94A3B8'} />
+          <Feather name="home" size={20} color={activeTab === 'dashboard' ? '#4338CA' : '#94A3B8'} />
           <Text style={[styles.navLabel, activeTab === 'dashboard' && styles.navLabelActive]}>
             Home
           </Text>
@@ -84,9 +92,9 @@ function MainApp() {
           onPress={() => setActiveTab('faceMatch')}
           activeOpacity={0.7}
         >
-          <Feather name="camera" size={22} color={activeTab === 'faceMatch' ? '#4338CA' : '#94A3B8'} />
+          <Feather name="camera" size={20} color={activeTab === 'faceMatch' ? '#4338CA' : '#94A3B8'} />
           <Text style={[styles.navLabel, activeTab === 'faceMatch' && styles.navLabelActive]}>
-            AI Scan
+            Scan
           </Text>
         </TouchableOpacity>
 
@@ -95,7 +103,7 @@ function MainApp() {
           onPress={() => setActiveTab('coach')}
           activeOpacity={0.7}
         >
-          <Feather name="message-square" size={22} color={activeTab === 'coach' ? '#4338CA' : '#94A3B8'} />
+          <Feather name="message-square" size={20} color={activeTab === 'coach' ? '#4338CA' : '#94A3B8'} />
           <Text style={[styles.navLabel, activeTab === 'coach' && styles.navLabelActive]}>
             Coach
           </Text>
@@ -103,23 +111,23 @@ function MainApp() {
 
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setActiveTab('routines')}
+          onPress={() => setActiveTab('products')}
           activeOpacity={0.7}
         >
-          <Feather name="calendar" size={22} color={activeTab === 'routines' ? '#4338CA' : '#94A3B8'} />
-          <Text style={[styles.navLabel, activeTab === 'routines' && styles.navLabelActive]}>
-            Routines
+          <Feather name="shopping-bag" size={20} color={activeTab === 'products' ? '#4338CA' : '#94A3B8'} />
+          <Text style={[styles.navLabel, activeTab === 'products' && styles.navLabelActive]}>
+            Store
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setActiveTab('profile')}
+          onPress={() => setActiveTab('consultations')}
           activeOpacity={0.7}
         >
-          <Feather name="user" size={22} color={activeTab === 'profile' ? '#4338CA' : '#94A3B8'} />
-          <Text style={[styles.navLabel, activeTab === 'profile' && styles.navLabelActive]}>
-            Profile
+          <Feather name="user-check" size={20} color={activeTab === 'consultations' ? '#4338CA' : '#94A3B8'} />
+          <Text style={[styles.navLabel, activeTab === 'consultations' && styles.navLabelActive]}>
+            Doctors
           </Text>
         </TouchableOpacity>
       </View>
@@ -150,7 +158,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderTopWidth: 1,
     borderTopColor: '#EEF0F7',
     elevation: 8,
