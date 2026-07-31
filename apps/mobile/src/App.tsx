@@ -1,7 +1,12 @@
-import React, { useState, Component, ReactNode } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, StatusBar, Platform, ScrollView } from 'react-native';
+import React, { useState, useEffect, Component, ReactNode } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, Platform, ScrollView, BackHandler } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { ScreenKey } from '@medivo/types';
+
+import { SplashScreen } from './screens/SplashScreen';
+import { LoginScreen } from './screens/LoginScreen';
+import { RegisterScreen } from './screens/RegisterScreen';
+import { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 import { DashboardScreen } from './screens/DashboardScreen';
 import { CameraScanScreen } from './screens/CameraScanScreen';
 import { ScanReportScreen } from './screens/ScanReportScreen';
@@ -10,6 +15,9 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { RoutinesScreen } from './screens/RoutinesScreen';
 import { ProductsScreen } from './screens/ProductsScreen';
 import { ConsultationsScreen } from './screens/ConsultationsScreen';
+import { CartScreen } from './screens/CartScreen';
+import { CheckoutScreen } from './screens/CheckoutScreen';
+import { PaymentsScreen } from './screens/PaymentsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 
 interface ErrorBoundaryProps {
@@ -55,82 +63,127 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 }
 
 function MainApp() {
-  const [activeTab, setActiveTab] = useState<ScreenKey>('dashboard');
+  const [activeTab, setActiveTab] = useState<ScreenKey>('splash');
+  const [navStack, setNavStack] = useState<ScreenKey[]>(['splash']);
+
+  // Navigate with stack push history
+  function navigateTo(screen: ScreenKey) {
+    setNavStack((prev) => [...prev, screen]);
+    setActiveTab(screen);
+  }
+
+  // Pop screen off stack on Android hardware back button press
+  useEffect(() => {
+    const onHardwareBackPress = () => {
+      if (navStack.length > 1) {
+        const newStack = [...navStack];
+        newStack.pop();
+        const prevScreen = newStack[newStack.length - 1];
+        setNavStack(newStack);
+        setActiveTab(prevScreen);
+        return true; // Handled back navigation, prevent app exit
+      }
+
+      if (activeTab !== 'splash' && activeTab !== 'dashboard') {
+        setNavStack(['dashboard']);
+        setActiveTab('dashboard');
+        return true; // Return to dashboard, prevent app exit
+      }
+
+      return false; // Already on root screen, allow standard app exit
+    };
+
+    const backSubscription = BackHandler.addEventListener('hardwareBackPress', onHardwareBackPress);
+    return () => backSubscription.remove();
+  }, [navStack, activeTab]);
+
+  const showBottomNav = !['splash', 'login', 'register', 'privacyPolicy', 'checkout', 'payments'].includes(activeTab);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FAFAFC" translucent={false} />
       
-      {/* Primary Screen Canvas View (All 9 Web Portal Screens Natively Supported) */}
-      <View style={styles.screenContainer}>
-        {activeTab === 'dashboard' && <DashboardScreen onNavigate={(screen) => setActiveTab(screen)} />}
-        {activeTab === 'faceMatch' && <CameraScanScreen onNavigate={(screen) => setActiveTab(screen)} />}
-        {activeTab === 'scanReport' && <ScanReportScreen onNavigate={(screen) => setActiveTab(screen)} />}
+      {/* Primary Screen Canvas View (15 Native Screens Supported) */}
+      <View style={[styles.screenContainer, showBottomNav && { paddingBottom: 90 }]}>
+        {activeTab === 'splash' && <SplashScreen onNavigate={navigateTo} />}
+        {activeTab === 'login' && <LoginScreen onNavigate={navigateTo} />}
+        {activeTab === 'register' && <RegisterScreen onNavigate={navigateTo} />}
+        {activeTab === 'privacyPolicy' && <PrivacyPolicyScreen onNavigate={navigateTo} />}
+        {activeTab === 'dashboard' && <DashboardScreen onNavigate={navigateTo} />}
+        {activeTab === 'faceMatch' && <CameraScanScreen onNavigate={navigateTo} />}
+        {activeTab === 'scanReport' && <ScanReportScreen onNavigate={navigateTo} />}
         {activeTab === 'coach' && <AICoachScreen />}
-        {activeTab === 'history' && <HistoryScreen onNavigate={(screen) => setActiveTab(screen)} />}
+        {activeTab === 'history' && <HistoryScreen onNavigate={navigateTo} />}
         {activeTab === 'routines' && <RoutinesScreen />}
         {activeTab === 'products' && <ProductsScreen />}
         {activeTab === 'consultations' && <ConsultationsScreen />}
+        {activeTab === 'cart' && <CartScreen onNavigate={navigateTo} />}
+        {activeTab === 'checkout' && <CheckoutScreen onNavigate={navigateTo} />}
+        {activeTab === 'payments' && <PaymentsScreen onNavigate={navigateTo} />}
         {activeTab === 'profile' && <ProfileScreen />}
       </View>
 
-      {/* Touch-Optimized Native Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab('dashboard')}
-          activeOpacity={0.7}
-        >
-          <Feather name="home" size={20} color={activeTab === 'dashboard' ? '#4338CA' : '#94A3B8'} />
-          <Text style={[styles.navLabel, activeTab === 'dashboard' && styles.navLabelActive]}>
-            Home
-          </Text>
-        </TouchableOpacity>
+      {/* Floating Glassmorphic Pill Navigation Bar */}
+      {showBottomNav && (
+        <View style={styles.floatingNavContainer}>
+          <View style={styles.floatingNav}>
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => navigateTo('dashboard')}
+              activeOpacity={0.75}
+            >
+              <Feather name="home" size={20} color={activeTab === 'dashboard' ? '#4338CA' : '#94A3B8'} />
+              <Text style={[styles.navLabel, activeTab === 'dashboard' && styles.navLabelActive]}>
+                Home
+              </Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab('faceMatch')}
-          activeOpacity={0.7}
-        >
-          <Feather name="camera" size={20} color={activeTab === 'faceMatch' ? '#4338CA' : '#94A3B8'} />
-          <Text style={[styles.navLabel, activeTab === 'faceMatch' && styles.navLabelActive]}>
-            Scan
-          </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => navigateTo('faceMatch')}
+              activeOpacity={0.75}
+            >
+              <Feather name="camera" size={20} color={activeTab === 'faceMatch' ? '#4338CA' : '#94A3B8'} />
+              <Text style={[styles.navLabel, activeTab === 'faceMatch' && styles.navLabelActive]}>
+                Scan
+              </Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab('coach')}
-          activeOpacity={0.7}
-        >
-          <Feather name="message-square" size={20} color={activeTab === 'coach' ? '#4338CA' : '#94A3B8'} />
-          <Text style={[styles.navLabel, activeTab === 'coach' && styles.navLabelActive]}>
-            Coach
-          </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => navigateTo('coach')}
+              activeOpacity={0.75}
+            >
+              <Feather name="message-square" size={20} color={activeTab === 'coach' ? '#4338CA' : '#94A3B8'} />
+              <Text style={[styles.navLabel, activeTab === 'coach' && styles.navLabelActive]}>
+                Coach
+              </Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab('products')}
-          activeOpacity={0.7}
-        >
-          <Feather name="shopping-bag" size={20} color={activeTab === 'products' ? '#4338CA' : '#94A3B8'} />
-          <Text style={[styles.navLabel, activeTab === 'products' && styles.navLabelActive]}>
-            Store
-          </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => navigateTo('products')}
+              activeOpacity={0.75}
+            >
+              <Feather name="shopping-bag" size={20} color={activeTab === 'products' ? '#4338CA' : '#94A3B8'} />
+              <Text style={[styles.navLabel, activeTab === 'products' && styles.navLabelActive]}>
+                Store
+              </Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab('consultations')}
-          activeOpacity={0.7}
-        >
-          <Feather name="user-check" size={20} color={activeTab === 'consultations' ? '#4338CA' : '#94A3B8'} />
-          <Text style={[styles.navLabel, activeTab === 'consultations' && styles.navLabelActive]}>
-            Doctors
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <TouchableOpacity
+              style={styles.navItem}
+              onPress={() => navigateTo('consultations')}
+              activeOpacity={0.75}
+            >
+              <Feather name="user-check" size={20} color={activeTab === 'consultations' ? '#4338CA' : '#94A3B8'} />
+              <Text style={[styles.navLabel, activeTab === 'consultations' && styles.navLabelActive]}>
+                Doctors
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -152,20 +205,29 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
   },
-  bottomNav: {
+  floatingNavContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 16,
+    right: 16,
+    alignItems: 'center',
+  },
+  floatingNav: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#EEF0F7',
-    elevation: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#EEF0F7',
+    elevation: 12,
     shadowColor: '#312E81',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
   },
   navItem: {
     alignItems: 'center',

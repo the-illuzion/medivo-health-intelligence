@@ -19,6 +19,7 @@
     "@medivo/utils": "workspace:*",
     "expo": "~51.0.0",
     "expo-camera": "~15.0.0",
+    "expo-font": "~12.0.10",
     "expo-status-bar": "~1.12.1",
     "lucide-react-native": "^0.378.0",
     "react": "18.2.0",

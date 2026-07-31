@@ -9,6 +9,18 @@ build/
 out/
 *.tsbuildinfo
 
+# Monorepo & Expo Mobile Builds
+.expo/
+*.apk
+*.aab
+apps/mobile/android/.cxx/
+apps/mobile/android/.gradle/
+apps/mobile/android/build/
+apps/mobile/android/app/build/
+apps/mobile/android/local.properties
+apps/mobile/generate-icon.js
+apps/mobile/generate-icon.ps1
+
 # Turborepo
 .turbo/
 
@@ -19,11 +31,11 @@ out/
 .env.test.local
 .env.production.local
 
-# Testing
+# Testing & Coverage
 coverage/
 .nyc_output/
 
-# IDE
+# IDE & Editor
 .vscode/settings.json
 .vscode/launch.json
 .idea/
@@ -35,31 +47,24 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# Debug
+# Debug & Logs
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 lerna-debug.log*
+*.log
+*.pid
+*.seed
+*.pid.lock
 
 # Package manager
 *.tgz
 .yarn-integrity
 
-# Storybook
+# Storybook & PWA
 storybook-static/
-
-# PWA
 sw.js
 workbox-*.js
-
-# Expo
-.expo/
-
-# Misc
-*.log
-*.pid
-*.seed
-*.pid.lock
 
 # Temporary
 tmp/
