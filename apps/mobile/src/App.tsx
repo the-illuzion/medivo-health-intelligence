@@ -13,12 +13,17 @@ import { ScanReportScreen } from './screens/ScanReportScreen';
 import { AICoachScreen } from './screens/AICoachScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
 import { RoutinesScreen } from './screens/RoutinesScreen';
+import { RoutineDetailScreen } from './screens/RoutineDetailScreen';
 import { ProductsScreen } from './screens/ProductsScreen';
 import { ConsultationsScreen } from './screens/ConsultationsScreen';
+import { VideoCallScreen } from './screens/VideoCallScreen';
 import { CartScreen } from './screens/CartScreen';
 import { CheckoutScreen } from './screens/CheckoutScreen';
 import { PaymentsScreen } from './screens/PaymentsScreen';
+import { OrderDetailsScreen } from './screens/OrderDetailsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { EditProfileScreen } from './screens/EditProfileScreen';
+import { NotificationsScreen } from './screens/NotificationsScreen';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -65,14 +70,18 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 function MainApp() {
   const [activeTab, setActiveTab] = useState<ScreenKey>('splash');
   const [navStack, setNavStack] = useState<ScreenKey[]>(['splash']);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Navigate with stack push history
+  function showToast(msg: string) {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  }
+
   function navigateTo(screen: ScreenKey) {
     setNavStack((prev) => [...prev, screen]);
     setActiveTab(screen);
   }
 
-  // Pop screen off stack on Android hardware back button press
   useEffect(() => {
     const onHardwareBackPress = () => {
       if (navStack.length > 1) {
@@ -81,30 +90,65 @@ function MainApp() {
         const prevScreen = newStack[newStack.length - 1];
         setNavStack(newStack);
         setActiveTab(prevScreen);
-        return true; // Handled back navigation, prevent app exit
+        return true;
       }
 
       if (activeTab !== 'splash' && activeTab !== 'dashboard') {
         setNavStack(['dashboard']);
         setActiveTab('dashboard');
-        return true; // Return to dashboard, prevent app exit
+        return true;
       }
 
-      return false; // Already on root screen, allow standard app exit
+      return false;
     };
 
     const backSubscription = BackHandler.addEventListener('hardwareBackPress', onHardwareBackPress);
     return () => backSubscription.remove();
   }, [navStack, activeTab]);
 
-  const showBottomNav = !['splash', 'login', 'register', 'privacyPolicy', 'checkout', 'payments'].includes(activeTab);
+  const showHeader = !['splash', 'login', 'register', 'videoCall'].includes(activeTab);
+  const showBottomNav = !['splash', 'login', 'register', 'privacyPolicy', 'checkout', 'payments', 'videoCall'].includes(activeTab);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FAFAFC" translucent={false} />
       
-      {/* Primary Screen Canvas View (15 Native Screens Supported) */}
-      <View style={[styles.screenContainer, showBottomNav && { paddingBottom: 90 }]}>
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <View style={styles.toastBanner}>
+          <Feather name="check-circle" size={16} color="#059669" />
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </View>
+      )}
+
+      {/* Top Header Bar */}
+      {showHeader && (
+        <View style={styles.topHeader}>
+          <View style={styles.brandRow}>
+            <View style={styles.brandIcon}>
+              <Feather name="activity" size={16} color="#FFFFFF" />
+            </View>
+            <Text style={styles.topBrandName}>Medivo Health</Text>
+          </View>
+
+          <View style={styles.topHeaderActions}>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigateTo('notifications')}>
+              <Feather name="bell" size={18} color="#1E1B4B" />
+              <View style={styles.badgeDot} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigateTo('cart')}>
+              <Feather name="shopping-bag" size={18} color="#1E1B4B" />
+              <View style={styles.badgeCount}>
+                <Text style={styles.badgeCountText}>2</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Primary Screen View */}
+      <View style={styles.screenContainer}>
         {activeTab === 'splash' && <SplashScreen onNavigate={navigateTo} />}
         {activeTab === 'login' && <LoginScreen onNavigate={navigateTo} />}
         {activeTab === 'register' && <RegisterScreen onNavigate={navigateTo} />}
@@ -117,13 +161,16 @@ function MainApp() {
         {activeTab === 'routines' && <RoutinesScreen />}
         {activeTab === 'products' && <ProductsScreen />}
         {activeTab === 'consultations' && <ConsultationsScreen />}
+        {activeTab === 'videoCall' && <VideoCallScreen onNavigate={navigateTo} />}
         {activeTab === 'cart' && <CartScreen onNavigate={navigateTo} />}
         {activeTab === 'checkout' && <CheckoutScreen onNavigate={navigateTo} />}
         {activeTab === 'payments' && <PaymentsScreen onNavigate={navigateTo} />}
+        {activeTab === 'orderDetails' && <OrderDetailsScreen onNavigate={navigateTo} />}
         {activeTab === 'profile' && <ProfileScreen />}
+        {activeTab === 'notifications' && <NotificationsScreen onNavigate={navigateTo} />}
       </View>
 
-      {/* Floating Glassmorphic Pill Navigation Bar */}
+      {/* Perfectly Spaced & Aligned Floating Glassmorphic Pill Navigation Bar */}
       {showBottomNav && (
         <View style={styles.floatingNavContainer}>
           <View style={styles.floatingNav}>
@@ -202,42 +249,77 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFC',
     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0,
   },
+  toastBanner: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    zIndex: 999,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    elevation: 6,
+  },
+  toastText: { color: '#065F46', fontSize: 13, fontWeight: '700', marginLeft: 8 },
+  topHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#FAFAFC',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF0F7',
+  },
+  brandRow: { flexDirection: 'row', alignItems: 'center' },
+  brandIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#4338CA', justifyContent: 'center', alignItems: 'center' },
+  topBrandName: { fontSize: 16, fontWeight: '800', color: '#1E1B4B', marginLeft: 8 },
+  topHeaderActions: { flexDirection: 'row', gap: 10 },
+  headerIconBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#EEF0F7', position: 'relative' },
+  badgeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', position: 'absolute', top: 6, right: 6 },
+  badgeCount: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#4338CA', justifyContent: 'center', alignItems: 'center', position: 'absolute', top: 4, right: 4 },
+  badgeCountText: { color: '#FFFFFF', fontSize: 9, fontWeight: '800' },
   screenContainer: {
     flex: 1,
   },
   floatingNavContainer: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 24,
     left: 16,
     right: 16,
-    alignItems: 'center',
+    zIndex: 100,
   },
   floatingNav: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.96)',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 32,
     borderWidth: 1,
     borderColor: '#EEF0F7',
     elevation: 12,
-    shadowColor: '#312E81',
+    shadowColor: '#1E1B4B',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
   },
   navItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 4,
   },
   navLabel: {
     fontSize: 10,
     fontWeight: '600',
     color: '#94A3B8',
-    marginTop: 4,
+    marginTop: 3,
   },
   navLabelActive: {
     color: '#4338CA',

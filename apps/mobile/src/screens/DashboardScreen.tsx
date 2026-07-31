@@ -137,7 +137,7 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFC' },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 110 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   greeting: { fontSize: 22, fontWeight: '700', color: '#1E1B4B' },
   subtitle: { fontSize: 13, color: '#78716C', marginTop: 2 },

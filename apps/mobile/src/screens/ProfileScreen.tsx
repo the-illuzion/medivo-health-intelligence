@@ -61,7 +61,7 @@ export function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFC' },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 120 },
   title: { fontSize: 22, fontWeight: '700', color: '#1E1B4B', marginBottom: 16 },
   userCard: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 20, flexDirection: 'row', alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#F1F0F7' },
   avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#4338CA', justifyContent: 'center', alignItems: 'center' },

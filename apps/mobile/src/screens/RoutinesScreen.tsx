@@ -55,9 +55,9 @@ export function RoutinesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFC' },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 120 },
   title: { fontSize: 22, fontWeight: '700', color: '#1E1B4B', marginBottom: 16 },
-  streakBanner: { backgroundColor: '#F59E0B', padding: 20, borderRadius: 20, flexDirection: 'row', justify: 'space-between', alignItems: 'center', marginBottom: 20 },
+  streakBanner: { backgroundColor: '#F59E0B', padding: 20, borderRadius: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   streakLabel: { color: '#FEF3C7', fontSize: 11, fontWeight: '700' },
   streakVal: { color: '#FFFFFF', fontSize: 20, fontWeight: '800', marginTop: 4 },
   streakBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },

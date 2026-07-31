@@ -105,7 +105,7 @@ export function ProductsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFC' },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 120 },
   header: { marginBottom: 16 },
   headerTitle: { fontSize: 22, fontWeight: '700', color: '#1E1B4B' },
   headerSub: { fontSize: 13, color: '#64748B', marginTop: 2 },

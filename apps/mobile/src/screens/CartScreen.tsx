@@ -104,7 +104,7 @@ export function CartScreen({ onNavigate }: CartScreenProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFC' },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 120 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   backBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#EEF0F7' },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#1E1B4B' },
