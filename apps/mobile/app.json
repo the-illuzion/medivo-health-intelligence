@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Medivo Health Intelligence",
+    "slug": "medivo-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#1E1B4B"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.medivo.health",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Medivo Health requires camera access for real-time AI face match skin analysis."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1E1B4B"
+      },
+      "package": "com.medivo.health",
+      "permissions": ["CAMERA"]
+    }
+  }
+}
