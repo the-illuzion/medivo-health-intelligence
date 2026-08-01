@@ -1,8 +1,8 @@
 # Current Session State
 
 - **Agent**: Customer Portal Frontend Agent
-- **Started**: 2026-07-31T18:02:22Z
-- **Task**: Perform full 20-screen audit for missing screens or layout impact.
+- **Started**: 2026-08-01T16:29:17Z
+- **Task**: Implement Core Backend API service (services/api) and Customer BFF (apps/customer-bff) using Clean Architecture.
 - **Branch**: `main`
 - **Status**: ✅ Complete
 
@@ -10,30 +10,34 @@
 
 ## Active Work
 
-- [x] Perform file audit of all 21 screens in `apps/mobile/src/screens/`
-- [x] Update `RoutinesScreen`, `ProfileScreen`, `CartScreen`, `RoutineDetailScreen`, `EditProfileScreen`, and `OrderDetailsScreen` to `paddingBottom: 120`
-- [x] Update `AICoachScreen` `inputBar` to `marginBottom: 85`
-- [x] Recompile standalone Android Release APK (`BUILD SUCCESSFUL in 1m 27s`, `25.0 MB`)
-- [x] Copy binary to `apps/mobile/medivo-health-mobile-arm64-25MB.apk`
+- [x] Create package.json and tsconfig.json for `services/api`
+- [x] Implement Domain Layer (`entities`, `value-objects`, `repositories`) in `services/api`
+- [x] Implement Application Layer (`use-cases`) in `services/api`
+- [x] Implement Infrastructure Layer (`repositories`, `ai-inference`, `jwt-service`) in `services/api`
+- [x] Create package.json and `src/server.ts` for `apps/customer-bff`
+- [x] Build `@medivo/service-api` and `@medivo/customer-bff`
+- [x] Start Customer BFF API server on `http://localhost:4000`
+- [x] Verify live REST API endpoints via HTTP requests
 
 ---
 
 ## Files Modified
 
-- `apps/mobile/src/screens/RoutinesScreen.tsx` (Modified)
-- `apps/mobile/src/screens/ProfileScreen.tsx` (Modified)
-- `apps/mobile/src/screens/CartScreen.tsx` (Modified)
-- `apps/mobile/src/screens/AICoachScreen.tsx` (Modified)
-- `apps/mobile/src/screens/RoutineDetailScreen.tsx` (Modified)
-- `apps/mobile/src/screens/EditProfileScreen.tsx` (Modified)
-- `apps/mobile/src/screens/OrderDetailsScreen.tsx` (Modified)
-- `apps/mobile/medivo-health-mobile-arm64-25MB.apk` (Updated Binary)
+- `services/api/package.json` (New)
+- `services/api/tsconfig.json` (New)
+- `services/api/src/index.ts` (New)
+- `services/api/src/domain/*` (New)
+- `services/api/src/application/*` (New)
+- `services/api/src/infrastructure/*` (New)
+- `apps/customer-bff/package.json` (New)
+- `apps/customer-bff/tsconfig.json` (New)
+- `apps/customer-bff/src/server.ts` (New)
 
 ---
 
 ## Decisions Made
 
-- Audited all 20 screens and updated padding across all remaining views for 100% clean navigation clearance.
+- Implemented Clean Architecture Node.js / TypeScript API server with JWT authentication, simulated AI skin scan inference, and in-memory clinical repositories.
 
 ---
 
