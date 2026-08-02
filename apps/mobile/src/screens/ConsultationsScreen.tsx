@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Doctor } from '@medivo/types';
+import { apiClient } from '@medivo/api-client';
 
 export function ConsultationsScreen() {
   const [selectedSlot, setSelectedSlot] = useState<Record<number, string>>({});
   const [booked, setBooked] = useState<Record<number, boolean>>({});
-
-  const doctors: Doctor[] = [
+  const [doctors, setDoctors] = useState<Doctor[]>([
     {
-      id: 1,
+      id: '1',
       name: 'Dr. Aris Thorne, MD',
       title: 'Board-Certified Dermatologist',
       rating: 4.9,
@@ -21,7 +21,7 @@ export function ConsultationsScreen() {
       slots: ['03:00 PM', '04:30 PM', '06:00 PM'],
     },
     {
-      id: 2,
+      id: '2',
       name: 'Dr. Elena Rostova, MD',
       title: 'Cosmetic & Laser Specialist',
       rating: 4.8,
@@ -32,14 +32,28 @@ export function ConsultationsScreen() {
       avatarBg: '#059669',
       slots: ['10:00 AM', '01:30 PM', '03:00 PM'],
     },
-  ];
+  ]);
 
-  function selectSlot(docId: number, slot: string) {
-    setSelectedSlot((prev) => ({ ...prev, [docId]: slot }));
+  useEffect(() => {
+    async function fetchLiveDoctors() {
+      try {
+        const liveDoctors = await apiClient.doctors.list();
+        if (liveDoctors && liveDoctors.length > 0) {
+          setDoctors(liveDoctors);
+        }
+      } catch (err) {
+        // Fallback to initial state if server is offline
+      }
+    }
+    fetchLiveDoctors();
+  }, []);
+
+  function selectSlot(docId: string, slot: string) {
+    setSelectedSlot((prev: any) => ({ ...prev, [docId]: slot }));
   }
 
-  function handleConfirmBook(docId: number) {
-    setBooked((prev) => ({ ...prev, [docId]: true }));
+  function handleConfirmBook(docId: string) {
+    setBooked((prev: any) => ({ ...prev, [docId]: true }));
   }
 
   return (
@@ -76,7 +90,7 @@ export function ConsultationsScreen() {
 
       {/* Clinician Directory */}
       <Text style={styles.sectionTitle}>Available Dermatologists</Text>
-      {doctors.map((doc) => {
+      {doctors.map((doc: any) => {
         const isAlreadyBooked = !!booked[doc.id];
         const activeSlot = selectedSlot[doc.id] || doc.slots[0];
 
@@ -107,7 +121,7 @@ export function ConsultationsScreen() {
             {/* Time Slot Selector */}
             <Text style={styles.slotTitle}>Select Time Slot:</Text>
             <View style={styles.slotGroup}>
-              {doc.slots.map((slot) => (
+              {doc.slots.map((slot: string) => (
                 <TouchableOpacity
                   key={slot}
                   style={[styles.slotPill, activeSlot === slot && styles.slotPillActive]}

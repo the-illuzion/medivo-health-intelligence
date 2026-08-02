@@ -1,22 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Product } from '@medivo/types';
+import { apiClient } from '@medivo/api-client';
 
 export function ProductsScreen() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [addedIds, setAddedIds] = useState<Record<number, boolean>>({});
-
-  const categories = ['All', 'Cleansers', 'Serums', 'Sunscreen', 'Moisturizers'];
-
-  const products: Product[] = [
+  const [products, setProducts] = useState<Product[]>([
     { id: 1, name: 'Balancing Clay Cleanser', category: 'Cleansers', price: 34, rating: 4.9, tag: 'AI Recommended', icon: 'droplet', tint: '#EEF2FF', accent: '#4338CA' },
     { id: 2, name: 'Vitamin C Brightening Drops', category: 'Serums', price: 58, rating: 4.8, tag: 'Top Rated', icon: 'sun', tint: '#FEF3C7', accent: '#D97706' },
     { id: 3, name: 'Hydra Renew Serum', category: 'Serums', price: 62, rating: 4.9, tag: 'Best for Hydration', icon: 'shield', tint: '#E0F2FE', accent: '#0284C7' },
     { id: 4, name: 'Mineral SPF 50 Shield', category: 'Sunscreen', price: 42, rating: 4.7, tag: 'Essential', icon: 'sun', tint: '#ECFDF5', accent: '#059669' },
     { id: 5, name: 'Ceramide Barrier Cream', category: 'Moisturizers', price: 46, rating: 4.9, tag: 'Restorative', icon: 'moon', tint: '#F3E8FF', accent: '#7C3AED' },
-  ];
+  ]);
+
+  useEffect(() => {
+    async function fetchLiveProducts() {
+      try {
+        const liveProducts = await apiClient.products.list();
+        if (liveProducts && liveProducts.length > 0) {
+          setProducts(liveProducts.map((p) => ({
+            ...p,
+            icon: p.icon || 'droplet',
+            tint: p.tint || '#EEF2FF',
+            accent: p.accent || '#4338CA',
+          })));
+        }
+      } catch (err) {
+        // Fallback to initial state if server is offline
+      }
+    }
+    fetchLiveProducts();
+  }, []);
+
+  const categories = ['All', 'Cleansers', 'Serums', 'Sunscreen', 'Moisturizers'];
 
   const filtered = products.filter((p) => {
     const matchCat = selectedCategory === 'All' || p.category === selectedCategory;
@@ -66,11 +85,11 @@ export function ProductsScreen() {
           const isAdded = !!addedIds[prod.id];
           return (
             <View key={prod.id} style={styles.card}>
-              <View style={[styles.cardHeader, { backgroundColor: prod.tint }]}>
+              <View style={[styles.cardHeader, { backgroundColor: prod.tint || '#EEF2FF' }]}>
                 <View style={styles.tagBadge}>
-                  <Text style={styles.tagText}>{prod.tag}</Text>
+                  <Text style={styles.tagText}>{prod.tag || 'Clinical'}</Text>
                 </View>
-                <Feather name={prod.icon as any} size={28} color={prod.accent} />
+                <Feather name={(prod.icon || 'droplet') as any} size={28} color={prod.accent || '#4338CA'} />
               </View>
 
               <View style={styles.cardBody}>

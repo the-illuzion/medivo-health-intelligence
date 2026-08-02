@@ -14,6 +14,7 @@
   "dependencies": {
     "@babel/runtime": "^7.24.0",
     "@expo/vector-icons": "^14.0.0",
+    "@medivo/api-client": "workspace:*",
     "@medivo/design-system": "workspace:*",
     "@medivo/types": "workspace:*",
     "@medivo/utils": "workspace:*",
