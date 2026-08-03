@@ -150,6 +150,49 @@ importers:
         specifier: ^5.4.5
         version: 5.9.3
 
+  apps/marketing-web:
+    dependencies:
+      '@medivo/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@medivo/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      lucide-react:
+        specifier: ^0.378.0
+        version: 0.378.0(react@18.2.0)
+      next:
+        specifier: 14.2.3
+        version: 14.2.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      react:
+        specifier: 18.2.0
+        version: 18.2.0
+      react-dom:
+        specifier: 18.2.0
+        version: 18.2.0(react@18.2.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.12.0
+        version: 20.19.43
+      '@types/react':
+        specifier: ^18.2.45
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ^18.2.18
+        version: 18.3.7(@types/react@18.3.31)
+      autoprefixer:
+        specifier: ^10.4.19
+        version: 10.5.4(postcss@8.5.23)
+      postcss:
+        specifier: ^8.4.38
+        version: 8.5.23
+      tailwindcss:
+        specifier: ^3.4.3
+        version: 3.4.19(tsx@4.23.1)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+
   apps/mobile:
     dependencies:
       '@babel/runtime':
