@@ -1,17 +1,23 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { View, Platform, LogBox } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
 
 import '../global.css';
 
+// Silence non-fatal Metro require cycle warnings in dev mode
+LogBox.ignoreLogs(['Require cycle:']);
+
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  const Container = Platform.OS === 'web' ? View : GestureHandlerRootView;
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <Container style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <StatusBar style="light" />
@@ -19,7 +25,7 @@ export default function RootLayout() {
             screenOptions={{
               headerShown: false,
               contentStyle: { backgroundColor: '#0D1F1C' },
-              animation: 'slide_from_right',
+              animation: Platform.OS === 'web' ? 'none' : 'slide_from_right',
             }}
           >
             <Stack.Screen name="index" />
@@ -42,6 +48,6 @@ export default function RootLayout() {
           </Stack>
         </ThemeProvider>
       </QueryClientProvider>
-    </GestureHandlerRootView>
+    </Container>
   );
 }

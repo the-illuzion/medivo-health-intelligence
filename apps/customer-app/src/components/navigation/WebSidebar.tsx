@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { Home, Sparkles, Camera, ShoppingBag, User, ShieldCheck, Activity, MessageSquare } from 'lucide-react-native';
 
 export const WebSidebar: React.FC = () => {
+  if (Platform.OS !== 'web') return null;
+
   const router = useRouter();
   const pathname = usePathname();
 
