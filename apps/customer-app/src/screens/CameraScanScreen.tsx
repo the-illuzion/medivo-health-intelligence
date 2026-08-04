@@ -40,7 +40,7 @@ export function CameraScanScreen({ onNavigate }: CameraScanScreenProps) {
       <View style={styles.controlsCard}>
         {stage === 'positioning' && (
           <TouchableOpacity style={styles.scanBtn} onPress={handleStartScan}>
-            <Feather name="sparkles" size={18} color="#FFFFFF" />
+            <Feather name="zap" size={18} color="#FFFFFF" />
             <Text style={styles.scanBtnText}>Start AI Skin Scan</Text>
           </TouchableOpacity>
         )}

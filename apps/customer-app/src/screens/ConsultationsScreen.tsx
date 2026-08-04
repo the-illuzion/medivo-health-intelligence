@@ -9,7 +9,7 @@ export function ConsultationsScreen() {
   const [booked, setBooked] = useState<Record<number, boolean>>({});
   const [doctors, setDoctors] = useState<Doctor[]>([
     {
-      id: '1',
+      id: 1,
       name: 'Dr. Aris Thorne, MD',
       title: 'Board-Certified Dermatologist',
       rating: 4.9,
@@ -21,7 +21,7 @@ export function ConsultationsScreen() {
       slots: ['03:00 PM', '04:30 PM', '06:00 PM'],
     },
     {
-      id: '2',
+      id: 2,
       name: 'Dr. Elena Rostova, MD',
       title: 'Cosmetic & Laser Specialist',
       rating: 4.8,

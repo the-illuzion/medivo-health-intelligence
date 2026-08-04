@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "Medivo Health Intelligence",
-    "slug": "medivo-mobile",
+    "name": "Medivo Health",
+    "slug": "medivo-health",
+    "scheme": "medivo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,6 +12,22 @@
       "resizeMode": "contain",
       "backgroundColor": "#0D1F1C"
     },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Medivo Health requires camera access for real-time AI face match skin analysis."
+        }
+      ],
+      "expo-notifications",
+      "expo-secure-store"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.medivo.health",

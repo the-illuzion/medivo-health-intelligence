@@ -1,4 +1,5 @@
 const { getDefaultConfig } = require('expo/metro-config');
+const { withNativeWind } = require('nativewind/metro');
 const path = require('path');
 
 const projectRoot = __dirname;
@@ -9,7 +10,7 @@ const config = getDefaultConfig(projectRoot);
 // 1. Watch all workspace package folders in the monorepo
 config.watchFolders = [workspaceRoot];
 
-// 2. Force Metro to resolve node_modules starting from mobile project root
+// 2. Force Metro to resolve node_modules starting from customer-app project root
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(workspaceRoot, 'node_modules'),
@@ -24,4 +25,4 @@ config.resolver.extraNodeModules = {
   '@medivo/api-client': path.resolve(workspaceRoot, 'packages/api-client/src'),
 };
 
-module.exports = config;
+module.exports = withNativeWind(config, { input: './global.css' });

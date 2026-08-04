@@ -42,7 +42,7 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
       {/* AI Clinical Summary Card */}
       <View style={styles.aiCard}>
         <View style={styles.aiHeader}>
-          <Feather name="sparkles" size={16} color="#4338CA" />
+          <Feather name="zap" size={16} color="#4338CA" />
           <Text style={styles.aiTitle}>Today's AI Summary</Text>
         </View>
         <Text style={styles.aiText}>

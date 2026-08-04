@@ -3,15 +3,27 @@ import { ComponentType, SVGProps } from 'react';
 export type IconType = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string; color?: string; strokeWidth?: number | string }>;
 
 export type ScreenKey =
+  | 'splash'
+  | 'login'
+  | 'register'
+  | 'privacyPolicy'
   | 'dashboard'
   | 'faceMatch'
   | 'scanReport'
   | 'coach'
   | 'history'
   | 'routines'
+  | 'routineDetail'
   | 'products'
   | 'consultations'
-  | 'profile';
+  | 'videoCall'
+  | 'cart'
+  | 'checkout'
+  | 'payments'
+  | 'orderDetails'
+  | 'profile'
+  | 'editProfile'
+  | 'notifications';
 
 export type FaceMatchStage = 'init' | 'positioning' | 'detected' | 'scanning' | 'complete';
 export type ScanStage = FaceMatchStage;

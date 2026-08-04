@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-ink: #0F172A;
+    --color-ink-soft: #64748B;
+    --color-surface: #0D1F1C;
+    --color-surface-elevated: #162E29;
+    --color-accent: #6366F1;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-error: #EF4444;
+  }
+}
