@@ -31,20 +31,18 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
         <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           <Defs>
             <LinearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <Stop offset="0%" stopColor="#34D399" />
-              <Stop offset="100%" stopColor="#10B981" />
+              <Stop offset="0%" stopColor="#38BDF8" />
+              <Stop offset="100%" stopColor="#1F7FC4" />
             </LinearGradient>
           </Defs>
-          {/* Track Circle */}
           <Circle
             cx={center}
             cy={center}
             r={radius}
-            stroke="#162E29"
+            stroke="#E2E8F0"
             strokeWidth={strokeWidth}
             fill="none"
           />
-          {/* Progress Circle */}
           <Circle
             cx={center}
             cy={center}
@@ -59,17 +57,16 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({
           />
         </Svg>
 
-        {/* Center Content */}
         <View className="absolute items-center justify-center">
-          <Text className="text-white text-3xl font-extrabold tracking-tight">
+          <Text className="text-slate-900 dark:text-white text-3xl font-extrabold tracking-tight">
             {score}
           </Text>
-          <Text className="text-success-light text-xs font-bold uppercase tracking-wider mt-0.5">
+          <Text className="text-sky-600 dark:text-sky-400 text-xs font-bold uppercase tracking-wider mt-0.5">
             {sublabel}
           </Text>
         </View>
       </View>
-      {label && <Text className="text-ink-soft text-xs font-semibold mt-2">{label}</Text>}
+      {label && <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold mt-2">{label}</Text>}
     </View>
   );
 };

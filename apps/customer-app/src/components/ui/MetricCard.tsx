@@ -23,7 +23,6 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   icon,
   onPress,
 }) => {
-  // Sparkline path generator
   const width = 80;
   const height = 28;
   const minY = Math.min(...sparklineData);
@@ -39,16 +38,16 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     <TouchableOpacity
       onPress={onPress}
       disabled={!onPress}
-      className="bg-surface-elevated p-4 rounded-2xl border border-[#2A4A43] flex-1 min-w-[150px] justify-between"
+      className="bg-white dark:bg-[#111827] p-4 rounded-2xl border border-slate-200 dark:border-[#374151] flex-1 min-w-[150px] justify-between shadow-sm"
     >
       <View className="flex-row items-center justify-between mb-2">
         <View className="flex-row items-center">
           {icon && <View className="mr-2">{icon}</View>}
-          <Text className="text-ink-soft text-xs font-semibold">{title}</Text>
+          <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold">{title}</Text>
         </View>
         <Text
           className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-            isPositive ? 'bg-success/10 text-success-light' : 'bg-error/10 text-error-light'
+            isPositive ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'
           }`}
         >
           {change}
@@ -56,17 +55,16 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       </View>
 
       <View className="flex-row items-end justify-between mt-1">
-        <Text className="text-white text-2xl font-extrabold">
+        <Text className="text-slate-900 dark:text-white text-2xl font-extrabold">
           {value}
-          <Text className="text-ink-soft text-sm font-normal">{unit}</Text>
+          <Text className="text-slate-500 dark:text-slate-400 text-sm font-normal">{unit}</Text>
         </Text>
 
-        {/* Mini Sparkline Chart */}
         <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
           <Path
             d={pathD}
             fill="none"
-            stroke={isPositive ? '#10B981' : '#EF4444'}
+            stroke={isPositive ? '#1F7FC4' : '#EF4444'}
             strokeWidth="2.5"
           />
         </Svg>

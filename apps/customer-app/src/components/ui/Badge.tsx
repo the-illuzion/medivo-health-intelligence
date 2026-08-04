@@ -14,12 +14,20 @@ export const Badge: React.FC<BadgeProps> = ({
   size = 'sm',
   icon,
 }) => {
-  const variantStyles = {
-    success: 'bg-success/10 text-success-light border-success/30',
-    warning: 'bg-warning/10 text-warning border-warning/30',
-    error: 'bg-error/10 text-error-light border-error/30',
-    accent: 'bg-accent/10 text-accent-light border-accent/30',
-    neutral: 'bg-surface-elevated text-ink-soft border-[#2A4A43]',
+  const containerStyles = {
+    success: 'bg-emerald-500/10 border-emerald-500/30',
+    warning: 'bg-amber-500/10 border-amber-500/30',
+    error: 'bg-red-500/10 border-red-500/30',
+    accent: 'bg-sky-500/10 border-sky-500/30',
+    neutral: 'bg-slate-100 dark:bg-[#1F2937] border-slate-200 dark:border-[#374151]',
+  };
+
+  const textStyles = {
+    success: 'text-emerald-700 dark:text-emerald-400 font-bold',
+    warning: 'text-amber-700 dark:text-amber-400 font-bold',
+    error: 'text-red-700 dark:text-red-400 font-bold',
+    accent: 'text-sky-700 dark:text-sky-400 font-bold',
+    neutral: 'text-slate-700 dark:text-slate-300 font-bold',
   };
 
   const sizeStyles = {
@@ -28,9 +36,9 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   return (
-    <View className={`flex-row items-center rounded-full border ${variantStyles[variant]} ${sizeStyles[size]}`}>
+    <View className={`flex-row items-center rounded-full border ${containerStyles[variant]} ${sizeStyles[size]}`}>
       {icon && <View className="mr-1">{icon}</View>}
-      <Text className={`font-semibold ${variantStyles[variant].split(' ')[1]}`}>{label}</Text>
+      <Text className={textStyles[variant]}>{label}</Text>
     </View>
   );
 };

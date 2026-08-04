@@ -27,12 +27,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       const root = document.documentElement;
+      const body = document.body;
+
       if (isDark) {
         root.classList.add('dark');
         root.classList.remove('light');
+        if (body) {
+          body.style.backgroundColor = '#090D16';
+          body.style.color = '#FFFFFF';
+        }
       } else {
         root.classList.add('light');
         root.classList.remove('dark');
+        if (body) {
+          body.style.backgroundColor = '#FFFFFF';
+          body.style.color = '#0F172A';
+        }
       }
     }
   }, [isDark]);
