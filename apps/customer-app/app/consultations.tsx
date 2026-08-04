@@ -1,75 +1,104 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Video, Calendar, Star, ShieldCheck } from 'lucide-react-native';
+import { ArrowLeft, Video, Calendar, Star, ShieldCheck, CheckCircle2 } from 'lucide-react-native';
+import { externalTelehealthService, DoctorConsultation } from '../src/services/telehealth/TelehealthProvider';
+import { Badge, Button } from '../src/components/ui';
 
 export default function ConsultationsScreen() {
   const router = useRouter();
+  const [doctors, setDoctors] = useState<DoctorConsultation[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<Record<string, string>>({});
 
-  const doctors = [
-    {
-      id: 'doc_1',
-      name: 'Dr. Elena Rostova, MD',
-      specialty: 'Board Certified Dermatologist',
-      experience: '12 yrs exp',
-      rating: 4.9,
-      nextAvailable: 'Today, 4:30 PM',
-    },
-    {
-      id: 'doc_2',
-      name: 'Dr. Marcus Vance, MD',
-      specialty: 'Clinical Dermatology & AI Telehealth',
-      experience: '15 yrs exp',
-      rating: 4.95,
-      nextAvailable: 'Tomorrow, 10:00 AM',
-    },
-  ];
+  useEffect(() => {
+    async function loadDoctors() {
+      const data = await externalTelehealthService.getDoctors();
+      setDoctors(data);
+    }
+    loadDoctors();
+  }, []);
+
+  const handleSelectSlot = (docId: string, slot: string) => {
+    setSelectedSlot((prev) => ({ ...prev, [docId]: slot }));
+  };
 
   return (
     <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ paddingBottom: 40 }}>
-      <View className="px-6 pt-14 pb-6 bg-surface-elevated border-b border-[#2A4A43] flex-row items-center">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <ArrowLeft size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-        <View>
-          <Text className="text-white text-xl font-extrabold">Dermatologist Consultations</Text>
-          <Text className="text-ink-soft text-xs">Telehealth video care & prescription access</Text>
+      {/* Header */}
+      <View className="px-6 pt-14 pb-6 bg-surface-elevated border-b border-[#2A4A43] flex-row items-center justify-between">
+        <View className="flex-row items-center">
+          <TouchableOpacity onPress={() => router.back()} className="mr-3">
+            <ArrowLeft size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <View>
+            <Text className="text-white text-xl font-extrabold">Dermatologist Network</Text>
+            <Text className="text-ink-soft text-xs">Telehealth Provider Integration</Text>
+          </View>
         </View>
+        <Badge label="HIPAA Compliant" variant="success" />
       </View>
 
-      <View className="p-6 gap-4">
+      <View className="p-6 gap-6">
+        {/* Telehealth Network Banner */}
+        <View className="bg-[#1C3833] p-4 rounded-2xl border border-[#2A4A43] flex-row items-center">
+          <ShieldCheck size={20} color="#10B981" className="mr-3" />
+          <View className="flex-1">
+            <Text className="text-white font-bold text-sm">External Provider Network</Text>
+            <Text className="text-ink-soft text-xs mt-0.5">
+              Securely connected via Doximity & Amwell Telehealth APIs.
+            </Text>
+          </View>
+        </View>
+
+        {/* Doctor List */}
         {doctors.map((doc) => (
           <View key={doc.id} className="bg-surface-elevated p-5 rounded-2xl border border-[#2A4A43]">
             <View className="flex-row items-center justify-between mb-3">
               <View className="flex-row items-center">
                 <View className="w-12 h-12 bg-brand-primary/20 rounded-full items-center justify-center mr-3 border border-brand-primary/40">
-                  <Text className="text-brand-primary font-bold text-base">MD</Text>
+                  <Text className="text-brand-primary font-extrabold text-base">MD</Text>
                 </View>
                 <View>
                   <Text className="text-white font-bold text-base">{doc.name}</Text>
                   <Text className="text-ink-soft text-xs">{doc.specialty}</Text>
+                  <Text className="text-brand-primary text-[11px] font-semibold mt-0.5">{doc.providerName}</Text>
                 </View>
               </View>
             </View>
 
-            <View className="flex-row items-center justify-between bg-[#1C3833] p-3 rounded-xl mb-4 border border-[#2A4A43]">
-              <View className="flex-row items-center">
-                <Calendar size={14} color="#10B981" />
-                <Text className="text-white text-xs font-medium ml-1.5">{doc.nextAvailable}</Text>
-              </View>
-              <View className="flex-row items-center">
-                <Star size={14} color="#F59E0B" fill="#F59E0B" />
-                <Text className="text-white text-xs font-bold ml-1">{doc.rating}</Text>
-              </View>
+            {/* Slots Selection */}
+            <Text className="text-white font-semibold text-xs mb-2">Available Consultation Slots:</Text>
+            <View className="flex-row gap-2 mb-4">
+              {doc.slots.map((slot) => {
+                const isSelected = selectedSlot[doc.id] === slot;
+                return (
+                  <TouchableOpacity
+                    key={slot}
+                    onPress={() => handleSelectSlot(doc.id, slot)}
+                    className={`px-3 py-2 rounded-xl border flex-row items-center ${
+                      isSelected
+                        ? 'bg-brand-primary border-brand-primary'
+                        : 'bg-[#1C3833] border-[#2A4A43]'
+                    }`}
+                  >
+                    <Calendar size={12} color={isSelected ? '#0D1F1C' : '#10B981'} />
+                    <Text
+                      className={`text-xs font-bold ml-1.5 ${
+                        isSelected ? 'text-surface' : 'text-white'
+                      }`}
+                    >
+                      {slot}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
-            <TouchableOpacity
+            <Button
+              title="Launch Telehealth Session"
               onPress={() => router.push(`/video-call/${doc.id}`)}
-              className="bg-brand-primary py-3.5 rounded-xl items-center justify-center flex-row shadow-lg"
-            >
-              <Video size={18} color="#0D1F1C" />
-              <Text className="text-surface font-extrabold text-sm ml-2">Start Video Call</Text>
-            </TouchableOpacity>
+              icon={<Video size={18} color="#0D1F1C" />}
+            />
           </View>
         ))}
       </View>
