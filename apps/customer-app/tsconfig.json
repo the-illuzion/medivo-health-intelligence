@@ -5,6 +5,7 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@medivo/theme": ["../../packages/theme/src"],
       "@medivo/types": ["../../packages/types/src"],
       "@medivo/utils": ["../../packages/utils/src"],
       "@medivo/design-system": ["../../packages/design-system/src"]

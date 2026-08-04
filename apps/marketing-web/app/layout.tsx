@@ -1,5 +1,6 @@
 import './globals.css';
 import React from 'react';
+import { ThemeProvider } from '@medivo/theme';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 
@@ -10,11 +11,13 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body className="flex min-h-screen flex-col bg-[#0b0f17] text-slate-100 antialiased">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+    <html lang="en" suppressHydrationWarning>
+      <body className="flex min-h-screen flex-col bg-surface text-ink-primary antialiased">
+        <ThemeProvider defaultMode="system">
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

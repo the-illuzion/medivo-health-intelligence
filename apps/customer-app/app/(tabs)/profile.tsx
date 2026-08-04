@@ -1,10 +1,19 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { User, Shield, Bell, CreditCard, History, Settings, LogOut, ChevronRight } from 'lucide-react-native';
+import { User, Shield, Bell, CreditCard, History, LogOut, ChevronRight, Sun, Moon, Monitor } from 'lucide-react-native';
+import { useTheme } from '../../src/theme/ThemeProvider';
+import { ThemeMode } from '@medivo/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { mode, setMode } = useTheme();
+
+  const themeOptions: { mode: ThemeMode; label: string; icon: any }[] = [
+    { mode: 'light', label: 'Light', icon: Sun },
+    { mode: 'dark', label: 'Dark', icon: Moon },
+    { mode: 'system', label: 'System', icon: Monitor },
+  ];
 
   return (
     <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ paddingBottom: 40 }}>
@@ -20,8 +29,40 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* Theme Preference Segmented Control */}
+      <View className="px-6 pt-6">
+        <Text className="text-white font-bold text-sm mb-3">Appearance Theme</Text>
+        <View className="flex-row bg-surface-elevated p-1.5 rounded-2xl border border-[#2A4A43] gap-2">
+          {themeOptions.map((opt) => {
+            const IconComponent = opt.icon;
+            const isSelected = mode === opt.mode;
+
+            return (
+              <TouchableOpacity
+                key={opt.mode}
+                onPress={() => setMode(opt.mode)}
+                className={`flex-1 flex-row items-center justify-center py-2.5 rounded-xl border ${
+                  isSelected
+                    ? 'bg-brand-primary border-brand-primary'
+                    : 'bg-transparent border-transparent active:bg-[#1C3833]'
+                }`}
+              >
+                <IconComponent size={16} color={isSelected ? '#0D1F1C' : '#94A3B8'} />
+                <Text
+                  className={`text-xs font-bold ml-2 ${
+                    isSelected ? 'text-surface' : 'text-ink-soft'
+                  }`}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
       {/* Settings Menu List */}
-      <View className="px-6 pt-6 gap-3">
+      <View className="px-6 pt-4 gap-3">
         <TouchableOpacity
           onPress={() => router.push('/edit-profile')}
           className="bg-surface-elevated p-4 rounded-2xl border border-[#2A4A43] flex-row items-center justify-between"
