@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { ThemeMode, darkThemeColors, lightThemeColors } from './tokens';
 import { ThemeContext } from './useTheme';

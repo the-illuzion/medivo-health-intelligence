@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext } from 'react';
 import { ThemeMode, ThemeColors, darkThemeColors, lightThemeColors } from './tokens';
 

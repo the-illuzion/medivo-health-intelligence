@@ -1,9 +1,11 @@
+'use client';
+
 import React, { useState } from 'react';
 import { useTheme } from './useTheme';
 import { ThemeMode } from './tokens';
 
 export const ThemeToggle: React.FC<{ className?: string }> = ({ className = '' }) => {
-  const { mode, setMode, resolvedMode } = useTheme();
+  const { mode, setMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
   // Single button toggle: Click cycles through Light -> Dark -> System
