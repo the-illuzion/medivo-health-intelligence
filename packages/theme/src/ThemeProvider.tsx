@@ -11,6 +11,31 @@ export interface ThemeProviderProps {
   defaultMode?: ThemeMode;
 }
 
+export const ThemeScript: React.FC = () => {
+  const scriptContent = `
+    (function() {
+      try {
+        var mode = localStorage.getItem('${STORAGE_KEY}');
+        var supportDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var isDark = mode === 'dark' || ((!mode || mode === 'system') && supportDarkMode);
+        var root = document.documentElement;
+        if (isDark) {
+          root.classList.add('dark');
+          root.classList.remove('light');
+          root.style.backgroundColor = '#090D16';
+          root.style.color = '#FFFFFF';
+        } else {
+          root.classList.add('light');
+          root.classList.remove('dark');
+          root.style.backgroundColor = '#FFFFFF';
+          root.style.color = '#0F172A';
+        }
+      } catch (e) {}
+    })();
+  `;
+  return <script dangerouslySetInnerHTML={{ __html: scriptContent }} />;
+};
+
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
   defaultMode = 'system',
@@ -25,7 +50,18 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return defaultMode;
   });
 
-  const [resolvedMode, setResolvedMode] = useState<'light' | 'dark'>('light');
+  const getSystemDark = () => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  };
+
+  const [resolvedMode, setResolvedMode] = useState<'light' | 'dark'>(() => {
+    if (mode === 'dark') return 'dark';
+    if (mode === 'light') return 'light';
+    return getSystemDark() ? 'dark' : 'light';
+  });
 
   useEffect(() => {
     const updateTheme = () => {

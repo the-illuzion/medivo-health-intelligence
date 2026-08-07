@@ -1,6 +1,6 @@
 import './globals.css';
 import React from 'react';
-import { ThemeProvider } from '@medivo/theme';
+import { ThemeProvider, ThemeScript } from '@medivo/theme';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 
@@ -12,6 +12,9 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body className="flex min-h-screen flex-col bg-surface text-ink-primary antialiased">
         <ThemeProvider defaultMode="system">
           <Navbar />

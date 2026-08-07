@@ -32,8 +32,30 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return 'system';
   });
 
-  const activeMode = mode === 'system' ? (currentScheme.colorScheme ?? 'light') : mode;
-  const isDark = activeMode === 'dark';
+  const getSystemIsDark = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return currentScheme.colorScheme === 'dark';
+  };
+
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(getSystemIsDark);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const listener = (e: MediaQueryListEvent) => {
+        setSystemIsDark(e.matches);
+      };
+      setSystemIsDark(mediaQuery.matches);
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    } else {
+      setSystemIsDark(currentScheme.colorScheme === 'dark');
+    }
+  }, [currentScheme.colorScheme]);
+
+  const isDark = mode === 'system' ? systemIsDark : mode === 'dark';
   const colors = isDark ? darkThemeColors : lightThemeColors;
 
   const setMode = (newMode: ThemeMode) => {
@@ -53,6 +75,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   useEffect(() => {
+    try {
+      if (mode === 'system') {
+        nwColorScheme.set('system');
+      } else {
+        nwColorScheme.set(mode);
+      }
+    } catch (e) {}
+
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       const root = document.documentElement;
       const body = document.body;
@@ -73,7 +103,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       }
     }
-  }, [isDark]);
+  }, [isDark, mode]);
 
   return (
     <ThemeContext.Provider value={{ mode, colors, isDark, setMode }}>
