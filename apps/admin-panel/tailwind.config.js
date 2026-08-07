@@ -2,6 +2,7 @@ const tailwindPreset = require('../../packages/theme/src/tailwindPreset').tailwi
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   presets: [tailwindPreset],
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
