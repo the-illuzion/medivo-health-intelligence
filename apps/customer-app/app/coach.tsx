@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Send, Sparkles, Bot } from 'lucide-react-native';
+import { ArrowLeft, Send, Sparkles, Bot, ShieldCheck, Heart, Droplet, Activity } from 'lucide-react-native';
 import { chatGPTHealthService, ChatMessageItem } from '../src/services/chatgpt-health/ChatGPTHealthService';
 import { aiServiceManager, CombinedAIReport } from '../src/services/ai';
 import { Badge } from '../src/components/ui';
@@ -61,97 +61,153 @@ export default function CoachScreen() {
     <View className="flex-1 bg-white dark:bg-[#090D16]">
       {/* Top Header */}
       <View className="px-6 pt-14 pb-4 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] flex-row items-center justify-between shadow-sm">
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <ArrowLeft size={24} color="#1F7FC4" />
-          </TouchableOpacity>
+        <View className="flex-row items-center max-w-7xl mx-auto w-full justify-between">
           <View className="flex-row items-center">
-            <View className="w-10 h-10 bg-sky-500/10 dark:bg-sky-500/20 rounded-full items-center justify-center mr-3 border border-sky-500/30">
-              <Sparkles size={20} color="#1F7FC4" />
-            </View>
-            <View>
-              <Text className="text-slate-900 dark:text-white text-lg font-extrabold">ChatGPT Health Coach</Text>
-              <Text className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold">Perfect Corp & Shen.ai Synced</Text>
+            <TouchableOpacity onPress={() => router.back()} className="mr-3">
+              <ArrowLeft size={24} color="#1F7FC4" />
+            </TouchableOpacity>
+            <View className="flex-row items-center">
+              <View className="w-10 h-10 bg-sky-500/10 dark:bg-sky-500/20 rounded-full items-center justify-center mr-3 border border-sky-500/30">
+                <Sparkles size={20} color="#1F7FC4" />
+              </View>
+              <View>
+                <Text className="text-slate-900 dark:text-white text-lg font-extrabold">ChatGPT Health Coach</Text>
+                <Text className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold">Perfect Corp & Shen.ai Synced</Text>
+              </View>
             </View>
           </View>
+          <Badge label="GPT-4o Health" variant="accent" />
         </View>
-        <Badge label="GPT-4o Health" variant="accent" />
       </View>
 
-      {/* Messages Scroll Area */}
-      <ScrollView className="flex-1 p-6 max-w-4xl mx-auto w-full" contentContainerStyle={{ paddingBottom: 20 }}>
-        {messages.map((msg) => (
-          <View key={msg.id} className="mb-4">
-            <View className={`flex-row ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-              {msg.sender === 'ai' && (
-                <View className="w-8 h-8 bg-sky-500/10 dark:bg-sky-500/20 rounded-full items-center justify-center mr-2 mt-1 border border-sky-500/30">
-                  <Bot size={16} color="#1F7FC4" />
+      {/* Main Desktop Split Layout */}
+      <View className="flex-1 max-w-7xl mx-auto w-full p-6">
+        <View className="flex-1 flex-col lg:flex-row gap-8 items-stretch h-full">
+
+          {/* Left Panel: Desktop Telemetry & AI Context Sidebar */}
+          <View className="hidden lg:flex w-80 bg-slate-50 dark:bg-[#111827] p-6 rounded-3xl border border-slate-200 dark:border-[#374151] gap-6 shadow-sm flex-shrink-0">
+            <View>
+              <Text className="text-slate-900 dark:text-white font-extrabold text-lg mb-1">Patient Context</Text>
+              <Text className="text-slate-500 dark:text-slate-400 text-xs">Active Telemetry Stream</Text>
+            </View>
+
+            <View className="bg-white dark:bg-[#1F2937] p-4 rounded-2xl border border-slate-200 dark:border-[#374151] gap-3 shadow-sm">
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  <Droplet size={16} color="#1F7FC4" className="mr-2" />
+                  <Text className="text-slate-900 dark:text-white text-xs font-bold">Hydration</Text>
                 </View>
-              )}
-              <View
-                className={`p-4 rounded-2xl max-w-[85%] ${
-                  msg.sender === 'user'
-                    ? 'bg-brand-primary rounded-tr-none shadow-sm'
-                    : 'bg-slate-100 dark:bg-[#111827] border border-slate-200 dark:border-[#374151] rounded-tl-none shadow-sm'
-                }`}
-              >
-                <Text className={`text-sm leading-6 ${msg.sender === 'user' ? 'text-white font-semibold' : 'text-slate-900 dark:text-white'}`}>
-                  {msg.text}
-                </Text>
-                <Text
-                  className={`text-[10px] mt-1.5 align-self-end ${
-                    msg.sender === 'user' ? 'text-white/80 font-medium' : 'text-slate-500 dark:text-slate-400'
-                  }`}
-                >
-                  {msg.timestamp}
-                </Text>
+                <Text className="text-sky-600 dark:text-sky-400 font-extrabold text-sm">93%</Text>
+              </View>
+
+              <View className="flex-row items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-2">
+                <View className="flex-row items-center">
+                  <Heart size={16} color="#EF4444" className="mr-2" />
+                  <Text className="text-slate-900 dark:text-white text-xs font-bold">rPPG HRV</Text>
+                </View>
+                <Text className="text-slate-900 dark:text-white font-extrabold text-sm">62 ms</Text>
+              </View>
+
+              <View className="flex-row items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-2">
+                <View className="flex-row items-center">
+                  <Activity size={16} color="#059669" className="mr-2" />
+                  <Text className="text-slate-900 dark:text-white text-xs font-bold">Skin Age</Text>
+                </View>
+                <Text className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">26 yrs</Text>
               </View>
             </View>
 
-            {/* Interactive Suggestion Chips */}
-            {msg.suggestedActions && (
-              <View className="mt-3 ml-10 flex-row flex-wrap gap-2">
-                {msg.suggestedActions.map((chip, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    onPress={() => handleSendPrompt(chip)}
-                    className="bg-sky-500/10 dark:bg-sky-500/20 px-3.5 py-2 rounded-xl border border-sky-500/30 active:bg-brand-primary/20"
-                  >
-                    <Text className="text-sky-600 dark:text-sky-400 text-xs font-semibold">✨ {chip}</Text>
-                  </TouchableOpacity>
-                ))}
+            <View className="bg-sky-500/10 dark:bg-sky-500/20 p-4 rounded-2xl border border-sky-500/30">
+              <View className="flex-row items-center mb-1">
+                <ShieldCheck size={16} color="#1F7FC4" className="mr-2" />
+                <Text className="text-slate-900 dark:text-white text-xs font-bold">HIPAA Secure Engine</Text>
               </View>
-            )}
+              <Text className="text-slate-600 dark:text-slate-400 text-xs leading-5">
+                AI response reasoning is bounded by clinical dermatology guidelines and zero-retention privacy filters.
+              </Text>
+            </View>
           </View>
-        ))}
 
-        {loading && (
-          <View className="flex-row items-center ml-10 my-2">
-            <ActivityIndicator size="small" color="#1F7FC4" />
-            <Text className="text-slate-500 dark:text-slate-400 text-xs ml-2 font-medium">ChatGPT Health is reasoning...</Text>
+          {/* Right Panel: Interactive Chat Main Container */}
+          <View className="flex-1 bg-slate-50 dark:bg-[#111827] rounded-3xl border border-slate-200 dark:border-[#374151] flex-col justify-between overflow-hidden shadow-sm">
+            {/* Messages Scroll Area */}
+            <ScrollView className="flex-1 p-6" contentContainerStyle={{ paddingBottom: 20 }}>
+              {messages.map((msg) => (
+                <View key={msg.id} className="mb-4">
+                  <View className={`flex-row ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {msg.sender === 'ai' && (
+                      <View className="w-8 h-8 bg-sky-500/10 dark:bg-sky-500/20 rounded-full items-center justify-center mr-2 mt-1 border border-sky-500/30">
+                        <Bot size={16} color="#1F7FC4" />
+                      </View>
+                    )}
+                    <View
+                      className={`p-4 rounded-2xl max-w-[85%] ${
+                        msg.sender === 'user'
+                          ? 'bg-brand-primary rounded-tr-none shadow-sm'
+                          : 'bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-[#374151] rounded-tl-none shadow-sm'
+                      }`}
+                    >
+                      <Text className={`text-sm leading-6 ${msg.sender === 'user' ? 'text-white font-semibold' : 'text-slate-900 dark:text-white'}`}>
+                        {msg.text}
+                      </Text>
+                      <Text
+                        className={`text-[10px] mt-1.5 align-self-end ${
+                          msg.sender === 'user' ? 'text-white/80 font-medium' : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {msg.timestamp}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Interactive Suggestion Chips */}
+                  {msg.suggestedActions && (
+                    <View className="mt-3 ml-10 flex-row flex-wrap gap-2">
+                      {msg.suggestedActions.map((chip, idx) => (
+                        <TouchableOpacity
+                          key={idx}
+                          onPress={() => handleSendPrompt(chip)}
+                          className="bg-sky-500/10 dark:bg-sky-500/20 px-3.5 py-2 rounded-xl border border-sky-500/30 active:bg-brand-primary/20"
+                        >
+                          <Text className="text-sky-600 dark:text-sky-400 text-xs font-semibold">✨ {chip}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+
+              {loading && (
+                <View className="flex-row items-center ml-10 my-2">
+                  <ActivityIndicator size="small" color="#1F7FC4" />
+                  <Text className="text-slate-500 dark:text-slate-400 text-xs ml-2 font-medium">ChatGPT Health is reasoning...</Text>
+                </View>
+              )}
+            </ScrollView>
+
+            {/* Message Input Box */}
+            <View className="p-4 bg-white dark:bg-[#1F2937] border-t border-slate-200 dark:border-[#374151]">
+              <View className="flex-row items-center w-full">
+                <TextInput
+                  value={input}
+                  onChangeText={setInput}
+                  placeholder="Ask ChatGPT Health Coach..."
+                  placeholderTextColor="#94A3B8"
+                  className="flex-1 bg-slate-100 dark:bg-[#111827] text-slate-900 dark:text-white px-4 py-3 rounded-xl border border-slate-200 dark:border-[#374151] mr-2 text-sm"
+                />
+                <TouchableOpacity
+                  onPress={() => handleSendPrompt(input)}
+                  disabled={loading || !input.trim()}
+                  className={`w-11 h-11 rounded-xl items-center justify-center ${
+                    input.trim() ? 'bg-brand-primary shadow-sm' : 'bg-slate-200 dark:bg-[#111827] border border-slate-300 dark:border-[#374151]'
+                  }`}
+                >
+                  <Send size={18} color={input.trim() ? '#FFFFFF' : '#94A3B8'} />
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        )}
-      </ScrollView>
 
-      {/* Message Input Box */}
-      <View className="p-4 bg-slate-50 dark:bg-[#111827] border-t border-slate-200 dark:border-[#374151]">
-        <View className="flex-row items-center max-w-4xl mx-auto w-full">
-          <TextInput
-            value={input}
-            onChangeText={setInput}
-            placeholder="Ask ChatGPT Health Coach..."
-            placeholderTextColor="#94A3B8"
-            className="flex-1 bg-white dark:bg-[#1F2937] text-slate-900 dark:text-white px-4 py-3 rounded-xl border border-slate-200 dark:border-[#374151] mr-2 text-sm"
-          />
-          <TouchableOpacity
-            onPress={() => handleSendPrompt(input)}
-            disabled={loading || !input.trim()}
-            className={`w-11 h-11 rounded-xl items-center justify-center ${
-              input.trim() ? 'bg-brand-primary shadow-sm' : 'bg-slate-200 dark:bg-[#1F2937] border border-slate-300 dark:border-[#374151]'
-            }`}
-          >
-            <Send size={18} color={input.trim() ? '#FFFFFF' : '#94A3B8'} />
-          </TouchableOpacity>
         </View>
       </View>
     </View>

@@ -23,13 +23,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     return defaultMode;
   });
 
-  const [resolvedMode, setResolvedMode] = useState<'light' | 'dark'>('dark');
+  const [resolvedMode, setResolvedMode] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
     const updateTheme = () => {
-      let isDark = true;
+      let isDark = false;
       if (mode === 'system') {
-        isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        isDark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)').matches : false;
       } else {
         isDark = mode === 'dark';
       }
@@ -38,12 +38,22 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       setResolvedMode(activeResolved);
 
       const root = document.documentElement;
+      const body = document.body;
+
       if (isDark) {
         root.classList.add('dark');
         root.classList.remove('light');
+        if (body) {
+          body.style.backgroundColor = '#090D16';
+          body.style.color = '#FFFFFF';
+        }
       } else {
         root.classList.add('light');
         root.classList.remove('dark');
+        if (body) {
+          body.style.backgroundColor = '#FFFFFF';
+          body.style.color = '#0F172A';
+        }
       }
     };
 

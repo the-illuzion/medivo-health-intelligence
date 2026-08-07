@@ -25,82 +25,89 @@ export default function ConsultationsScreen() {
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 40 }}>
       {/* Header */}
-      <View className="px-6 pt-14 pb-6 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] flex-row items-center justify-between shadow-sm">
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <ArrowLeft size={24} color="#1F7FC4" />
-          </TouchableOpacity>
-          <View>
-            <Text className="text-slate-900 dark:text-white text-xl font-extrabold">Dermatologist Network</Text>
-            <Text className="text-slate-600 dark:text-slate-400 text-xs">Telehealth Provider Integration</Text>
+      <View className="px-6 pt-10 lg:pt-6 pb-6 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] shadow-sm">
+        <View className="max-w-7xl mx-auto w-full flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <TouchableOpacity onPress={() => router.back()} className="mr-4">
+              <ArrowLeft size={24} color="#1F7FC4" />
+            </TouchableOpacity>
+            <View>
+              <Text className="text-slate-900 dark:text-white text-2xl font-extrabold">Dermatologist Telehealth Network</Text>
+              <Text className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">Direct integration with Board-Certified MDs</Text>
+            </View>
           </View>
+          <Badge label="HIPAA Encrypted Stream" variant="success" />
         </View>
-        <Badge label="HIPAA Compliant" variant="success" />
       </View>
 
       <View className="p-6 gap-6 max-w-7xl mx-auto w-full">
         {/* Telehealth Network Banner */}
-        <View className="bg-sky-500/10 dark:bg-sky-500/20 p-4 rounded-2xl border border-sky-500/30 flex-row items-center">
-          <ShieldCheck size={20} color="#1F7FC4" className="mr-3" />
+        <View className="bg-sky-500/10 dark:bg-sky-500/20 p-5 rounded-3xl border border-sky-500/30 flex-row items-center shadow-sm">
+          <ShieldCheck size={24} color="#1F7FC4" className="mr-4 flex-shrink-0" />
           <View className="flex-1">
-            <Text className="text-slate-900 dark:text-white font-bold text-sm">External Provider Network</Text>
-            <Text className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">
-              Securely connected via Doximity & Amwell Telehealth APIs.
+            <Text className="text-slate-900 dark:text-white font-extrabold text-base">External Provider Network Connected</Text>
+            <Text className="text-slate-600 dark:text-slate-400 text-xs mt-0.5 leading-5">
+              Securely connected via Doximity & Amwell Telehealth APIs with automatic neural scan report sync.
             </Text>
           </View>
         </View>
 
-        {/* Doctor List */}
-        {doctors.map((doc) => (
-          <View key={doc.id} className="bg-slate-50 dark:bg-[#111827] p-6 rounded-3xl border border-slate-200 dark:border-[#374151] shadow-sm">
-            <View className="flex-row items-center justify-between mb-4">
-              <View className="flex-row items-center">
-                <View className="w-12 h-12 bg-sky-500/10 dark:bg-sky-500/20 rounded-full items-center justify-center mr-3 border border-sky-500/30">
-                  <Text className="text-brand-primary font-extrabold text-base">MD</Text>
+        {/* Doctor Grid (2 Columns on Desktop) */}
+        <View className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {doctors.map((doc) => (
+            <View key={doc.id} className="bg-slate-50 dark:bg-[#111827] p-6 rounded-3xl border border-slate-200 dark:border-[#374151] flex-col justify-between shadow-sm">
+              <View>
+                <View className="flex-row items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                  <View className="flex-row items-center">
+                    <View className="w-14 h-14 bg-sky-500/10 dark:bg-sky-500/20 rounded-2xl items-center justify-center mr-4 border border-sky-500/30">
+                      <Text className="text-brand-primary font-extrabold text-lg">MD</Text>
+                    </View>
+                    <View>
+                      <Text className="text-slate-900 dark:text-white font-extrabold text-lg">{doc.name}</Text>
+                      <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold">{doc.specialty}</Text>
+                      <Text className="text-brand-primary text-xs font-extrabold mt-1">{doc.providerName}</Text>
+                    </View>
+                  </View>
                 </View>
-                <View>
-                  <Text className="text-slate-900 dark:text-white font-bold text-base">{doc.name}</Text>
-                  <Text className="text-slate-600 dark:text-slate-400 text-xs">{doc.specialty}</Text>
-                  <Text className="text-brand-primary text-[11px] font-bold mt-0.5">{doc.providerName}</Text>
+
+                {/* Slots Selection */}
+                <Text className="text-slate-900 dark:text-white font-bold text-xs mb-3">Available Consultation Slots:</Text>
+                <View className="flex-row flex-wrap gap-2 mb-6">
+                  {doc.slots.map((slot) => {
+                    const isSelected = selectedSlot[doc.id] === slot;
+                    return (
+                      <TouchableOpacity
+                        key={slot}
+                        onPress={() => handleSelectSlot(doc.id, slot)}
+                        className={`px-4 py-2.5 rounded-xl border flex-row items-center transition-all ${
+                          isSelected
+                            ? 'bg-brand-primary border-brand-primary shadow-sm'
+                            : 'bg-white dark:bg-[#1F2937] border-slate-200 dark:border-[#374151]'
+                        }`}
+                      >
+                        <Calendar size={14} color={isSelected ? '#FFFFFF' : '#1F7FC4'} />
+                        <Text
+                          className={`text-xs font-bold ml-2 ${
+                            isSelected ? 'text-white' : 'text-slate-800 dark:text-slate-200'
+                          }`}
+                        >
+                          {slot}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
-            </View>
 
-            {/* Slots Selection */}
-            <Text className="text-slate-900 dark:text-white font-bold text-xs mb-2">Available Consultation Slots:</Text>
-            <View className="flex-row flex-wrap gap-2 mb-5">
-              {doc.slots.map((slot) => {
-                const isSelected = selectedSlot[doc.id] === slot;
-                return (
-                  <TouchableOpacity
-                    key={slot}
-                    onPress={() => handleSelectSlot(doc.id, slot)}
-                    className={`px-3.5 py-2 rounded-xl border flex-row items-center ${
-                      isSelected
-                        ? 'bg-brand-primary border-brand-primary shadow-sm'
-                        : 'bg-white dark:bg-[#1F2937] border-slate-200 dark:border-[#374151]'
-                    }`}
-                  >
-                    <Calendar size={12} color={isSelected ? '#FFFFFF' : '#1F7FC4'} />
-                    <Text
-                      className={`text-xs font-bold ml-1.5 ${
-                        isSelected ? 'text-white' : 'text-slate-800 dark:text-slate-200'
-                      }`}
-                    >
-                      {slot}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+              <Button
+                title="Launch Telehealth Session"
+                onPress={() => router.push(`/video-call/${doc.id}`)}
+                icon={<Video size={18} color="#FFFFFF" />}
+                className="w-full"
+              />
             </View>
-
-            <Button
-              title="Launch Telehealth Session"
-              onPress={() => router.push(`/video-call/${doc.id}`)}
-              icon={<Video size={18} color="#FFFFFF" />}
-            />
-          </View>
-        ))}
+          ))}
+        </View>
       </View>
     </ScrollView>
   );

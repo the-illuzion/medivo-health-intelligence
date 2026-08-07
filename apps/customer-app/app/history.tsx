@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Calendar, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, Calendar, ChevronRight, TrendingUp } from 'lucide-react-native';
 import { LineChart } from '../src/components/charts';
+import { Badge } from '../src/components/ui';
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -23,53 +24,79 @@ export default function HistoryScreen() {
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 40 }}>
-      <View className="px-6 pt-14 pb-6 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <ArrowLeft size={24} color="#1F7FC4" />
-        </TouchableOpacity>
-        <View>
-          <Text className="text-slate-900 dark:text-white text-xl font-extrabold">Scan History & Trends</Text>
-          <Text className="text-slate-600 dark:text-slate-400 text-xs">Longitudinal skin biomarker analysis</Text>
+      {/* Header */}
+      <View className="px-6 pt-10 lg:pt-6 pb-6 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] shadow-sm">
+        <View className="max-w-7xl mx-auto w-full flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <TouchableOpacity onPress={() => router.back()} className="mr-4">
+              <ArrowLeft size={24} color="#1F7FC4" />
+            </TouchableOpacity>
+            <View>
+              <Text className="text-slate-900 dark:text-white text-2xl font-extrabold">Scan History & Trends</Text>
+              <Text className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">Longitudinal skin biomarker analysis</Text>
+            </View>
+          </View>
+          <Badge label="+9% Monthly Growth" variant="success" />
         </View>
       </View>
 
-      <View className="p-6 gap-4 max-w-7xl mx-auto w-full">
-        {/* Line Chart */}
-        <LineChart
-          data={historyTrendData}
-          title="Monthly Skin Health Progression"
-          height={210}
-          color="#1F7FC4"
-        />
+      {/* Desktop 2-Column Split View */}
+      <View className="p-6 max-w-7xl mx-auto w-full">
+        <View className="flex-col lg:flex-row gap-8 items-start">
+          
+          {/* Left Column (2/3 width on Desktop): Line Chart & Trends */}
+          <View className="flex-1 w-full gap-6">
+            <LineChart
+              data={historyTrendData}
+              title="Monthly Skin Health Progression"
+              height={280}
+              color="#1F7FC4"
+            />
 
-        <Text className="text-slate-900 dark:text-white font-bold text-lg mt-2">Past Scans</Text>
-
-        <View className="gap-3">
-          {pastScans.map((scan) => (
-            <TouchableOpacity
-              key={scan.id}
-              onPress={() => router.push(`/scan-report/${scan.id}`)}
-              className="bg-slate-50 dark:bg-[#111827] p-4 rounded-2xl border border-slate-200 dark:border-[#374151] flex-row items-center justify-between shadow-sm"
-            >
-              <View className="flex-row items-center">
-                <View className="w-10 h-10 bg-sky-500/10 dark:bg-sky-500/20 rounded-xl items-center justify-center mr-3 border border-sky-500/30">
-                  <Calendar size={20} color="#1F7FC4" />
-                </View>
-                <View>
-                  <Text className="text-slate-900 dark:text-white font-bold text-base">{scan.date}</Text>
-                  <Text className="text-slate-500 dark:text-slate-400 text-xs">ID: {scan.id}</Text>
-                </View>
+            <View className="bg-sky-500/10 dark:bg-sky-500/20 p-5 rounded-3xl border border-sky-500/30 flex-row items-center shadow-sm">
+              <TrendingUp size={24} color="#1F7FC4" className="mr-4 flex-shrink-0" />
+              <View className="flex-1">
+                <Text className="text-slate-900 dark:text-white font-extrabold text-base">Consistent Positive Trajectory</Text>
+                <Text className="text-slate-600 dark:text-slate-400 text-xs mt-0.5 leading-5">
+                  Your hydration index and stratum corneum barrier score have consistently improved over 5 consecutive weeks.
+                </Text>
               </View>
+            </View>
+          </View>
 
-              <View className="flex-row items-center">
-                <View className="items-end mr-3">
-                  <Text className="text-emerald-600 dark:text-emerald-400 font-extrabold text-base">{scan.score}/100</Text>
-                  <Text className="text-slate-500 dark:text-slate-400 text-xs">{scan.status}</Text>
-                </View>
-                <ChevronRight size={18} color="#64748B" />
-              </View>
-            </TouchableOpacity>
-          ))}
+          {/* Right Column (1/3 width on Desktop): Past Scans List */}
+          <View className="w-full lg:w-96 gap-4">
+            <Text className="text-slate-900 dark:text-white font-extrabold text-lg">Past Scan Records</Text>
+
+            <View className="gap-3">
+              {pastScans.map((scan) => (
+                <TouchableOpacity
+                  key={scan.id}
+                  onPress={() => router.push(`/scan-report/${scan.id}`)}
+                  className="bg-slate-50 dark:bg-[#111827] p-5 rounded-3xl border border-slate-200 dark:border-[#374151] flex-row items-center justify-between hover:border-brand-primary/40 transition-all shadow-sm"
+                >
+                  <View className="flex-row items-center">
+                    <View className="w-12 h-12 bg-sky-500/10 dark:bg-sky-500/20 rounded-2xl items-center justify-center mr-3.5 border border-sky-500/30">
+                      <Calendar size={22} color="#1F7FC4" />
+                    </View>
+                    <View>
+                      <Text className="text-slate-900 dark:text-white font-bold text-base">{scan.date}</Text>
+                      <Text className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">ID: {scan.id}</Text>
+                    </View>
+                  </View>
+
+                  <View className="flex-row items-center">
+                    <View className="items-end mr-3">
+                      <Text className="text-emerald-600 dark:text-emerald-400 font-extrabold text-base">{scan.score}/100</Text>
+                      <Text className="text-slate-500 dark:text-slate-400 text-xs font-semibold">{scan.status}</Text>
+                    </View>
+                    <ChevronRight size={20} color="#64748B" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
         </View>
       </View>
     </ScrollView>

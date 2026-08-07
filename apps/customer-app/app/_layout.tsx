@@ -1,10 +1,11 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, Platform, LogBox } from 'react-native';
+import { View, Platform, LogBox, useWindowDimensions } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
+import { WebSidebar } from '../src/components/navigation/WebSidebar';
 
 import '../global.css';
 
@@ -47,6 +48,20 @@ function StackNavigator() {
   );
 }
 
+function MainAppShell() {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 1024;
+
+  return (
+    <View className="flex-1 flex-row bg-white dark:bg-[#090D16]" style={{ flex: 1, height: '100%' }}>
+      {isDesktop && <WebSidebar />}
+      <View className="flex-1 h-full" style={{ flex: 1, height: '100%' }}>
+        <StackNavigator />
+      </View>
+    </View>
+  );
+}
+
 export default function RootLayout() {
   const Container = Platform.OS === 'web' ? View : GestureHandlerRootView;
 
@@ -54,7 +69,7 @@ export default function RootLayout() {
     <Container style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <StackNavigator />
+          <MainAppShell />
         </ThemeProvider>
       </QueryClientProvider>
     </Container>

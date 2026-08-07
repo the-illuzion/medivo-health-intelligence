@@ -6,6 +6,7 @@ export interface BadgeProps {
   variant?: 'success' | 'warning' | 'error' | 'accent' | 'neutral';
   size?: 'sm' | 'md';
   icon?: React.ReactNode;
+  className?: string;
 }
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -13,6 +14,7 @@ export const Badge: React.FC<BadgeProps> = ({
   variant = 'success',
   size = 'sm',
   icon,
+  className = '',
 }) => {
   const containerStyles = {
     success: 'bg-emerald-500/10 border-emerald-500/30',
@@ -31,12 +33,12 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const sizeStyles = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-3 py-1 text-sm',
+    sm: 'px-2.5 py-1 text-xs',
+    md: 'px-3.5 py-1.5 text-sm',
   };
 
   return (
-    <View className={`flex-row items-center rounded-full border ${containerStyles[variant]} ${sizeStyles[size]}`}>
+    <View className={`flex-row items-center rounded-full border ${containerStyles[variant]} ${sizeStyles[size]} ${className}`}>
       {icon && <View className="mr-1">{icon}</View>}
       <Text className={textStyles[variant]}>{label}</Text>
     </View>

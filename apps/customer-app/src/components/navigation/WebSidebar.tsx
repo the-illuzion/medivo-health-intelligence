@@ -12,12 +12,12 @@ export const WebSidebar: React.FC = () => {
   const { mode, setMode, isDark } = useTheme();
 
   const navItems = [
-    { label: 'Dashboard', icon: Home, route: '/(tabs)' },
-    { label: 'Routines', icon: Sparkles, route: '/(tabs)/routines' },
-    { label: 'AI Scan', icon: Camera, route: '/(tabs)/scan' },
-    { label: 'Marketplace', icon: ShoppingBag, route: '/(tabs)/products' },
-    { label: 'Profile', icon: User, route: '/(tabs)/profile' },
-    { label: 'AI Coach', icon: MessageSquare, route: '/coach' },
+    { label: 'Dashboard', icon: Home, route: '/(tabs)', match: (p: string) => p === '/' || p === '/(tabs)' },
+    { label: 'Routines', icon: Sparkles, route: '/(tabs)/routines', match: (p: string) => p.includes('routine') },
+    { label: 'AI Scan', icon: Camera, route: '/(tabs)/scan', match: (p: string) => p.includes('scan') },
+    { label: 'Marketplace', icon: ShoppingBag, route: '/(tabs)/products', match: (p: string) => p.includes('product') || p.includes('cart') || p.includes('checkout') },
+    { label: 'Profile', icon: User, route: '/(tabs)/profile', match: (p: string) => p.includes('profile') },
+    { label: 'AI Coach', icon: MessageSquare, route: '/coach', match: (p: string) => p.includes('coach') },
   ];
 
   const handleCycleTheme = () => {
@@ -35,7 +35,7 @@ export const WebSidebar: React.FC = () => {
   const ThemeIcon = getThemeIcon();
 
   return (
-    <View className="hidden lg:flex w-64 bg-slate-50 dark:bg-[#111827] border-r border-slate-200 dark:border-[#374151] h-full p-6 justify-between">
+    <View className="w-64 bg-slate-50 dark:bg-[#111827] border-r border-slate-200 dark:border-[#374151] h-full p-6 justify-between flex-shrink-0">
       {/* Brand Header */}
       <View>
         <View className="flex-row items-center mb-8">
@@ -52,7 +52,7 @@ export const WebSidebar: React.FC = () => {
         <View className="gap-2">
           {navItems.map((item) => {
             const IconComponent = item.icon;
-            const isActive = pathname === item.route || (item.route === '/(tabs)' && pathname === '/');
+            const isActive = item.match(pathname);
 
             return (
               <TouchableOpacity

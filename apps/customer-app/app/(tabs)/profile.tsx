@@ -23,9 +23,9 @@ export default function ProfileScreen() {
   const ThemeIcon = getThemeIcon();
 
   return (
-    <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
       {/* Profile Header */}
-      <View className="px-6 pt-14 pb-8 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] items-center shadow-sm">
+      <View className="px-6 pt-10 lg:pt-6 pb-8 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] items-center shadow-sm">
         <View className="w-24 h-24 bg-sky-500/10 dark:bg-sky-500/20 rounded-full items-center justify-center mb-3 border-2 border-brand-primary">
           <Text className="text-brand-primary text-3xl font-extrabold">AM</Text>
         </View>
