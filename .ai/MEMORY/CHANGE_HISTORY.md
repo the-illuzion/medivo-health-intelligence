@@ -22,6 +22,7 @@ All entries must strictly adhere to the following block format. Do not use table
 - **Refactor**: Code restructuring, optimization, or technical debt removal without changing external behavior.
 - **Security**: Patches, authorization changes, encryption updates, or data privacy enhancements.
 - **Documentation**: Major additions to the project knowledge base, ADRs, or compliance documentation.
+- **Performance**: Optimizations, bundle size reductions, caching strategies, or speed enhancements.
 
 ## Impact Level Definitions
 - **Low**: Isolated change, no downtime risk, purely internal, cosmetic UI tweaks, or minor non-breaking API additions.
@@ -32,6 +33,14 @@ All entries must strictly adhere to the following block format. Do not use table
 ---
 
 ## History Log
+
+### 2026-08-07 - Monorepo Design System & Multi-Theme Alignment Across Web & Mobile Apps
+- **Agent/Author**: Design System & Full-Stack UI Alignment Agent
+- **Type**: Feature / Refactor / Architecture
+- **Impact Level**: High
+- **Description**: Standardized the Medivo Clinical Blue (`#1F7FC4`) brand palette, Pure White (`#FFFFFF`) Light Mode background, and Deep Slate (`#090D16`) Dark Mode background across all 4 monorepo applications (`Customer App`, `Marketing Web`, `Admin Panel`, `Doctor Portal`). Elevated `WebSidebar` to root app shell for a persistent desktop experience, built a custom `CustomTabBar` floating pill renderer with flexbox centering, and refactored Next.js App Router client directives for seamless SSR and static generation.
+- **Domains Affected**: Frontend UI, Design System, Multi-App Infrastructure
+- **Key Files**: `apps/customer-app/app/_layout.tsx`, `apps/customer-app/app/(tabs)/_layout.tsx`, `packages/theme/src/*`, `apps/marketing-web/app/*`, `apps/admin-panel/app/*`, `apps/doctor-portal/app/*`
 
 ### 2026-07-28 - AI OS Memory & Automation Rules Expansion
 - **Agent/Author**: System Architecture Agent
