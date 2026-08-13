@@ -36,6 +36,11 @@ export class InMemorySkinScanRepository implements ISkinScanRepository {
     this.scans.unshift(scan);
   }
 
+  async findById(id: string): Promise<SkinScan | null> {
+    const scan = this.scans.find((s) => s.id === id);
+    return scan || null;
+  }
+
   async findByUserId(userId: string): Promise<SkinScan[]> {
     return this.scans.filter((s) => s.userId === userId);
   }

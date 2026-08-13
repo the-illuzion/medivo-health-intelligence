@@ -34,7 +34,7 @@ export class MedivoApiClient {
     }
   }
 
-  // Auth Group
+  // Auth & Profile Group
   public auth = {
     login: async (email: string, passwordHash: string) => {
       return this.request<{ user: any; token: string }>('/api/v1/auth/login', {
@@ -42,9 +42,18 @@ export class MedivoApiClient {
         body: JSON.stringify({ email, password: passwordHash }),
       });
     },
+    register: async (name: string, email: string, skinType?: string) => {
+      return this.request<{ user: any; token: string }>('/api/v1/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, skinType }),
+      });
+    },
+    getProfile: async (userId: string = 'usr-101') => {
+      return this.request<any>(`/api/v1/user/profile?userId=${userId}`);
+    },
   };
 
-  // AI Skin Scans Group
+  // AI Skin Scans Telemetry Group
   public scans = {
     analyze: async (userId: string, imageBase64: string) => {
       return this.request<any>('/api/v1/scans/analyze', {
@@ -55,25 +64,81 @@ export class MedivoApiClient {
     getHistory: async (userId: string) => {
       return this.request<any[]>(`/api/v1/scans/history?userId=${userId}`);
     },
+    getDetails: async (scanId: string) => {
+      return this.request<any>(`/api/v1/scans/${scanId}`);
+    },
   };
 
-  // Doctors Group
+  // Routines & AI Health Coach Group
+  public routines = {
+    list: async () => {
+      return this.request<any[]>('/api/v1/routines');
+    },
+    getDetails: async (routineId: string) => {
+      return this.request<any>(`/api/v1/routines/${routineId}`);
+    },
+  };
+
+  public coach = {
+    chat: async (message: string) => {
+      return this.request<any>('/api/v1/coach/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      });
+    },
+  };
+
+  // Doctors & Appointments Group
   public doctors = {
     list: async () => {
       return this.request<Doctor[]>('/api/v1/doctors');
     },
   };
 
-  // Ecommerce & Orders Group
+  public appointments = {
+    list: async () => {
+      return this.request<any[]>('/api/v1/appointments');
+    },
+    book: async (booking: { doctorId: string; doctorName: string; date: string; time: string; condition?: string }) => {
+      return this.request<any>('/api/v1/appointments/book', {
+        method: 'POST',
+        body: JSON.stringify(booking),
+      });
+    },
+  };
+
+  // Ecommerce, Cart & Orders Group
+  public products = {
+    list: async () => {
+      return this.request<Product[]>('/api/v1/products');
+    },
+  };
+
   public orders = {
     getDetails: async (orderId: string) => {
       return this.request<any>(`/api/v1/orders/${orderId}`);
     },
+    checkout: async (items: any[], totalAmount: number) => {
+      return this.request<any>('/api/v1/checkout', {
+        method: 'POST',
+        body: JSON.stringify({ items, totalAmount }),
+      });
+    },
   };
 
-  public products = {
+  // Notifications & Admin Console Group
+  public notifications = {
     list: async () => {
-      return this.request<Product[]>('/api/v1/products');
+      return this.request<any[]>('/api/v1/notifications');
+    },
+  };
+
+  public admin = {
+    getHipaaAudit: async () => {
+      return this.request<any[]>('/api/v1/admin/hipaa-audit');
+    },
+    getTelemetryStats: async () => {
+      return this.request<any>('/api/v1/admin/telemetry-stats');
     },
   };
 }

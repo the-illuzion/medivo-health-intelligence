@@ -2,6 +2,7 @@ import { SkinScan } from '../skin/SkinScanEntity.js';
 
 export interface ISkinScanRepository {
   save(scan: SkinScan): Promise<void>;
+  findById(id: string): Promise<SkinScan | null>;
   findByUserId(userId: string): Promise<SkinScan[]>;
   findLatestByUserId(userId: string): Promise<SkinScan | null>;
 }
