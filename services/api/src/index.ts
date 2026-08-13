@@ -8,8 +8,14 @@ export * from './domain/repositories/ISkinScanRepository.js';
 export * from './domain/repositories/IDoctorRepository.js';
 export * from './domain/repositories/IOrderRepository.js';
 
-// Infrastructure Adapters & Database Pool
+// Infrastructure Adapters & Database Configurations
+export * from './infrastructure/db/config/database.config.js';
 export * from './infrastructure/db/DatabasePool.js';
+export * from './infrastructure/db/migrations/runner.js';
+export * from './infrastructure/db/seeders/index.js';
+export * from './infrastructure/db/factories/index.js';
+
+// Infrastructure Repositories
 export * from './infrastructure/repositories/InMemoryAuthRepository.js';
 export * from './infrastructure/repositories/InMemorySkinScanRepository.js';
 export * from './infrastructure/repositories/InMemoryDoctorRepository.js';

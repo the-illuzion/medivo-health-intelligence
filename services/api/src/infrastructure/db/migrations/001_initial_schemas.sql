@@ -1,0 +1,17 @@
+-- Migration 001: Create 13 Domain Schemas & Primary Tables
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE SCHEMA IF NOT EXISTS auth_schema;
+CREATE SCHEMA IF NOT EXISTS user_schema;
+CREATE SCHEMA IF NOT EXISTS profile_schema;
+CREATE SCHEMA IF NOT EXISTS skin_schema;
+CREATE SCHEMA IF NOT EXISTS ai_schema;
+CREATE SCHEMA IF NOT EXISTS report_schema;
+CREATE SCHEMA IF NOT EXISTS health_schema;
+CREATE SCHEMA IF NOT EXISTS doctor_schema;
+CREATE SCHEMA IF NOT EXISTS appointment_schema;
+CREATE SCHEMA IF NOT EXISTS commerce_schema;
+CREATE SCHEMA IF NOT EXISTS payment_schema;
+CREATE SCHEMA IF NOT EXISTS notification_schema;
+CREATE SCHEMA IF NOT EXISTS analytics_schema;
