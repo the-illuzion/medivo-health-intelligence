@@ -1,15 +1,21 @@
 # Current Session State
 
-- **Agent**: Design System & Full-Stack UI Alignment Agent
-- **Last Updated**: 2026-08-07T20:54:00Z
-- **Task**: Monorepo Clinical Blue Design System, Anti-FOUC Theme Script & Multi-Theme Alignment Across Web & Mobile Apps
+- **Agent**: Platform Infrastructure & Full-Stack Systems Agent
+- **Last Updated**: 2026-08-13T20:48:50Z
+- **Task**: Docker & Docker Compose Containerization Infrastructure Across Medivo Monorepo
 - **Branch**: `main`
-- **Status**: ✅ Complete (100% Type-Checked & Production Build Passing)
+- **Status**: ✅ Complete (100% Configured & Committed)
 
 ---
 
 ## Active Work Completed
 
+- [x] **Docker Infrastructure & Multi-Container Stack (`docker-compose.yml`)**:
+  - Provisioned **PostgreSQL 16** with automatic 13-schema DDL initialization (`services/api/src/infrastructure/db/schema.sql`).
+  - Provisioned **Redis 7** container for BullMQ queue management and session caching.
+  - Provisioned **MinIO S3** Object Storage container for AI scan image vault storage (`medivo`).
+  - Provisioned **Mailpit SMTP** mock server for email notification testing.
+  - Provisioned multi-stage `Dockerfile` files for `apps/customer-bff`, `apps/marketing-web`, `apps/doctor-portal`, and `apps/admin-panel`.
 - [x] **Theme FOUC & System Preference Fix**:
   - Added `ThemeScript` inline IIFE anti-FOUC script component in `@medivo/theme` and injected into `<head>` in `marketing-web`, `admin-panel`, and `doctor-portal` `layout.tsx` to eliminate light theme flashing on page reload.
   - Updated Customer App `ThemeProvider` with active `window.matchMedia('(prefers-color-scheme: dark)')` listener so `System` mode detects dark mode instantly.
@@ -32,10 +38,14 @@
 
 ---
 
-## Workspace Ports & Services
+## Workspace Container & Service Ports
 
-- **Customer BFF REST API**: `http://localhost:4000` (Node.js Express API)
-- **Customer Web Portal**: `http://localhost:8081` (Expo Web / React Native Web)
-- **Marketing Website**: `http://localhost:3000` (Next.js 14 App Router)
-- **Doctor Portal**: `http://localhost:3001` (Next.js 14 App Router)
-- **Platform Admin Console**: `http://localhost:3002` (Next.js 14 App Router)
+- **PostgreSQL 16 Cluster**: `localhost:5432` (`medivo` database, 13 domain schemas)
+- **Redis 7 Cache**: `localhost:6379`
+- **MinIO S3 Console**: `localhost:9000` / `localhost:9001`
+- **Mailpit Web UI**: `localhost:8025` (SMTP `localhost:1025`)
+- **Customer BFF REST API**: `http://localhost:4000`
+- **Customer Web Portal**: `http://localhost:8081`
+- **Marketing Website**: `http://localhost:3000`
+- **Doctor Portal**: `http://localhost:3001`
+- **Platform Admin Console**: `http://localhost:3002`
