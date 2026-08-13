@@ -11,9 +11,11 @@ export async function seedDoctors(): Promise<void> {
       await DatabasePool.query(
         `INSERT INTO doctor_schema.doctors (id, user_id, specialization, license_number, bio)
          VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (license_number) DO NOTHING`,
+         ON CONFLICT (id) DO UPDATE SET specialization = EXCLUDED.specialization`,
         [doc.id, doc.userId, doc.spec, doc.license, doc.bio]
       );
-    } catch (err) {}
+    } catch (err: any) {
+      console.warn('[DoctorSeeder Warning]:', err.message);
+    }
   }
 }
