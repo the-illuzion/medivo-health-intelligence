@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { InMemorySkinScanRepository, SimulatedAIInferenceService, SubmitSkinScanUseCase } from '@medivo/service-api';
+import { PostgresSkinScanRepository, SimulatedAIInferenceService, SubmitSkinScanUseCase } from '@medivo/service-api';
 import { auditService } from '../services/audit.service.js';
 import { notificationService } from '../services/notification.service.js';
 
-const scanRepo = new InMemorySkinScanRepository();
+const scanRepo = new PostgresSkinScanRepository();
 const aiService = new SimulatedAIInferenceService();
 const submitSkinScanUseCase = new SubmitSkinScanUseCase(scanRepo, aiService);
 

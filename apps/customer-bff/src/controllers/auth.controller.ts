@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { InMemoryAuthRepository, JwtTokenService, AuthenticateUserUseCase, User } from '@medivo/service-api';
+import { PostgresAuthRepository, JwtTokenService, AuthenticateUserUseCase, User } from '@medivo/service-api';
 import { auditService } from '../services/audit.service.js';
 
-const authRepo = new InMemoryAuthRepository();
+const authRepo = new PostgresAuthRepository();
 const jwtService = new JwtTokenService();
 const authenticateUserUseCase = new AuthenticateUserUseCase(authRepo, jwtService);
 
