@@ -4,24 +4,29 @@ import { useRouter } from 'expo-router';
 import { Sparkles, Camera, MessageSquare, ArrowRight, ShieldCheck, Droplet, Zap, Award, Activity, Heart, Sun } from 'lucide-react-native';
 import { Header, ScoreRing, MetricCard, Button, Badge } from '../../src/components/ui';
 import { AreaChart } from '../../src/components/charts';
+import { useAuthStore } from '../../src/store/useAuthStore';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
+
+  const userName = user?.name || 'Patient';
+  const skinScore = user?.score || 87;
 
   const skinScoreData = [
-    { x: 'Mon', y: 82 },
-    { x: 'Tue', y: 83 },
-    { x: 'Wed', y: 81 },
-    { x: 'Thu', y: 85 },
-    { x: 'Fri', y: 84 },
-    { x: 'Sat', y: 86 },
-    { x: 'Sun', y: 87 },
+    { x: 'Mon', y: skinScore - 5 },
+    { x: 'Tue', y: skinScore - 4 },
+    { x: 'Wed', y: skinScore - 6 },
+    { x: 'Thu', y: skinScore - 2 },
+    { x: 'Fri', y: skinScore - 3 },
+    { x: 'Sat', y: skinScore - 1 },
+    { x: 'Sun', y: skinScore },
   ];
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
       {/* Top Header */}
-      <Header title="Alex Morgan" subtitle="Welcome Back" />
+      <Header title={userName} subtitle={`Welcome Back • ${user?.skinType || 'Combination'} Dermal Profile`} />
 
       {/* Main Responsive Dashboard Layout Container */}
       <View className="px-6 pt-6 max-w-7xl mx-auto w-full">
@@ -38,7 +43,7 @@ export default function DashboardScreen() {
                   Overall Skin Index
                 </Text>
                 <Text className="text-slate-600 dark:text-slate-400 text-xs mt-1 text-center md:text-left">
-                  Neural biomarker analysis from recent scan
+                  Neural biomarker telemetry analysis from recent AI scan
                 </Text>
 
                 <View className="flex-row items-center mt-4 justify-center md:justify-start gap-3">
@@ -57,10 +62,10 @@ export default function DashboardScreen() {
                 </View>
               </View>
 
-              <ScoreRing score={87} label="Skin Health Score" sublabel="Optimal" size={140} />
+              <ScoreRing score={skinScore} label="Skin Health Score" sublabel="Optimal" size={140} />
             </View>
 
-            {/* Quick Action Cards Grid (Responsive 2 to 4 cols) */}
+            {/* Quick Action Cards Grid */}
             <View>
               <Text className="text-slate-900 dark:text-white font-extrabold text-lg mb-3">Quick Actions</Text>
               <View className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -150,7 +155,7 @@ export default function DashboardScreen() {
             />
           </View>
 
-          {/* Right Column / Desktop Sidebar Panel (1/3 Width on Desktop) */}
+          {/* Right Column / Desktop Sidebar Panel */}
           <View className="w-full lg:w-80 gap-6">
 
             {/* Active Regimen Protocol Card */}

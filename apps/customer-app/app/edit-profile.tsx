@@ -1,12 +1,27 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, User, Mail, Save } from 'lucide-react-native';
+import { ArrowLeft, User, Mail, Save, Check } from 'lucide-react-native';
+import { useAuthStore } from '../src/store/useAuthStore';
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const [name, setName] = useState('Alex Morgan');
-  const [email, setEmail] = useState('alex.morgan@medivo.health');
+  const { user, updateProfile } = useAuthStore();
+  const [name, setName] = useState(user?.name || 'Sarah Jenkins');
+  const [email, setEmail] = useState(user?.email || 'sarah.j@example.com');
+  const [skinType, setSkinType] = useState(user?.skinType || 'Combination');
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await updateProfile({ name, email, skinType });
+    setIsSaving(false);
+    setSavedSuccess(true);
+    setTimeout(() => {
+      router.back();
+    }, 800);
+  };
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 40 }}>
@@ -16,11 +31,19 @@ export default function EditProfileScreen() {
         </TouchableOpacity>
         <View>
           <Text className="text-slate-900 dark:text-white text-xl font-extrabold">Edit Profile</Text>
-          <Text className="text-slate-600 dark:text-slate-400 text-xs">Update your personal information</Text>
+          <Text className="text-slate-600 dark:text-slate-400 text-xs">Update your confidential patient information</Text>
         </View>
       </View>
 
       <View className="p-6 gap-4 max-w-4xl mx-auto w-full">
+        {savedSuccess ? (
+          <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex-row items-center justify-center">
+            <Check size={20} color="#10B981" />
+            <Text className="text-emerald-500 font-bold text-sm ml-2">Profile changes saved successfully!</Text>
+          </View>
+        ) : null}
+
+        <Text className="text-slate-700 dark:text-slate-300 text-xs font-bold">Full Name:</Text>
         <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm">
           <User size={20} color="#1F7FC4" />
           <TextInput
@@ -32,6 +55,7 @@ export default function EditProfileScreen() {
           />
         </View>
 
+        <Text className="text-slate-700 dark:text-slate-300 text-xs font-bold">Email Address:</Text>
         <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm">
           <Mail size={20} color="#1F7FC4" />
           <TextInput
@@ -44,12 +68,38 @@ export default function EditProfileScreen() {
           />
         </View>
 
+        <Text className="text-slate-700 dark:text-slate-300 text-xs font-bold">Skin Type:</Text>
+        <View className="flex-row gap-2">
+          {['Combination', 'Sensitive', 'Oily', 'Dry'].map((type) => (
+            <TouchableOpacity
+              key={type}
+              onPress={() => setSkinType(type)}
+              className={`flex-1 py-2.5 rounded-xl items-center border ${
+                skinType === type
+                  ? 'bg-brand-primary/10 border-brand-primary'
+                  : 'bg-slate-50 dark:bg-[#111827] border-slate-200 dark:border-[#374151]'
+              }`}
+            >
+              <Text className={`text-xs font-bold ${skinType === type ? 'text-brand-primary' : 'text-slate-600 dark:text-slate-400'}`}>
+                {type}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <TouchableOpacity
-          onPress={() => router.back()}
-          className="bg-brand-primary py-4 rounded-2xl items-center justify-center flex-row shadow-sm mt-2"
+          onPress={handleSave}
+          disabled={isSaving}
+          className="bg-brand-primary py-4 rounded-2xl items-center justify-center flex-row shadow-sm mt-4"
         >
-          <Save size={20} color="#FFFFFF" />
-          <Text className="text-white font-extrabold text-base ml-2">Save Changes</Text>
+          {isSaving ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <>
+              <Save size={20} color="#FFFFFF" />
+              <Text className="text-white font-extrabold text-base ml-2">Save Changes</Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>

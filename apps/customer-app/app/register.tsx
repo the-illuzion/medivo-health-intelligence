@@ -1,16 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Shield, Lock, Mail, User, ArrowRight } from 'lucide-react-native';
+import { Shield, User as UserIcon, Mail, Lock, ArrowRight } from 'lucide-react-native';
+import { useAuthStore } from '../src/store/useAuthStore';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { register, isLoading } = useAuthStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [skinType, setSkinType] = useState('Combination');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleRegister = () => {
-    router.replace('/(tabs)');
+  const handleRegister = async () => {
+    if (!name || !email || !password) {
+      setErrorMessage('Please fill in all required fields.');
+      return;
+    }
+    setErrorMessage('');
+    const success = await register(name, email, skinType);
+    if (success) {
+      router.replace('/otp-verify');
+    } else {
+      setErrorMessage('Registration failed. Please try again.');
+    }
   };
 
   return (
@@ -20,17 +34,23 @@ export default function RegisterScreen() {
           <View className="w-16 h-16 bg-sky-500/10 dark:bg-sky-500/20 rounded-2xl items-center justify-center mb-4 border border-sky-500/30">
             <Shield size={32} color="#1F7FC4" />
           </View>
-          <Text className="text-slate-900 dark:text-white text-3xl font-extrabold tracking-tight mb-2 text-center">Create Account</Text>
-          <Text className="text-slate-600 dark:text-slate-400 text-sm text-center">Join Medivo for personalized AI skin intelligence</Text>
+          <Text className="text-slate-900 dark:text-white text-3xl font-extrabold tracking-tight mb-2 text-center">Create Patient Account</Text>
+          <Text className="text-slate-600 dark:text-slate-400 text-sm text-center">Join Medivo for confidential AI telemetry skin analysis</Text>
         </View>
+
+        {errorMessage ? (
+          <View className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 mb-4">
+            <Text className="text-rose-500 text-xs text-center font-bold">{errorMessage}</Text>
+          </View>
+        ) : null}
 
         <View className="gap-4">
           <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm">
-            <User size={20} color="#1F7FC4" />
+            <UserIcon size={20} color="#1F7FC4" />
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="Full Name"
+              placeholder="Full name"
               placeholderTextColor="#94A3B8"
               className="flex-1 ml-3 text-slate-900 dark:text-white text-base"
             />
@@ -45,6 +65,7 @@ export default function RegisterScreen() {
               placeholderTextColor="#94A3B8"
               className="flex-1 ml-3 text-slate-900 dark:text-white text-base"
               autoCapitalize="none"
+              keyboardType="email-address"
             />
           </View>
 
@@ -60,12 +81,38 @@ export default function RegisterScreen() {
             />
           </View>
 
+          <Text className="text-slate-700 dark:text-slate-300 text-xs font-bold mt-2">Select Primary Skin Type:</Text>
+          <View className="flex-row gap-2">
+            {['Combination', 'Sensitive', 'Oily', 'Dry'].map((type) => (
+              <TouchableOpacity
+                key={type}
+                onPress={() => setSkinType(type)}
+                className={`flex-1 py-2 rounded-xl items-center border ${
+                  skinType === type
+                    ? 'bg-brand-primary/10 border-brand-primary'
+                    : 'bg-slate-50 dark:bg-[#111827] border-slate-200 dark:border-[#374151]'
+                }`}
+              >
+                <Text className={`text-xs font-bold ${skinType === type ? 'text-brand-primary' : 'text-slate-600 dark:text-slate-400'}`}>
+                  {type}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <TouchableOpacity
             onPress={handleRegister}
-            className="bg-brand-primary py-4 rounded-2xl items-center justify-center mt-2 flex-row shadow-sm"
+            disabled={isLoading}
+            className="bg-brand-primary py-4 rounded-2xl items-center justify-center mt-4 flex-row shadow-sm"
           >
-            <Text className="text-white font-extrabold text-base mr-2">Create Account</Text>
-            <ArrowRight size={20} color="#FFFFFF" />
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Text className="text-white font-extrabold text-base mr-2">Create Account</Text>
+                <ArrowRight size={20} color="#FFFFFF" />
+              </>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/login')} className="mt-4 items-center">

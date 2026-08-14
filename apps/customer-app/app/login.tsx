@@ -1,15 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Shield, Lock, Mail, ArrowRight } from 'lucide-react-native';
+import { useAuthStore } from '../src/store/useAuthStore';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login, isLoading } = useAuthStore();
+  const [email, setEmail] = useState('sarah.j@example.com');
+  const [password, setPassword] = useState('password123');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleLogin = () => {
-    router.replace('/(tabs)');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setErrorMessage('Please fill in all fields.');
+      return;
+    }
+    setErrorMessage('');
+    const success = await login(email, password);
+    if (success) {
+      router.replace('/(tabs)');
+    } else {
+      setErrorMessage('Invalid credentials. Please try again.');
+    }
   };
 
   return (
@@ -23,6 +36,12 @@ export default function LoginScreen() {
           <Text className="text-slate-600 dark:text-slate-400 text-sm text-center">Sign in to access your confidential skin intelligence</Text>
         </View>
 
+        {errorMessage ? (
+          <View className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 mb-4">
+            <Text className="text-rose-500 text-xs text-center font-bold">{errorMessage}</Text>
+          </View>
+        ) : null}
+
         <View className="gap-4">
           <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm">
             <Mail size={20} color="#1F7FC4" />
@@ -33,6 +52,7 @@ export default function LoginScreen() {
               placeholderTextColor="#94A3B8"
               className="flex-1 ml-3 text-slate-900 dark:text-white text-base"
               autoCapitalize="none"
+              keyboardType="email-address"
             />
           </View>
 
@@ -48,12 +68,23 @@ export default function LoginScreen() {
             />
           </View>
 
+          <TouchableOpacity onPress={() => router.push('/forgot-password')} className="align-self-end my-1">
+            <Text className="text-right text-brand-primary text-xs font-bold">Forgot password?</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             onPress={handleLogin}
+            disabled={isLoading}
             className="bg-brand-primary py-4 rounded-2xl items-center justify-center mt-2 flex-row shadow-sm"
           >
-            <Text className="text-white font-extrabold text-base mr-2">Sign In</Text>
-            <ArrowRight size={20} color="#FFFFFF" />
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Text className="text-white font-extrabold text-base mr-2">Sign In</Text>
+                <ArrowRight size={20} color="#FFFFFF" />
+              </>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/register')} className="mt-4 items-center">
