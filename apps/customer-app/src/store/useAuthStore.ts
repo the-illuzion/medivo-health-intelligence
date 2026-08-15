@@ -26,7 +26,7 @@ interface AuthState {
   resetPassword: (email: string) => Promise<boolean>;
   completeOnboarding: (skinType: string, goals: string[]) => Promise<boolean>;
   updateProfile: (updatedData: Partial<UserProfile>) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -42,6 +42,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await apiClient.auth.login(email, password);
+      apiClient.setAuthToken(res.token);
       set({
         user: res.user,
         token: res.token,
@@ -67,6 +68,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await apiClient.auth.register(name, email, skinType);
+      apiClient.setAuthToken(res.token);
       set({
         user: res.user,
         token: res.token,
@@ -117,14 +119,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return true;
   },
 
-  logout: () => {
-    set({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isOnboarded: false,
-      error: null,
-    });
+  logout: async () => {
+    try {
+      await apiClient.auth.logout();
+    } catch (e) {
+    } finally {
+      apiClient.setAuthToken(null);
+      set({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isOnboarded: false,
+        error: null,
+      });
+    }
   },
 
   clearError: () => set({ error: null }),

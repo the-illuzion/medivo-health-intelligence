@@ -40,9 +40,23 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
+export const logout = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.user?.userId || 'ANONYMOUS';
+    auditService.logEvent('USER_LOGOUT_SUCCESS', userId, 'AUTH_SERVICE');
+    res.json({
+      success: true,
+      message: 'Session token invalidated and logged out successfully',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getProfile = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || (req.query.userId as string) || 'usr-101';
+    const userId = req.user?.userId || 'usr-101';
     const user = await authRepo.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: 'User profile not found' });

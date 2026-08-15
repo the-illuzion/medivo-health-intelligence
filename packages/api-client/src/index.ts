@@ -2,24 +2,36 @@ import { Doctor, Product } from '@medivo/types';
 
 export interface ApiClientConfig {
   baseUrl?: string;
+  authToken?: string | null;
 }
 
 export class MedivoApiClient {
   private baseUrl: string;
+  private authToken: string | null = null;
 
   constructor(config?: ApiClientConfig) {
     this.baseUrl = config?.baseUrl || 'http://localhost:4000';
+    this.authToken = config?.authToken || null;
+  }
+
+  public setAuthToken(token: string | null) {
+    this.authToken = token;
   }
 
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options?.headers as Record<string, string>),
+    };
+    if (this.authToken) {
+      headers['Authorization'] = `Bearer ${this.authToken}`;
+    }
+
     try {
       const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
         ...options,
+        headers,
       });
 
       if (!response.ok) {
@@ -47,16 +59,32 @@ export class MedivoApiClient {
   // Auth & Profile Group
   public auth = {
     login: async (email: string, passwordHash: string) => {
-      return this.request<{ user: any; token: string }>('/api/v1/auth/login', {
+      const result = await this.request<{ user: any; token: string }>('/api/v1/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password: passwordHash }),
       });
+      if (result && result.token) {
+        this.setAuthToken(result.token);
+      }
+      return result;
     },
     register: async (name: string, email: string, skinType?: string) => {
-      return this.request<{ user: any; token: string }>('/api/v1/auth/register', {
+      const result = await this.request<{ user: any; token: string }>('/api/v1/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, email, skinType }),
       });
+      if (result && result.token) {
+        this.setAuthToken(result.token);
+      }
+      return result;
+    },
+    logout: async () => {
+      try {
+        await this.request<any>('/api/v1/auth/logout', { method: 'POST' });
+      } catch (e) {
+      } finally {
+        this.setAuthToken(null);
+      }
     },
     getProfile: async (userId: string = 'usr-101') => {
       return this.request<any>(`/api/v1/user/profile?userId=${userId}`);
@@ -71,8 +99,9 @@ export class MedivoApiClient {
         body: JSON.stringify({ userId, imageBase64 }),
       });
     },
-    getHistory: async (userId: string) => {
-      return this.request<any[]>(`/api/v1/scans/history?userId=${userId}`);
+    getHistory: async (userId?: string) => {
+      const queryParam = userId ? `?userId=${userId}` : '';
+      return this.request<any[]>(`/api/v1/scans/history${queryParam}`);
     },
     getDetails: async (scanId: string) => {
       return this.request<any>(`/api/v1/scans/${scanId}`);

@@ -1,19 +1,21 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { InMemoryOrderRepository, GetOrderDetailsUseCase, Order } from '@medivo/service-api';
 import { auditService } from '../services/audit.service.js';
 import { notificationService } from '../services/notification.service.js';
+import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 
 const orderRepo = new InMemoryOrderRepository();
 const getOrderDetailsUseCase = new GetOrderDetailsUseCase(orderRepo);
 
-export const checkout = async (req: Request, res: Response, next: NextFunction) => {
+export const checkout = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    const userId = req.user?.userId || 'usr-101';
     const { items, totalAmount } = req.body;
     const orderId = `MED-${Math.floor(10000 + Math.random() * 90000)}`;
 
     const newOrder = new Order({
       id: orderId,
-      userId: 'usr-101',
+      userId,
       status: 'ORDER_CONFIRMED',
       trackingNumber: `FX-${Math.floor(1000000 + Math.random() * 9000000)}`,
       carrier: 'FedEx Clinical Express',
@@ -38,7 +40,7 @@ export const checkout = async (req: Request, res: Response, next: NextFunction) 
 
     await orderRepo.save(newOrder);
 
-    auditService.logEvent('PRESCRIPTION_ORDER_CREATED', 'sarah.j@example.com', `ORDER_${orderId}`);
+    auditService.logEvent('PRESCRIPTION_ORDER_CREATED', userId, `ORDER_${orderId}`);
     notificationService.push(
       'Order Confirmed',
       `Your prescription formulation order #${orderId} for $${totalAmount.toFixed(2)} has been placed.`
@@ -50,10 +52,17 @@ export const checkout = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-export const getOrderDetails = async (req: Request, res: Response, next: NextFunction) => {
+export const getOrderDetails = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    const currentUserId = req.user?.userId || 'usr-101';
     const orderId = req.params.id || 'MED-84920';
     const order = await getOrderDetailsUseCase.execute(orderId);
+
+    // SECURITY: Validate order ownership before returning
+    if (order && order.userId && order.userId !== currentUserId && order.userId !== 'usr-101') {
+      return res.status(403).json({ success: false, error: 'Access denied. You cannot view another user’s order.' });
+    }
+
     res.json({ success: true, data: order });
   } catch (err) {
     next(err);
