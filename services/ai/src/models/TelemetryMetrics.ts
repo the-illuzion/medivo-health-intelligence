@@ -3,7 +3,11 @@ export interface TelemetryMetrics {
   texture: number;
   pigmentation: number;
   darkCircles: number;
-  overallScore: number;
+  overallScore?: number;
+  skinAge?: number;
+  rednessScore?: number;
+  poreClarity?: number;
+  photoprotection?: string;
 }
 
 export interface TelemetryAnalysisResult {

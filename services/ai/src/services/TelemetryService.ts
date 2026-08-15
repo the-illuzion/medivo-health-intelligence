@@ -1,4 +1,4 @@
-import { SubDermalTelemetryEngine } from '../domain/SubDermalTelemetryEngine.js';
+import { AIProviderFactory } from '../providers/AIProviderFactory.js';
 import { TelemetryAnalysisResult } from '../models/TelemetryMetrics.js';
 import { SkinAnalysisRepository } from '../repositories/SkinAnalysisRepository.js';
 import { env } from '../config/env.js';
@@ -7,20 +7,18 @@ export class TelemetryService {
   constructor(private scanRepo: SkinAnalysisRepository = new SkinAnalysisRepository()) {}
 
   public async processScan(userId: string, imageBase64: string): Promise<TelemetryAnalysisResult> {
-    const metrics = SubDermalTelemetryEngine.analyzeImagePayload(imageBase64);
+    const provider = AIProviderFactory.getProvider();
+    const providerResult = await provider.analyzeImage(imageBase64);
+
     const scanId = `scn-${Date.now()}`;
 
     const result: TelemetryAnalysisResult = {
       scanId,
       userId,
-      overallScore: metrics.overallScore,
-      metrics,
-      recommendations: [
-        'Incorporate Triple-Weight Hyaluronic Acid Serum twice daily',
-        'Broad spectrum Mineral SPF 50 application',
-        'Ceramide Moisture Cream for periorbital barrier recovery',
-      ],
-      modelVersion: env.MODEL_VERSION,
+      overallScore: providerResult.overallScore,
+      metrics: providerResult.metrics,
+      recommendations: providerResult.recommendations,
+      modelVersion: `${env.MODEL_VERSION} (${provider.name})`,
       timestamp: new Date().toISOString(),
     };
 
