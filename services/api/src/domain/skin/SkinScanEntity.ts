@@ -1,8 +1,12 @@
 export interface SkinMetrics {
-  hydration: number; // 0-100%
-  texture: number;   // 0-100
-  pigmentation: number; // 0-100
-  darkCircles: number; // 0-100
+  hydration: number;       // 0-100%
+  texture: number;         // 0-100
+  pigmentation: number;    // 0-100
+  darkCircles: number;     // 0-100
+  skinAge?: number;        // Estimated dermal age in years
+  rednessScore?: number;   // Dermal erythema percentage (0-100%)
+  poreClarity?: number;    // Pore clarity percentage (0-100%)
+  photoprotection?: string;// Dynamic photoprotection status
 }
 
 export interface SkinScanProps {
@@ -25,11 +29,30 @@ export class SkinScan {
   get scannedAt(): Date { return this.props.scannedAt; }
 
   toDTO() {
+    const hydration = this.props.metrics.hydration ?? 92;
+    const texture = this.props.metrics.texture ?? 85;
+    const pigmentation = this.props.metrics.pigmentation ?? 91;
+    const darkCircles = this.props.metrics.darkCircles ?? 72;
+
+    const skinAge = this.props.metrics.skinAge ?? 26;
+    const rednessScore = this.props.metrics.rednessScore ?? Math.round(100 - pigmentation);
+    const poreClarity = this.props.metrics.poreClarity ?? texture;
+    const photoprotection = this.props.metrics.photoprotection ?? (darkCircles > 50 ? 'SPF 50 Active' : 'SPF 30 Active');
+
     return {
       id: this.props.id,
       userId: this.props.userId,
       overallScore: this.props.overallScore,
-      metrics: this.props.metrics,
+      metrics: {
+        hydration,
+        texture,
+        pigmentation,
+        darkCircles,
+        skinAge,
+        rednessScore,
+        poreClarity,
+        photoprotection,
+      },
       recommendations: this.props.recommendations,
       scannedAt: this.props.scannedAt.toISOString(),
     };

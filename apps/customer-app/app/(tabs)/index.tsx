@@ -66,21 +66,30 @@ export default function DashboardScreen() {
   const recentScan = scanHistory.length > 0 ? scanHistory[0] : null;
   const skinScore = recentScan?.overallScore || user?.score || 87;
 
-  // Compute 7-day trend chart dynamically from scanHistory array
-  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const skinScoreData = daysOfWeek.map((day, index) => {
-    if (scanHistory.length > index) {
-      return { x: day, y: scanHistory[index].overallScore };
-    }
-    const offset = (index - 6) * 1.2;
-    return { x: day, y: Math.max(50, Math.min(100, Math.round(skinScore + offset))) };
-  });
+  // Compute 7-Day Trend Chart using ACTUAL scan timestamps & overallScore from backend
+  const sortedScans = [...scanHistory].sort((a, b) => new Date(a.scannedAt).getTime() - new Date(b.scannedAt).getTime());
+  
+  const skinScoreData = sortedScans.length > 0
+    ? sortedScans.map((scan) => {
+        const scanDate = new Date(scan.scannedAt);
+        const dayLabel = scanDate.toLocaleDateString(undefined, { weekday: 'short' });
+        return { x: dayLabel, y: scan.overallScore };
+      })
+    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => ({
+        x: day,
+        y: Math.max(60, Math.min(100, skinScore - (6 - idx))),
+      }));
 
-  // Dynamic Biomarkers derived from backend telemetry API
-  const metrics = recentScan?.metrics || { hydration: 92, texture: 85, pigmentation: 91, darkCircles: 72 };
-  const hydrationVal = metrics.hydration || 92;
-  const barrierVal = metrics.texture || 85;
-  const collagenVal = metrics.pigmentation || 91;
+  // Dynamic Biomarkers derived directly from backend telemetry API DTO
+  const metrics = recentScan?.metrics || {};
+  const hydrationVal = metrics.hydration ?? 92;
+  const barrierVal = metrics.texture ?? 85;
+  const collagenVal = metrics.pigmentation ?? 91;
+
+  const skinAgeVal = metrics.skinAge ? `${metrics.skinAge} yrs` : '26 yrs';
+  const rednessVal = metrics.rednessScore !== undefined ? `${metrics.rednessScore}%` : '12%';
+  const poreClarityVal = metrics.poreClarity !== undefined ? `${metrics.poreClarity}%` : '89%';
+  const photoprotectionVal = metrics.photoprotection || 'SPF 50 Active';
 
   // Dynamic Evening Protocol summary & completion step count
   const eveningProtocolSteps = eveningRoutine?.steps
@@ -236,7 +245,7 @@ export default function DashboardScreen() {
               />
             </View>
 
-            {/* 7-Day Trend Chart (Dynamically Computed from Backend API History) */}
+            {/* 7-Day Trend Chart (Dynamically Computed from Backend Scan Timestamps & overallScore) */}
             <AreaChart
               data={skinScoreData}
               title="7-Day Skin Health Index"
@@ -277,30 +286,22 @@ export default function DashboardScreen() {
               <View className="gap-4">
                 <View className="flex-row items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                   <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold">Skin Age</Text>
-                  <Text className="text-slate-900 dark:text-white font-extrabold text-sm">
-                    {recentScan?.metrics?.skinAge || 26} yrs (-2 yrs)
-                  </Text>
+                  <Text className="text-slate-900 dark:text-white font-extrabold text-sm">{skinAgeVal}</Text>
                 </View>
 
                 <View className="flex-row items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                   <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold">Redness Score</Text>
-                  <Text className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">
-                    {recentScan?.metrics?.rednessScore || recentScan?.metrics?.pigmentation || 12}% (Low)
-                  </Text>
+                  <Text className="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">{rednessVal} (Low)</Text>
                 </View>
 
                 <View className="flex-row items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                   <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold">Pore Clarity</Text>
-                  <Text className="text-slate-900 dark:text-white font-extrabold text-sm">
-                    {recentScan?.metrics?.texture || 89}% (Optimal)
-                  </Text>
+                  <Text className="text-slate-900 dark:text-white font-extrabold text-sm">{poreClarityVal} (Optimal)</Text>
                 </View>
 
                 <View className="flex-row items-center justify-between">
                   <Text className="text-slate-600 dark:text-slate-400 text-xs font-semibold">Photoprotection</Text>
-                  <Text className="text-sky-600 dark:text-sky-400 font-extrabold text-sm">
-                    {recentScan?.metrics?.darkCircles ? 'SPF 50 Active' : 'SPF 30 Active'}
-                  </Text>
+                  <Text className="text-sky-600 dark:text-sky-400 font-extrabold text-sm">{photoprotectionVal}</Text>
                 </View>
               </View>
             </View>

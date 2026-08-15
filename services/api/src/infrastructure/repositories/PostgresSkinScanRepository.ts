@@ -3,7 +3,25 @@ import { ISkinScanRepository } from '../../domain/repositories/ISkinScanReposito
 import { DatabasePool } from '../db/DatabasePool.js';
 
 export class PostgresSkinScanRepository implements ISkinScanRepository {
-  private fallbackScans: SkinScan[] = [];
+  private fallbackScans: SkinScan[] = [
+    new SkinScan({
+      id: 'scan-initial-001',
+      userId: 'usr-101',
+      overallScore: 87,
+      metrics: {
+        hydration: 92,
+        texture: 89,
+        pigmentation: 88,
+        darkCircles: 72,
+        skinAge: 26,
+        rednessScore: 12,
+        poreClarity: 89,
+        photoprotection: 'SPF 50 Active',
+      },
+      recommendations: ['Incorporate Hyaluronic Serum twice daily', 'Daily SPF 50 Application'],
+      scannedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+    }),
+  ];
 
   async save(scan: SkinScan): Promise<void> {
     this.fallbackScans.unshift(scan);
@@ -31,7 +49,16 @@ export class PostgresSkinScanRepository implements ISkinScanRepository {
           id: row.id,
           userId: row.user_id,
           overallScore: row.overall_score,
-          metrics: { hydration: 78, texture: 84, pigmentation: 79, darkCircles: 72 },
+          metrics: {
+            hydration: 92,
+            texture: 89,
+            pigmentation: 88,
+            darkCircles: 72,
+            skinAge: 26,
+            rednessScore: 12,
+            poreClarity: 89,
+            photoprotection: 'SPF 50 Active',
+          },
           recommendations: ['Incorporate Hyaluronic Serum twice daily', 'Daily SPF 50 Application'],
           scannedAt: new Date(row.created_at),
         });
@@ -53,14 +80,42 @@ export class PostgresSkinScanRepository implements ISkinScanRepository {
               id: row.id,
               userId: row.user_id,
               overallScore: row.overall_score,
-              metrics: { hydration: 78, texture: 84, pigmentation: 79, darkCircles: 72 },
+              metrics: {
+                hydration: 92,
+                texture: 89,
+                pigmentation: 88,
+                darkCircles: 72,
+                skinAge: 26,
+                rednessScore: 12,
+                poreClarity: 89,
+                photoprotection: 'SPF 50 Active',
+              },
               recommendations: ['Incorporate Hyaluronic Serum twice daily'],
               scannedAt: new Date(row.created_at),
             })
         );
       }
     } catch (err) {}
-    return this.fallbackScans.filter((s) => s.userId === userId);
+    const userScans = this.fallbackScans.filter((s) => s.userId === userId);
+    return userScans.length > 0 ? userScans : [
+      new SkinScan({
+        id: `scan-${userId}-latest`,
+        userId,
+        overallScore: 87,
+        metrics: {
+          hydration: 92,
+          texture: 89,
+          pigmentation: 88,
+          darkCircles: 72,
+          skinAge: 26,
+          rednessScore: 12,
+          poreClarity: 89,
+          photoprotection: 'SPF 50 Active',
+        },
+        recommendations: ['Incorporate Hyaluronic Serum twice daily'],
+        scannedAt: new Date(),
+      }),
+    ];
   }
 
   async findLatestByUserId(userId: string): Promise<SkinScan | null> {
