@@ -190,11 +190,11 @@ export default function ScanScreen() {
           />
         )}
 
-        {/* Main Responsive Split Layout Container */}
-        <View className="flex-col lg:flex-row gap-6 sm:gap-8 items-start">
+        {/* Main Responsive Split Layout Container (Non-Overlapping Flex Stack) */}
+        <View className="flex-col lg:flex-row gap-6 sm:gap-8 w-full items-stretch lg:items-start">
           
           {/* Left Panel: Scan Mode Selector & Camera Viewfinder */}
-          <View className="flex-1 w-full bg-slate-50 dark:bg-[#111827] p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-[#374151] shadow-sm">
+          <View className="w-full flex-none lg:flex-1 bg-slate-50 dark:bg-[#111827] p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-[#374151] shadow-sm">
             <Text className="text-slate-900 dark:text-white font-extrabold text-lg mb-3 sm:mb-4">Neural Capture Station</Text>
             
             {/* Mode Selector Tabs */}
@@ -322,7 +322,7 @@ export default function ScanScreen() {
             </View>
 
             {/* Prominent, 100% Visible Mobile & Desktop Action Control Buttons */}
-            <View className="gap-2.5 mt-2">
+            <View className="gap-2.5 mt-2 w-full">
               {permissionState === 'granted' ? (
                 <Button
                   title={isScanning ? 'Analyzing Telemetry...' : 'Capture Frame & Process Scan'}
@@ -356,8 +356,8 @@ export default function ScanScreen() {
 
           </View>
 
-          {/* Right Panel: Live Analysis Telemetry Results Dashboard */}
-          <View className="flex-1 w-full bg-slate-50 dark:bg-[#111827] p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-[#374151] shadow-sm">
+          {/* Right Panel: Live Analysis Telemetry Results Dashboard (Clean Vertical Stacking) */}
+          <View className="w-full flex-none lg:flex-1 bg-slate-50 dark:bg-[#111827] p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-[#374151] shadow-sm">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-slate-900 dark:text-white font-extrabold text-base sm:text-lg">AI Telemetry Findings</Text>
               <Badge label={scanResult ? 'Analysis Complete' : 'Awaiting Scan'} variant={scanResult ? 'success' : 'accent'} />
