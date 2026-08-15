@@ -3,11 +3,11 @@ import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, Platform, LogBox, useWindowDimensions } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
 import { WebSidebar } from '../src/components/navigation/WebSidebar';
 import { Header } from '../src/components/ui/Header';
 import { useAuthStore } from '../src/store/useAuthStore';
+import { GestureRoot } from '../src/components/navigation/GestureRoot';
 
 import '../global.css';
 
@@ -86,12 +86,12 @@ function MainAppShell() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureRoot>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <MainAppShell />
         </ThemeProvider>
       </QueryClientProvider>
-    </GestureHandlerRootView>
+    </GestureRoot>
   );
 }
