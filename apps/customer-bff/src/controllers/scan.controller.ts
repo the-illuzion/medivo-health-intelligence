@@ -10,7 +10,7 @@ const submitSkinScanUseCase = new SubmitSkinScanUseCase(scanRepo, aiService);
 
 export const analyzeScan = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.userId || req.body.userId;
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
     }
@@ -20,7 +20,8 @@ export const analyzeScan = async (req: AuthenticatedRequest, res: Response, next
     auditService.logEvent('SCAN_DATA_ENCRYPTED_AES256', userId, 'AI_SCAN_VAULT_S3');
     notificationService.push(
       'AI Skin Telemetry Complete',
-      `Your sub-dermal scan score of ${result.overallScore}/100 is ready for review.`
+      `Your sub-dermal scan score of ${result.overallScore}/100 is ready for review.`,
+      userId
     );
 
     res.json({ success: true, data: result });

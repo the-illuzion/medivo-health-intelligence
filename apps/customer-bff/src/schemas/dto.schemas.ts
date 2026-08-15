@@ -12,7 +12,7 @@ export const registerSchema = z.object({
 });
 
 export const analyzeScanSchema = z.object({
-  userId: z.string().min(1, 'userId is required'),
+  userId: z.string().optional(),
   imageBase64: z.string().min(10, 'imageBase64 skin payload is required'),
 });
 
