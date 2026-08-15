@@ -86,23 +86,21 @@ export class MedivoApiClient {
         this.setAuthToken(null);
       }
     },
-    getProfile: async (userId?: string) => {
-      const queryParam = userId ? `?userId=${userId}` : '';
-      return this.request<any>(`/api/v1/user/profile${queryParam}`);
+    getProfile: async () => {
+      return this.request<any>('/api/v1/user/profile');
     },
   };
 
   // AI Skin Scans Telemetry Group
   public scans = {
-    analyze: async (userId: string, imageBase64: string) => {
+    analyze: async (imageBase64: string) => {
       return this.request<any>('/api/v1/scans/analyze', {
         method: 'POST',
-        body: JSON.stringify({ userId, imageBase64 }),
+        body: JSON.stringify({ imageBase64 }),
       });
     },
-    getHistory: async (userId?: string) => {
-      const queryParam = userId ? `?userId=${userId}` : '';
-      return this.request<any[]>(`/api/v1/scans/history${queryParam}`);
+    getHistory: async () => {
+      return this.request<any[]>('/api/v1/scans/history');
     },
     getDetails: async (scanId: string) => {
       return this.request<any>(`/api/v1/scans/${scanId}`);

@@ -16,7 +16,7 @@ export default function DashboardScreen() {
   const [scanHistory, setScanHistory] = useState<any[]>([]);
   const [eveningRoutine, setEveningRoutine] = useState<any | null>(null);
 
-  // Core API Fetch Function
+  // Core Dashboard API Fetcher: Executes 4 parallel Customer BFF endpoints
   const fetchDashboardData = useCallback(async () => {
     const activeToken = token || (useAuthStore.getState().token);
     if (activeToken) {
@@ -27,16 +27,20 @@ export default function DashboardScreen() {
     setError(null);
 
     try {
-      const userId = user?.id;
-      // Always trigger GET /api/v1/scans/history and GET /api/v1/routines
-      const [scans, routines] = await Promise.all([
-        apiClient.scans.getHistory(userId),
+      // Parallel execution of all 4 Customer BFF dashboard endpoints
+      const [profileRes, scansRes, routinesRes, notificationsRes] = await Promise.allSettled([
+        apiClient.auth.getProfile(),
+        apiClient.scans.getHistory(),
         apiClient.routines.list(),
+        apiClient.notifications.list(),
       ]);
 
-      setScanHistory(scans || []);
-      if (routines && routines.length > 0) {
-        const evening = routines.find((r: any) => r.timing === 'Evening') || routines[0];
+      if (scansRes.status === 'fulfilled' && scansRes.value) {
+        setScanHistory(scansRes.value);
+      }
+
+      if (routinesRes.status === 'fulfilled' && routinesRes.value && routinesRes.value.length > 0) {
+        const evening = routinesRes.value.find((r: any) => r.timing === 'Evening') || routinesRes.value[0];
         setEveningRoutine(evening);
       }
     } catch (err: any) {
@@ -45,9 +49,9 @@ export default function DashboardScreen() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, token]);
+  }, [token]);
 
-  // 1. Trigger immediately on component mount and when auth storage hydration state updates
+  // 1. Trigger immediately on mount and when auth storage hydration state updates
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData, isHydrated]);
@@ -62,7 +66,7 @@ export default function DashboardScreen() {
   const recentScan = scanHistory.length > 0 ? scanHistory[0] : null;
   const skinScore = recentScan?.overallScore || user?.score || 87;
 
-  // Compute 7-day trend chart dynamically from scanHistory or telemetry baseline
+  // Compute 7-day trend chart dynamically from scanHistory array
   const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const skinScoreData = daysOfWeek.map((day, index) => {
     if (scanHistory.length > index) {
