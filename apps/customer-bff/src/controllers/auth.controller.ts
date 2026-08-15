@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { PostgresAuthRepository, JwtTokenService, AuthenticateUserUseCase, User } from '@medivo/service-api';
 import { auditService } from '../services/audit.service.js';
+import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 
 const authRepo = new PostgresAuthRepository();
 const jwtService = new JwtTokenService();
@@ -39,9 +40,9 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
+export const getProfile = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = (req.query.userId as string) || 'usr-101';
+    const userId = req.user?.userId || (req.query.userId as string) || 'usr-101';
     const user = await authRepo.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: 'User profile not found' });
