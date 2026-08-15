@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, ShoppingBag, Search, ShieldCheck } from 'lucide-react-native';
+import { Bell, ShoppingBag, Search } from 'lucide-react-native';
 import { CommandPalette } from './CommandPalette';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNotificationStore } from '../../store/useNotificationStore';
@@ -98,18 +98,10 @@ export const Header: React.FC<HeaderProps> = ({
             </View>
           </TouchableOpacity>
 
-          {/* Right Column: Actions & HIPAA Encrypted Status Badge */}
+          {/* Right Column: Actions */}
           {showActions && (
             <View className="flex-row items-center gap-2 sm:gap-2.5">
               
-              {/* HIPAA Encrypted Vault Status Badge */}
-              <View className="hidden lg:flex flex-row items-center bg-emerald-500/10 dark:bg-emerald-500/20 px-2.5 py-1 rounded-full border border-emerald-500/30 mr-1">
-                <ShieldCheck size={13} color="#059669" className="mr-1" />
-                <Text className="text-emerald-700 dark:text-emerald-400 text-[11px] font-bold">
-                  HIPAA Encrypted
-                </Text>
-              </View>
-
               {/* Mobile Search Button */}
               <TouchableOpacity
                 onPress={() => setPaletteOpen(true)}
