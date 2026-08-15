@@ -52,29 +52,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       return true;
     } catch (err: any) {
-      if (email === 'sarah.j@example.com' && password === 'password123') {
-        set({
-          user: {
-            id: 'usr-101',
-            name: 'Sarah Jenkins',
-            email: 'sarah.j@example.com',
-            skinType: 'Combination',
-            score: 87,
-            hipaaConsent: true,
-            registered: '2026-01-15',
-          },
-          token: 'mock_jwt_token_sarah_123',
-          isAuthenticated: true,
-          isOnboarded: true,
-          isLoading: false,
-          error: null,
-        });
-        return true;
-      }
-
       set({
         error: err.message || 'Invalid email or password. Please try again.',
         isLoading: false,
+        isAuthenticated: false,
+        user: null,
+        token: null,
       });
       return false;
     }
@@ -95,22 +78,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return true;
     } catch (err: any) {
       set({
-        user: {
-          id: `usr-${Date.now()}`,
-          name,
-          email,
-          skinType,
-          score: 80,
-          hipaaConsent: true,
-          registered: new Date().toISOString().substring(0, 10),
-        },
-        token: `jwt_reg_${Date.now()}`,
-        isAuthenticated: true,
-        isOnboarded: false,
+        error: err.message || 'Registration failed. Please try again.',
         isLoading: false,
-        error: null,
+        isAuthenticated: false,
+        user: null,
+        token: null,
       });
-      return true;
+      return false;
     }
   },
 

@@ -7,8 +7,8 @@ import { useAuthStore } from '../src/store/useAuthStore';
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user, updateProfile } = useAuthStore();
-  const [name, setName] = useState(user?.name || 'Sarah Jenkins');
-  const [email, setEmail] = useState(user?.email || 'sarah.j@example.com');
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [skinType, setSkinType] = useState(user?.skinType || 'Combination');
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);

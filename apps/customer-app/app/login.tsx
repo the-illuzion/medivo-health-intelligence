@@ -6,24 +6,24 @@ import { useAuthStore } from '../src/store/useAuthStore';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoading } = useAuthStore();
-  const [email, setEmail] = useState('sarah.j@example.com');
-  const [password, setPassword] = useState('password123');
+  const { login, isLoading, error: authError } = useAuthStore();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setErrorMessage('Please fill in all fields.');
+      setErrorMessage('Please enter both your email and password.');
       return;
     }
     setErrorMessage('');
     const success = await login(email, password);
     if (success) {
       router.replace('/(tabs)');
-    } else {
-      setErrorMessage('Invalid credentials. Please try again.');
     }
   };
+
+  const activeError = errorMessage || authError;
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 40, flexGrow: 1, justifyContent: 'center' }}>
@@ -36,9 +36,9 @@ export default function LoginScreen() {
           <Text className="text-slate-600 dark:text-slate-400 text-sm text-center">Sign in to access your confidential skin intelligence</Text>
         </View>
 
-        {errorMessage ? (
+        {activeError ? (
           <View className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 mb-4">
-            <Text className="text-rose-500 text-xs text-center font-bold">{errorMessage}</Text>
+            <Text className="text-rose-500 text-xs text-center font-bold">{activeError}</Text>
           </View>
         ) : null}
 
