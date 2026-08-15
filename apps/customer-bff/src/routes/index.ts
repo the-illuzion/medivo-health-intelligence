@@ -10,6 +10,10 @@ import orderRoutes from './order.routes.js';
 import notificationRoutes from './notification.routes.js';
 import privacyRoutes from './privacy.routes.js';
 import adminRoutes from './admin.routes.js';
+import { checkout } from '../controllers/order.controller.js';
+import { validateRequest } from '../middleware/errorHandler.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { checkoutSchema } from '../schemas/dto.schemas.js';
 
 const apiRouter = Router();
 
@@ -22,9 +26,11 @@ apiRouter.use('/doctors', doctorRoutes);
 apiRouter.use('/appointments', appointmentRoutes);
 apiRouter.use('/products', productRoutes);
 apiRouter.use('/orders', orderRoutes);
-apiRouter.use('/', orderRoutes); // Support POST /api/v1/checkout directly
 apiRouter.use('/notifications', notificationRoutes);
 apiRouter.use('/privacy', privacyRoutes);
 apiRouter.use('/admin', adminRoutes);
+
+// Explicit route for POST /api/v1/checkout
+apiRouter.post('/checkout', authenticateToken, validateRequest(checkoutSchema), checkout);
 
 export default apiRouter;
