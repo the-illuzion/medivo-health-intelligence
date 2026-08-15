@@ -86,8 +86,9 @@ export class MedivoApiClient {
         this.setAuthToken(null);
       }
     },
-    getProfile: async (userId: string = 'usr-101') => {
-      return this.request<any>(`/api/v1/user/profile?userId=${userId}`);
+    getProfile: async (userId?: string) => {
+      const queryParam = userId ? `?userId=${userId}` : '';
+      return this.request<any>(`/api/v1/user/profile${queryParam}`);
     },
   };
 

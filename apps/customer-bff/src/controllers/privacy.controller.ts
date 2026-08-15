@@ -1,26 +1,35 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { auditService } from '../services/audit.service.js';
+import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 
-export const getHipaaConsent = (_req: Request, res: Response, next: NextFunction) => {
+export const getHipaaConsent = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
     res.json({
       success: true,
-      data: { userId: 'usr-101', hipaaConsent: true, grantedAt: '2026-01-15T00:00:00Z' },
+      data: { userId, hipaaConsent: true, grantedAt: new Date().toISOString() },
     });
   } catch (err) {
     next(err);
   }
 };
 
-export const updateHipaaConsent = (req: Request, res: Response, next: NextFunction) => {
+export const updateHipaaConsent = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
     const { consent } = req.body;
     auditService.logEvent(
       consent ? 'HIPAA_CONSENT_GRANTED' : 'HIPAA_CONSENT_REVOKED',
-      'sarah.j@example.com',
+      userId,
       'USER_CONSENT_REGISTRY'
     );
-    res.json({ success: true, data: { userId: 'usr-101', hipaaConsent: !!consent } });
+    res.json({ success: true, data: { userId, hipaaConsent: !!consent } });
   } catch (err) {
     next(err);
   }

@@ -18,13 +18,20 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     async function loadDashboardAPIs() {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      if (token) {
+        apiClient.setAuthToken(token);
+      }
       setLoading(true);
       setError(null);
 
       try {
-        // 1. Fetch live telemetry scan history from Customer BFF / Postgres DB
-        const userId = user?.id || 'usr-101';
-        const scans = await apiClient.scans.getHistory(userId);
+        // 1. Fetch live telemetry scan history from Customer BFF / Postgres DB using dynamic user.id
+        const scans = await apiClient.scans.getHistory(user.id);
         setScanHistory(scans || []);
 
         // 2. Fetch personalized skincare routines
@@ -83,9 +90,10 @@ export default function DashboardScreen() {
             </View>
             <TouchableOpacity
               onPress={() => {
+                if (!user?.id) return;
                 setError(null);
                 setLoading(true);
-                apiClient.scans.getHistory(user?.id || 'usr-101')
+                apiClient.scans.getHistory(user.id)
                   .then((s) => setScanHistory(s))
                   .finally(() => setLoading(false));
               }}

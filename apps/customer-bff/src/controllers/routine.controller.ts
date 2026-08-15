@@ -4,7 +4,10 @@ import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 
 export const listRoutines = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || 'usr-101';
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
     const routines = routineService.getUserRoutines(userId);
     res.json({ success: true, data: routines });
   } catch (err) {
@@ -14,7 +17,10 @@ export const listRoutines = (req: AuthenticatedRequest, res: Response, next: Nex
 
 export const getRoutineDetails = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || 'usr-101';
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
     const routine = routineService.getById(req.params.id, userId);
     if (!routine) {
       return res.status(404).json({ success: false, error: 'Routine not found' });
@@ -27,7 +33,10 @@ export const getRoutineDetails = (req: AuthenticatedRequest, res: Response, next
 
 export const toggleRoutineStep = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || 'usr-101';
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
     const { routineId, stepId, completed } = req.body;
     const updatedRoutine = routineService.toggleStepCompletion(userId, routineId, stepId, completed);
     if (!updatedRoutine) {
