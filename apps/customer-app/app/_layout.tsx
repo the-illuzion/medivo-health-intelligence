@@ -11,7 +11,10 @@ import { useAuthStore } from '../src/store/useAuthStore';
 
 import '../global.css';
 
-LogBox.ignoreLogs(['Require cycle:']);
+LogBox.ignoreLogs([
+  'Require cycle: node_modules/react-native-gesture-handler',
+  'Require cycle:',
+]);
 
 const queryClient = new QueryClient();
 
@@ -82,15 +85,13 @@ function MainAppShell() {
 }
 
 export default function RootLayout() {
-  const Container = Platform.OS === 'web' ? View : GestureHandlerRootView;
-
   return (
-    <Container style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <MainAppShell />
         </ThemeProvider>
       </QueryClientProvider>
-    </Container>
+    </GestureHandlerRootView>
   );
 }
