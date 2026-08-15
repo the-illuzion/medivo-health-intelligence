@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Sparkles, Camera, MessageSquare, ArrowRight, ShieldCheck, Droplet, Zap, Award, Activity, Heart, Sun } from 'lucide-react-native';
-import { Header, ScoreRing, MetricCard, Button, Badge } from '../../src/components/ui';
+import { ScoreRing, MetricCard, Button, Badge } from '../../src/components/ui';
 import { AreaChart } from '../../src/components/charts';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { apiClient } from '@medivo/api-client';
@@ -31,7 +31,6 @@ export default function DashboardScreen() {
     fetchDashboardData();
   }, [user?.id, token]);
 
-  const userName = user?.name || 'Patient';
   const skinScore = recentScan?.overallScore || user?.score || 87;
 
   const skinScoreData = [
@@ -46,9 +45,6 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
-      {/* Top Header */}
-      <Header title={userName} subtitle={`Welcome Back • ${user?.skinType || 'Combination'} Dermal Profile`} />
-
       {/* Main Responsive Dashboard Layout Container */}
       <View className="px-6 pt-6 max-w-7xl mx-auto w-full">
         <View className="flex-col lg:flex-row gap-8 items-start">

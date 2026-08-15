@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
 import { WebSidebar } from '../src/components/navigation/WebSidebar';
+import { Header } from '../src/components/ui/Header';
 import { useAuthStore } from '../src/store/useAuthStore';
 
 import '../global.css';
@@ -66,12 +67,14 @@ function MainAppShell() {
     pathname === '/otp-verify' ||
     pathname === '/onboarding';
 
+  const showHeader = isAuthenticated && !isAuthRoute;
   const showSidebar = Platform.OS === 'web' && width >= 1024 && isAuthenticated && !isAuthRoute;
 
   return (
     <View className="flex-1 flex-row bg-white dark:bg-[#090D16]" style={{ flex: 1, height: '100%' }}>
       {showSidebar && <WebSidebar />}
       <View className="flex-1 h-full" style={{ flex: 1, height: '100%' }}>
+        {showHeader && <Header />}
         <StackNavigator />
       </View>
     </View>
