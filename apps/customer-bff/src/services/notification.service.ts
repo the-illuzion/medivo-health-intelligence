@@ -9,17 +9,35 @@ export interface Notification {
 
 class DynamicNotificationService {
   private notifications: Notification[] = [
-    { id: '1', userId: 'all', title: 'AI Skin Telemetry Complete', message: 'Your scan report score of 87/100 is ready for review.', timestamp: '10m ago', unread: true },
-    { id: '2', userId: 'all', title: 'Prescription Shipped', message: 'Order #MED-84920 has been dispatched via FedEx.', timestamp: '2h ago', unread: true },
-    { id: '3', userId: 'all', title: 'Upcoming Telehealth Consultation', message: 'Video call with Dr. Aris Thorne, MD starts in 30 mins.', timestamp: '1d ago', unread: false },
+    { id: 'n1', userId: 'all', title: 'AI Skin Telemetry Complete', message: 'Your scan report score of 87/100 is ready for review.', timestamp: '10m ago', unread: true },
+    { id: 'n2', userId: 'all', title: 'Prescription Shipped', message: 'Order #MED-84920 has been dispatched via FedEx.', timestamp: '2h ago', unread: true },
+    { id: 'n3', userId: 'all', title: 'Upcoming Telehealth Consultation', message: 'Video call with Dr. Aris Thorne, MD starts in 30 mins.', timestamp: '1d ago', unread: false },
   ];
 
-  public getAll(): Notification[] {
-    return this.notifications;
+  public getUserNotifications(userId: string): { notifications: Notification[]; unreadCount: number } {
+    const userNotifs = this.notifications.filter((n) => !n.userId || n.userId === 'all' || n.userId === userId);
+    const unreadCount = userNotifs.filter((n) => n.unread).length;
+    return { notifications: userNotifs, unreadCount };
   }
 
-  public getUserNotifications(userId: string): Notification[] {
-    return this.notifications.filter((n) => !n.userId || n.userId === 'all' || n.userId === userId);
+  public markAsRead(userId: string, notifId: string): { notifications: Notification[]; unreadCount: number } {
+    this.notifications = this.notifications.map((n) => {
+      if (n.id === notifId && (!n.userId || n.userId === 'all' || n.userId === userId)) {
+        return { ...n, unread: false };
+      }
+      return n;
+    });
+    return this.getUserNotifications(userId);
+  }
+
+  public markAllAsRead(userId: string): { notifications: Notification[]; unreadCount: number } {
+    this.notifications = this.notifications.map((n) => {
+      if (!n.userId || n.userId === 'all' || n.userId === userId) {
+        return { ...n, unread: false };
+      }
+      return n;
+    });
+    return this.getUserNotifications(userId);
   }
 
   public push(title: string, message: string, userId: string = 'all'): Notification {

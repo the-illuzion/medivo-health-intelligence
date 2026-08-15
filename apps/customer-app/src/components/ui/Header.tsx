@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Bell, ShoppingBag, Search, ShieldCheck } from 'lucide-react-native';
 import { CommandPalette } from './CommandPalette';
 import { useAuthStore } from '../../store/useAuthStore';
+import { apiClient } from '@medivo/api-client';
 
 export interface HeaderProps {
   title?: string;
@@ -19,8 +20,9 @@ export const Header: React.FC<HeaderProps> = ({
   cartCount = 2,
 }) => {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, token, isHydrated } = useAuthStore();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const displayName = title || user?.name || 'Patient';
 
@@ -46,6 +48,22 @@ export const Header: React.FC<HeaderProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Fetch dynamic unread notification count
+  useEffect(() => {
+    async function loadNotificationsCount() {
+      if (!isHydrated || !token) return;
+      try {
+        apiClient.setAuthToken(token);
+        const res = await apiClient.notifications.list();
+        if (res && typeof res.unreadCount === 'number') {
+          setUnreadCount(res.unreadCount);
+        }
+      } catch (err) {}
+    }
+
+    loadNotificationsCount();
+  }, [isHydrated, token]);
 
   return (
     <>
@@ -108,12 +126,17 @@ export const Header: React.FC<HeaderProps> = ({
                 <Search size={17} color="#1F7FC4" />
               </TouchableOpacity>
 
-              {/* Notifications Button */}
+              {/* Notifications Button with Dynamic Unread Badge */}
               <TouchableOpacity
                 onPress={() => router.push('/notifications')}
-                className="w-9 h-9 sm:w-10 sm:h-10 bg-white dark:bg-[#192231] rounded-xl items-center justify-center border border-slate-200 dark:border-[#374151] shadow-sm active:bg-slate-100 dark:active:bg-slate-800"
+                className="w-9 h-9 sm:w-10 sm:h-10 bg-white dark:bg-[#192231] rounded-xl items-center justify-center border border-slate-200 dark:border-[#374151] shadow-sm relative active:bg-slate-100 dark:active:bg-slate-800"
               >
                 <Bell size={17} color="#1F7FC4" />
+                {unreadCount > 0 && (
+                  <View className="w-4 h-4 bg-rose-500 rounded-full items-center justify-center absolute -top-1 -right-1 border border-white dark:border-[#111827]">
+                    <Text className="text-white font-extrabold text-[9px]">{unreadCount}</Text>
+                  </View>
+                )}
               </TouchableOpacity>
 
               {/* Cart Button */}

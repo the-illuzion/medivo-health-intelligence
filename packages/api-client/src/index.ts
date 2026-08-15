@@ -173,7 +173,17 @@ export class MedivoApiClient {
   // Notifications & Admin Console Group
   public notifications = {
     list: async () => {
-      return this.request<any[]>('/api/v1/notifications');
+      return this.request<{ notifications: any[]; unreadCount: number }>('/api/v1/notifications');
+    },
+    markAsRead: async (notifId: string) => {
+      return this.request<{ notifications: any[]; unreadCount: number }>(`/api/v1/notifications/${notifId}/read`, {
+        method: 'PUT',
+      });
+    },
+    markAllAsRead: async () => {
+      return this.request<{ notifications: any[]; unreadCount: number }>('/api/v1/notifications/mark-all-read', {
+        method: 'POST',
+      });
     },
   };
 
