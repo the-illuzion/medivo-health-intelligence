@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Sparkles, Camera, MessageSquare, ArrowRight, ShieldCheck, Droplet, Zap, Award, Activity, Heart, Sun, AlertCircle } from 'lucide-react-native';
@@ -16,54 +16,47 @@ export default function DashboardScreen() {
   const [scanHistory, setScanHistory] = useState<any[]>([]);
   const [eveningRoutine, setEveningRoutine] = useState<any | null>(null);
 
-  // Trigger real-time API sync whenever Dashboard comes into focus or rehydrates
+  // Core API Fetch Function
+  const fetchDashboardData = useCallback(async () => {
+    const activeToken = token || (useAuthStore.getState().token);
+    if (activeToken) {
+      apiClient.setAuthToken(activeToken);
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const userId = user?.id;
+      // Always trigger GET /api/v1/scans/history and GET /api/v1/routines
+      const [scans, routines] = await Promise.all([
+        apiClient.scans.getHistory(userId),
+        apiClient.routines.list(),
+      ]);
+
+      setScanHistory(scans || []);
+      if (routines && routines.length > 0) {
+        const evening = routines.find((r: any) => r.timing === 'Evening') || routines[0];
+        setEveningRoutine(evening);
+      }
+    } catch (err: any) {
+      console.warn('[Dashboard API Sync Error]:', err.message);
+      setError(err.message || 'Unable to sync telemetry data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, token]);
+
+  // 1. Trigger immediately on component mount and when auth storage hydration state updates
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData, isHydrated]);
+
+  // 2. Trigger on tab focus when returning from other screens
   useFocusEffect(
     useCallback(() => {
-      let isMounted = true;
-
-      async function loadDashboardAPIs() {
-        if (!isHydrated) return;
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-
-        apiClient.setAuthToken(token);
-        setLoading(true);
-        setError(null);
-
-        try {
-          const userId = user?.id;
-          const [scans, routines] = await Promise.all([
-            apiClient.scans.getHistory(userId),
-            apiClient.routines.list(),
-          ]);
-
-          if (isMounted) {
-            setScanHistory(scans || []);
-            if (routines && routines.length > 0) {
-              const evening = routines.find((r: any) => r.timing === 'Evening') || routines[0];
-              setEveningRoutine(evening);
-            }
-          }
-        } catch (err: any) {
-          if (isMounted) {
-            console.warn('[Dashboard API Sync Error]:', err.message);
-            setError(err.message || 'Unable to sync telemetry data. Please try again.');
-          }
-        } finally {
-          if (isMounted) {
-            setLoading(false);
-          }
-        }
-      }
-
-      loadDashboardAPIs();
-
-      return () => {
-        isMounted = false;
-      };
-    }, [isHydrated, token, user?.id])
+      fetchDashboardData();
+    }, [fetchDashboardData])
   );
 
   const recentScan = scanHistory.length > 0 ? scanHistory[0] : null;
@@ -107,13 +100,7 @@ export default function DashboardScreen() {
             </View>
             <TouchableOpacity
               onPress={() => {
-                if (!token) return;
-                setError(null);
-                setLoading(true);
-                apiClient.setAuthToken(token);
-                apiClient.scans.getHistory(user?.id)
-                  .then((s) => setScanHistory(s))
-                  .finally(() => setLoading(false));
+                fetchDashboardData();
               }}
               className="px-3 py-1.5 rounded-xl bg-rose-500/20 border border-rose-500/30"
             >
