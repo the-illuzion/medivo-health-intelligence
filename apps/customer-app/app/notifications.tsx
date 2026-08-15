@@ -1,63 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Bell, CheckCheck, AlertCircle, Inbox } from 'lucide-react-native';
 import { Badge } from '../src/components/ui';
-import { apiClient } from '@medivo/api-client';
 import { useAuthStore } from '../src/store/useAuthStore';
+import { useNotificationStore } from '../src/store/useNotificationStore';
 
 export default function NotificationsScreen() {
   const router = useRouter();
   const { token, isHydrated } = useAuthStore();
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchNotifications = async () => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    apiClient.setAuthToken(token);
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiClient.notifications.list();
-      setNotifications(res?.notifications || []);
-      setUnreadCount(res?.unreadCount || 0);
-    } catch (err: any) {
-      console.warn('[Notifications API Fetch Error]:', err.message);
-      setError(err.message || 'Failed to load notifications.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { notifications, unreadCount, loading, error, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore();
 
   useEffect(() => {
     if (!isHydrated) return;
     fetchNotifications();
-  }, [isHydrated, token]);
-
-  const handleMarkAsRead = async (notifId: string) => {
-    try {
-      const res = await apiClient.notifications.markAsRead(notifId);
-      setNotifications(res?.notifications || []);
-      setUnreadCount(res?.unreadCount || 0);
-    } catch (err: any) {
-      console.warn('[Mark As Read Error]:', err.message);
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    try {
-      const res = await apiClient.notifications.markAllAsRead();
-      setNotifications(res?.notifications || []);
-      setUnreadCount(res?.unreadCount || 0);
-    } catch (err: any) {
-      console.warn('[Mark All As Read Error]:', err.message);
-    }
-  };
+  }, [isHydrated, token, fetchNotifications]);
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 40 }}>
@@ -79,7 +36,7 @@ export default function NotificationsScreen() {
           </View>
           {unreadCount > 0 ? (
             <TouchableOpacity
-              onPress={handleMarkAllAsRead}
+              onPress={markAllAsRead}
               className="flex-row items-center px-3 py-1.5 rounded-xl bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/30"
             >
               <CheckCheck size={16} color="#1F7FC4" className="mr-1.5" />
@@ -119,7 +76,7 @@ export default function NotificationsScreen() {
             {notifications.map((n) => (
               <TouchableOpacity
                 key={n.id}
-                onPress={() => n.unread && handleMarkAsRead(n.id)}
+                onPress={() => n.unread && markAsRead(n.id)}
                 className={`p-4 rounded-2xl border flex-row items-start transition-all shadow-sm ${
                   n.unread
                     ? 'bg-sky-500/5 dark:bg-sky-500/10 border-sky-500/30'

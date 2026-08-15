@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Bell, ShoppingBag, Search, ShieldCheck } from 'lucide-react-native';
 import { CommandPalette } from './CommandPalette';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNotificationStore } from '../../store/useNotificationStore';
 import { apiClient } from '@medivo/api-client';
 
 export interface HeaderProps {
@@ -21,8 +22,8 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const router = useRouter();
   const { user, token, isHydrated } = useAuthStore();
+  const { unreadCount, fetchNotifications } = useNotificationStore();
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
 
   const displayName = title || user?.name || 'Patient';
 
@@ -49,21 +50,12 @@ export const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Fetch dynamic unread notification count
+  // Fetch reactive unread notification count on mount & rehydration
   useEffect(() => {
-    async function loadNotificationsCount() {
-      if (!isHydrated || !token) return;
-      try {
-        apiClient.setAuthToken(token);
-        const res = await apiClient.notifications.list();
-        if (res && typeof res.unreadCount === 'number') {
-          setUnreadCount(res.unreadCount);
-        }
-      } catch (err) {}
-    }
-
-    loadNotificationsCount();
-  }, [isHydrated, token]);
+    if (!isHydrated || !token) return;
+    apiClient.setAuthToken(token);
+    fetchNotifications();
+  }, [isHydrated, token, fetchNotifications]);
 
   return (
     <>
@@ -126,15 +118,20 @@ export const Header: React.FC<HeaderProps> = ({
                 <Search size={17} color="#1F7FC4" />
               </TouchableOpacity>
 
-              {/* Notifications Button with Dynamic Unread Badge */}
+              {/* Notifications Button with Dynamic Unread Badge Pill */}
               <TouchableOpacity
                 onPress={() => router.push('/notifications')}
-                className="w-9 h-9 sm:w-10 sm:h-10 bg-white dark:bg-[#192231] rounded-xl items-center justify-center border border-slate-200 dark:border-[#374151] shadow-sm relative active:bg-slate-100 dark:active:bg-slate-800"
+                className="w-9 h-9 sm:w-10 sm:h-10 bg-white dark:bg-[#192231] rounded-xl items-center justify-center border border-slate-200 dark:border-[#374151] shadow-sm relative z-10 active:bg-slate-100 dark:active:bg-slate-800"
               >
-                <Bell size={17} color="#1F7FC4" />
+                <Bell size={18} color="#1F7FC4" />
                 {unreadCount > 0 && (
-                  <View className="w-4 h-4 bg-rose-500 rounded-full items-center justify-center absolute -top-1 -right-1 border border-white dark:border-[#111827]">
-                    <Text className="text-white font-extrabold text-[9px]">{unreadCount}</Text>
+                  <View
+                    style={{ position: 'absolute', top: -4, right: -4, zIndex: 30 }}
+                    className="min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full items-center justify-center border-2 border-white dark:border-[#111827] shadow-sm"
+                  >
+                    <Text className="text-white font-extrabold text-[10px] text-center leading-none">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Text>
                   </View>
                 )}
               </TouchableOpacity>
