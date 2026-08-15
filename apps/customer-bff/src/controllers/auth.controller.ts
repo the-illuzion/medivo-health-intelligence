@@ -56,7 +56,10 @@ export const logout = async (req: AuthenticatedRequest, res: Response, next: Nex
 
 export const getProfile = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || 'usr-101';
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
     const user = await authRepo.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: 'User profile not found' });

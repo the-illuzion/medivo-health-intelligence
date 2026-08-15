@@ -10,7 +10,10 @@ const submitSkinScanUseCase = new SubmitSkinScanUseCase(scanRepo, aiService);
 
 export const analyzeScan = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || 'usr-101';
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
     const { imageBase64 } = req.body;
     const result = await submitSkinScanUseCase.execute(userId, imageBase64);
 
@@ -28,8 +31,10 @@ export const analyzeScan = async (req: AuthenticatedRequest, res: Response, next
 
 export const getScanHistory = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    // SECURITY: Use authenticated userId exclusively from validated JWT token. Ignore query overrides.
-    const userId = req.user?.userId || 'usr-101';
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
     const scans = await scanRepo.findByUserId(userId);
     res.json({ success: true, data: scans.map((s) => s.toDTO()) });
   } catch (err) {
@@ -39,7 +44,10 @@ export const getScanHistory = async (req: AuthenticatedRequest, res: Response, n
 
 export const getScanDetails = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const currentUserId = req.user?.userId || 'usr-101';
+    const currentUserId = req.user?.userId;
+    if (!currentUserId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
     const scanId = req.params.id;
     const scan = await scanRepo.findById(scanId);
 
@@ -47,7 +55,6 @@ export const getScanDetails = async (req: AuthenticatedRequest, res: Response, n
       return res.status(404).json({ success: false, error: `Scan record '${scanId}' not found` });
     }
 
-    // SECURITY: Ensure user can ONLY access their own scan records
     if (scan.userId !== currentUserId) {
       return res.status(403).json({ success: false, error: 'Access denied. You cannot view another patient’s scan telemetry.' });
     }

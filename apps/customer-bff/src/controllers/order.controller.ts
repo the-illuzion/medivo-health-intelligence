@@ -9,7 +9,11 @@ const getOrderDetailsUseCase = new GetOrderDetailsUseCase(orderRepo);
 
 export const checkout = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.user?.userId || 'usr-101';
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
+
     const { items, totalAmount } = req.body;
     const orderId = `MED-${Math.floor(10000 + Math.random() * 90000)}`;
 
@@ -54,12 +58,19 @@ export const checkout = async (req: AuthenticatedRequest, res: Response, next: N
 
 export const getOrderDetails = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const currentUserId = req.user?.userId || 'usr-101';
-    const orderId = req.params.id || 'MED-84920';
+    const currentUserId = req.user?.userId;
+    if (!currentUserId) {
+      return res.status(401).json({ success: false, error: 'Authentication required. Invalid user session.' });
+    }
+
+    const orderId = req.params.id;
     const order = await getOrderDetailsUseCase.execute(orderId);
 
-    // SECURITY: Validate order ownership before returning
-    if (order && order.userId && order.userId !== currentUserId && order.userId !== 'usr-101') {
+    if (!order) {
+      return res.status(404).json({ success: false, error: `Order record '${orderId}' not found` });
+    }
+
+    if (order.userId !== currentUserId) {
       return res.status(403).json({ success: false, error: 'Access denied. You cannot view another user’s order.' });
     }
 
