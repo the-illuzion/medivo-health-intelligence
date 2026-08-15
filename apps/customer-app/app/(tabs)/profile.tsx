@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { User, Shield, Bell, CreditCard, History, LogOut, ChevronRight, Sun, Moon, Monitor } from 'lucide-react-native';
+import { User, Shield, Bell, CreditCard, History, LogOut, ChevronRight, Sun, Moon, Monitor, ShieldCheck } from 'lucide-react-native';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { useAuthStore } from '../../src/store/useAuthStore';
 
@@ -42,10 +42,11 @@ export default function ProfileScreen() {
         </View>
         <Text className="text-slate-900 dark:text-white text-xl sm:text-2xl font-extrabold">{displayName}</Text>
         <Text className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-0.5">{user?.email || ''}</Text>
-        <View className="mt-3 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/30 flex-row items-center gap-1.5">
-          <Text className="text-brand-primary font-bold text-xs">Patient ID: {user?.id || ''}</Text>
-          <Text className="text-slate-400 text-xs">•</Text>
-          <Text className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">{user?.skinType || 'Combination'}</Text>
+        <View className="mt-3 bg-emerald-500/10 dark:bg-emerald-500/20 px-3.5 py-1.5 rounded-full border border-emerald-500/30 flex-row items-center gap-1.5">
+          <ShieldCheck size={14} color="#059669" />
+          <Text className="text-emerald-700 dark:text-emerald-400 font-extrabold text-xs">
+            Verified Patient • {user?.skinType || 'Combination'} Profile
+          </Text>
         </View>
       </View>
 
