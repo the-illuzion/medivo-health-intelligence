@@ -154,7 +154,7 @@ export default function ScanScreen() {
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
-      <View className="px-4 sm:px-6 pt-6 gap-6 max-w-7xl mx-auto w-full">
+      <View className="px-4 sm:px-6 pt-6 gap-5 sm:gap-6 max-w-7xl mx-auto w-full">
         
         {/* Page Title & Subtitle Banner */}
         <View className="mb-1">
@@ -179,7 +179,7 @@ export default function ScanScreen() {
           </View>
         ) : null}
 
-        {/* Hidden File Input for Mobile & Desktop Image Upload Fallback */}
+        {/* Hidden File Input for Mobile & Desktop Image Upload */}
         {typeof document !== 'undefined' && (
           <input
             type="file"
@@ -195,10 +195,10 @@ export default function ScanScreen() {
           
           {/* Left Panel: Scan Mode Selector & Camera Viewfinder */}
           <View className="flex-1 w-full bg-slate-50 dark:bg-[#111827] p-4 sm:p-6 rounded-3xl border border-slate-200 dark:border-[#374151] shadow-sm">
-            <Text className="text-slate-900 dark:text-white font-extrabold text-lg mb-4">Neural Capture Station</Text>
+            <Text className="text-slate-900 dark:text-white font-extrabold text-lg mb-3 sm:mb-4">Neural Capture Station</Text>
             
             {/* Mode Selector Tabs */}
-            <View className="flex-row bg-slate-100 dark:bg-[#1F2937] p-1.5 rounded-2xl border border-slate-200 dark:border-[#374151] mb-5">
+            <View className="flex-row bg-slate-100 dark:bg-[#1F2937] p-1.5 rounded-2xl border border-slate-200 dark:border-[#374151] mb-4">
               <TouchableOpacity
                 onPress={() => setScanMode('skin')}
                 className={`flex-1 py-2.5 sm:py-3 rounded-xl items-center flex-row justify-center ${
@@ -224,9 +224,9 @@ export default function ScanScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Interactive Viewfinder Container (Sized for Mobile & Desktop) */}
-            <View className="items-center justify-center my-2 sm:my-4">
-              <View className="w-64 h-72 sm:w-72 sm:h-80 border-2 border-brand-primary border-dashed rounded-full items-center justify-center bg-white dark:bg-[#090D16] relative overflow-hidden shadow-md border-slate-300 dark:border-[#374151]">
+            {/* Compact Viewfinder Container (Optimized for Mobile Viewports) */}
+            <View className="items-center justify-center my-2">
+              <View className="w-52 h-60 sm:w-72 sm:h-80 border-2 border-brand-primary border-dashed rounded-full items-center justify-center bg-white dark:bg-[#090D16] relative overflow-hidden shadow-md border-slate-300 dark:border-[#374151]">
                 
                 {/* 1. Camera Granted - Live Video Feed */}
                 {permissionState === 'granted' && typeof document !== 'undefined' ? (
@@ -251,17 +251,17 @@ export default function ScanScreen() {
 
                 {/* 3. Prompt Permission Explanation Card */}
                 {permissionState === 'prompt' && !isScanning && (
-                  <View className="items-center p-4 sm:p-5 text-center">
-                    <Camera size={40} color="#1F7FC4" className="mb-2" />
-                    <Text className="text-slate-900 dark:text-white text-sm font-extrabold text-center mb-1">
+                  <View className="items-center p-3.5 sm:p-5 text-center">
+                    <Camera size={36} color="#1F7FC4" className="mb-2" />
+                    <Text className="text-slate-900 dark:text-white text-xs sm:text-sm font-extrabold text-center mb-1">
                       Camera Access Needed
                     </Text>
-                    <Text className="text-slate-500 dark:text-slate-400 text-[11px] text-center mb-3 leading-4">
+                    <Text className="text-slate-500 dark:text-slate-400 text-[10px] sm:text-[11px] text-center mb-2.5 leading-4">
                       Medivo requires camera access to process facial telemetry. Images are processed in-memory and encrypted.
                     </Text>
                     <TouchableOpacity
                       onPress={requestCameraPermission}
-                      className="px-4 py-2 bg-brand-primary rounded-xl active:opacity-90"
+                      className="px-3.5 py-1.5 bg-brand-primary rounded-xl active:opacity-90"
                     >
                       <Text className="text-white font-bold text-xs">Enable Camera</Text>
                     </TouchableOpacity>
@@ -284,11 +284,11 @@ export default function ScanScreen() {
                 {/* 5. Denied State View */}
                 {permissionState === 'denied' && !isScanning && (
                   <View className="items-center p-4 sm:p-5 text-center">
-                    <Lock size={36} color="#F43F5E" className="mb-2" />
-                    <Text className="text-rose-600 dark:text-rose-400 text-sm font-extrabold text-center mb-1">
+                    <Lock size={32} color="#F43F5E" className="mb-2" />
+                    <Text className="text-rose-600 dark:text-rose-400 text-xs sm:text-sm font-extrabold text-center mb-1">
                       Camera Blocked
                     </Text>
-                    <Text className="text-slate-500 dark:text-slate-400 text-[10px] text-center mb-3 leading-4">
+                    <Text className="text-slate-500 dark:text-slate-400 text-[10px] text-center mb-2.5 leading-4">
                       Camera access was blocked. Retry permissions or upload a facial photo below.
                     </Text>
                     <TouchableOpacity
@@ -303,7 +303,7 @@ export default function ScanScreen() {
                 {/* 6. Unsupported Environment State */}
                 {permissionState === 'unsupported' && !isScanning && (
                   <View className="items-center p-4">
-                    <Camera size={40} color="#64748B" className="mb-2" />
+                    <Camera size={36} color="#64748B" className="mb-2" />
                     <Text className="text-slate-900 dark:text-white font-bold text-xs text-center">
                       Camera Unavailable
                     </Text>
@@ -316,47 +316,44 @@ export default function ScanScreen() {
               </View>
             </View>
 
-            <View className="flex-row items-center justify-center gap-2 my-3">
+            <View className="flex-row items-center justify-center gap-2 my-2 sm:my-3">
               <Shield size={13} color="#1F7FC4" />
-              <Text className="text-slate-600 dark:text-slate-400 text-xs">HIPAA Encrypted • On-Device Neural Pipeline</Text>
+              <Text className="text-slate-600 dark:text-slate-400 text-[11px] sm:text-xs">HIPAA Encrypted • On-Device Neural Pipeline</Text>
             </View>
 
-            {/* Fully Accessible Mobile & Desktop Action Buttons */}
-            {permissionState === 'granted' ? (
-              <View className="gap-2.5">
+            {/* Prominent, 100% Visible Mobile & Desktop Action Control Buttons */}
+            <View className="gap-2.5 mt-2">
+              {permissionState === 'granted' ? (
                 <Button
                   title={isScanning ? 'Analyzing Telemetry...' : 'Capture Frame & Process Scan'}
                   onPress={() => handleCaptureAndScan()}
                   loading={isScanning}
                   icon={<Zap size={18} color="#FFFFFF" />}
-                  className="w-full"
+                  className="w-full shadow-sm"
                 />
-                <TouchableOpacity
-                  onPress={triggerFileUpload}
-                  className="w-full py-3 rounded-2xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex-row items-center justify-center active:bg-slate-300 dark:active:bg-slate-700"
-                >
-                  <Upload size={16} color="#1F7FC4" className="mr-2" />
-                  <Text className="text-slate-800 dark:text-slate-200 font-bold text-xs">Upload Photo File 📁</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View className="gap-2.5">
+              ) : (
                 <Button
                   title="Enable Camera & Start Scan"
                   onPress={requestCameraPermission}
                   loading={permissionState === 'requesting'}
                   icon={<Camera size={18} color="#FFFFFF" />}
-                  className="w-full"
+                  className="w-full shadow-sm"
                 />
-                <TouchableOpacity
-                  onPress={triggerFileUpload}
-                  className="w-full py-3 rounded-2xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex-row items-center justify-center active:bg-slate-300 dark:active:bg-slate-700"
-                >
-                  <Upload size={16} color="#1F7FC4" className="mr-2" />
-                  <Text className="text-slate-800 dark:text-slate-200 font-bold text-xs">Upload Photo File 📁</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              )}
+
+              {/* Upload Photo Button - Always Visible & Accessible */}
+              <TouchableOpacity
+                onPress={triggerFileUpload}
+                activeOpacity={0.8}
+                className="w-full py-3 rounded-2xl bg-white dark:bg-[#1F2937] border-2 border-sky-500/40 dark:border-sky-500/50 flex-row items-center justify-center shadow-sm active:bg-sky-50 dark:active:bg-slate-800"
+              >
+                <Upload size={18} color="#1F7FC4" className="mr-2" />
+                <Text className="text-brand-primary dark:text-sky-400 font-extrabold text-xs sm:text-sm">
+                  Upload Photo File 📁
+                </Text>
+              </TouchableOpacity>
+            </View>
+
           </View>
 
           {/* Right Panel: Live Analysis Telemetry Results Dashboard */}
