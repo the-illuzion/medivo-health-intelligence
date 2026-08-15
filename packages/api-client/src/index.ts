@@ -23,6 +23,16 @@ export class MedivoApiClient {
       });
 
       if (!response.ok) {
+        try {
+          const json = await response.json();
+          if (json && (json.error || json.message)) {
+            throw new Error(json.error || json.message);
+          }
+        } catch (e) {
+          if (e instanceof Error && e.message !== `HTTP Error ${response.status}: ${response.statusText}`) {
+            throw e;
+          }
+        }
         throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
       }
 

@@ -59,7 +59,6 @@ function MainAppShell() {
   const { isAuthenticated } = useAuthStore();
 
   const isAuthRoute =
-    pathname === '/' ||
     pathname === '/splash' ||
     pathname === '/login' ||
     pathname === '/register' ||

@@ -20,8 +20,8 @@ export const validateRequest = (schema: any) => {
 };
 
 export const errorHandler = (err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('[Customer BFF Error]:', err);
-  const status = err.status || 500;
+  console.error('[Customer BFF Error]:', err.message || err);
+  const status = err.status || (err.message === 'Invalid email or password' ? 401 : 500);
   const message = err.message || 'Internal Server Error';
   res.status(status).json({
     success: false,
