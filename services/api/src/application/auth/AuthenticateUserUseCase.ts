@@ -7,13 +7,18 @@ export class AuthenticateUserUseCase {
     private jwtService: JwtTokenService
   ) {}
 
-  async execute(email: string, passwordHash: string) {
+  async execute(email: string, passwordInput: string) {
     const user = await this.authRepo.findByEmail(email);
     if (!user) {
       throw new Error('Invalid email or password');
     }
 
-    const token = this.jwtService.generateToken(user.id, user.email);
+    const isValidPassword = user.verifyPassword(passwordInput);
+    if (!isValidPassword) {
+      throw new Error('Invalid email or password');
+    }
+
+    const token = await this.jwtService.generateToken(user.id, 'PATIENT');
     return {
       user: user.toDTO(),
       token,

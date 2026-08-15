@@ -1,17 +1,38 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Sparkles, Camera, MessageSquare, ArrowRight, ShieldCheck, Droplet, Zap, Award, Activity, Heart, Sun } from 'lucide-react-native';
 import { Header, ScoreRing, MetricCard, Button, Badge } from '../../src/components/ui';
 import { AreaChart } from '../../src/components/charts';
 import { useAuthStore } from '../../src/store/useAuthStore';
+import { apiClient } from '@medivo/api-client';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [recentScan, setRecentScan] = useState<any>(null);
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      if (!user?.id) return;
+      setDashboardLoading(true);
+      try {
+        const history = await apiClient.scans.getHistory(user.id);
+        if (history && history.length > 0) {
+          setRecentScan(history[0]);
+        }
+      } catch (err) {
+        console.warn('[Dashboard API Sync Notice]:', err);
+      } finally {
+        setDashboardLoading(false);
+      }
+    }
+    fetchDashboardData();
+  }, [user?.id, token]);
 
   const userName = user?.name || 'Patient';
-  const skinScore = user?.score || 87;
+  const skinScore = recentScan?.overallScore || user?.score || 87;
 
   const skinScoreData = [
     { x: 'Mon', y: skinScore - 5 },
@@ -62,7 +83,11 @@ export default function DashboardScreen() {
                 </View>
               </View>
 
-              <ScoreRing score={skinScore} label="Skin Health Score" sublabel="Optimal" size={140} />
+              {dashboardLoading ? (
+                <ActivityIndicator color="#1F7FC4" size="large" className="p-8" />
+              ) : (
+                <ScoreRing score={skinScore} label="Skin Health Score" sublabel="Optimal" size={140} />
+              )}
             </View>
 
             {/* Quick Action Cards Grid */}

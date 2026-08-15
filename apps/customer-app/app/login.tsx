@@ -13,7 +13,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setErrorMessage('Please enter both your email and password.');
+      setErrorMessage('Please enter both your email address and password.');
       return;
     }
     setErrorMessage('');
@@ -43,20 +43,21 @@ export default function LoginScreen() {
         ) : null}
 
         <View className="gap-4">
-          <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm">
+          <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm focus:border-brand-primary">
             <Mail size={20} color="#1F7FC4" />
             <TextInput
               value={email}
               onChangeText={setEmail}
               placeholder="Email address"
               placeholderTextColor="#94A3B8"
-              className="flex-1 ml-3 text-slate-900 dark:text-white text-base"
+              style={{ outlineStyle: 'none' } as any}
+              className="flex-1 ml-3 text-slate-900 dark:text-white text-base outline-none"
               autoCapitalize="none"
               keyboardType="email-address"
             />
           </View>
 
-          <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm">
+          <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm focus:border-brand-primary">
             <Lock size={20} color="#1F7FC4" />
             <TextInput
               value={password}
@@ -64,7 +65,8 @@ export default function LoginScreen() {
               placeholder="Password"
               placeholderTextColor="#94A3B8"
               secureTextEntry
-              className="flex-1 ml-3 text-slate-900 dark:text-white text-base"
+              style={{ outlineStyle: 'none' } as any}
+              className="flex-1 ml-3 text-slate-900 dark:text-white text-base outline-none"
             />
           </View>
 
@@ -75,7 +77,7 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={handleLogin}
             disabled={isLoading}
-            className="bg-brand-primary py-4 rounded-2xl items-center justify-center mt-2 flex-row shadow-sm"
+            className="bg-brand-primary py-4 rounded-2xl items-center justify-center mt-2 flex-row shadow-sm active:opacity-90"
           >
             {isLoading ? (
               <ActivityIndicator color="#FFFFFF" />
