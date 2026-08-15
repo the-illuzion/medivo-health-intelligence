@@ -116,6 +116,12 @@ export class MedivoApiClient {
     getDetails: async (routineId: string) => {
       return this.request<any>(`/api/v1/routines/${routineId}`);
     },
+    toggleStep: async (routineId: string, stepId: string, completed: boolean) => {
+      return this.request<any>('/api/v1/routines/step', {
+        method: 'POST',
+        body: JSON.stringify({ routineId, stepId, completed }),
+      });
+    },
   };
 
   public coach = {
