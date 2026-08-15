@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Star, Plus, Sparkles, ShoppingCart } from 'lucide-react-native';
-import { Badge, Header } from '../../src/components/ui';
+import { Badge } from '../../src/components/ui';
 
 export default function ProductsScreen() {
   const router = useRouter();
@@ -56,10 +56,13 @@ export default function ProductsScreen() {
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
-      {/* Header */}
-      <Header title="Curated Marketplace" subtitle="AI Skincare Recommendations" cartCount={2} />
-
       <View className="px-6 pt-6 gap-6 max-w-7xl mx-auto w-full">
+        {/* Page Title & Subtitle Banner */}
+        <View className="mb-1">
+          <Text className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-extrabold tracking-tight">Curated Marketplace</Text>
+          <Text className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1 font-medium">AI-analyzed formulations matched to your dermal profile</Text>
+        </View>
+
         {/* AI Personalization Banner */}
         <View className="bg-sky-500/10 dark:bg-sky-500/20 p-5 rounded-3xl border border-sky-500/30 flex-row items-center justify-between shadow-sm">
           <View className="flex-row items-center flex-1 mr-4">

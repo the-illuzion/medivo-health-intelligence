@@ -24,25 +24,26 @@ export default function ProfileScreen() {
 
   const ThemeIcon = getThemeIcon();
 
-  const nameParts = (user?.name || 'Sarah Jenkins').split(' ');
-  const initials = nameParts.map((p) => p[0]).join('').substring(0, 2).toUpperCase();
+  const displayName = user?.name || 'Patient';
+  const nameParts = displayName.split(' ');
+  const initials = nameParts.map((p) => p[0]).join('').substring(0, 2).toUpperCase() || 'PT';
 
-  const handleSignOut = () => {
-    logout();
+  const handleSignOut = async () => {
+    await logout();
     router.replace('/login');
   };
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
-      {/* Profile Header */}
-      <View className="px-6 pt-10 lg:pt-6 pb-8 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] items-center shadow-sm">
-        <View className="w-24 h-24 bg-sky-500/10 dark:bg-sky-500/20 rounded-full items-center justify-center mb-3 border-2 border-brand-primary">
-          <Text className="text-brand-primary text-3xl font-extrabold">{initials}</Text>
+      {/* Profile Info Banner */}
+      <View className="px-6 pt-6 pb-6 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] items-center shadow-sm">
+        <View className="w-20 h-20 bg-sky-500/10 dark:bg-sky-500/20 rounded-full items-center justify-center mb-3 border-2 border-brand-primary">
+          <Text className="text-brand-primary text-2xl font-black">{initials}</Text>
         </View>
-        <Text className="text-slate-900 dark:text-white text-2xl font-extrabold">{user?.name || 'Sarah Jenkins'}</Text>
-        <Text className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{user?.email || 'sarah.j@example.com'}</Text>
+        <Text className="text-slate-900 dark:text-white text-xl sm:text-2xl font-extrabold">{displayName}</Text>
+        <Text className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-0.5">{user?.email || ''}</Text>
         <View className="mt-3 bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/30 flex-row items-center gap-1.5">
-          <Text className="text-brand-primary font-bold text-xs">Patient ID: {user?.id || 'usr-101'}</Text>
+          <Text className="text-brand-primary font-bold text-xs">Patient ID: {user?.id || ''}</Text>
           <Text className="text-slate-400 text-xs">•</Text>
           <Text className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">{user?.skinType || 'Combination'}</Text>
         </View>
@@ -50,7 +51,7 @@ export default function ProfileScreen() {
 
       {/* Theme Toggle Control */}
       <View className="px-6 pt-6 max-w-4xl mx-auto w-full">
-        <Text className="text-slate-900 dark:text-white font-bold text-sm mb-3">Appearance Theme</Text>
+        <Text className="text-slate-900 dark:text-white font-extrabold text-sm mb-3">Appearance Theme</Text>
         <TouchableOpacity
           onPress={handleCycleTheme}
           className="bg-slate-50 dark:bg-[#111827] p-4 rounded-2xl border border-slate-200 dark:border-[#374151] flex-row items-center justify-between shadow-sm"

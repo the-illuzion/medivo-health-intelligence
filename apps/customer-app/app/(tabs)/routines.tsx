@@ -19,20 +19,16 @@ export default function RoutinesScreen() {
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
-      {/* Header */}
-      <View className="px-6 pt-10 lg:pt-6 pb-6 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] shadow-sm">
-        <View className="max-w-7xl mx-auto w-full">
-          <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-slate-900 dark:text-white text-2xl font-extrabold">Personalized Routines</Text>
-            <Badge label="AI Personalization Active" variant="success" />
-          </View>
-          <Text className="text-slate-600 dark:text-slate-400 text-sm">
-            Protocols dynamically optimized for your hydration (93%) and barrier recovery.
-          </Text>
-        </View>
-      </View>
-
       <View className="px-6 pt-6 gap-6 max-w-7xl mx-auto w-full">
+        {/* Page Title & Subtitle Banner */}
+        <View className="flex-row items-center justify-between">
+          <View>
+            <Text className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-extrabold tracking-tight">Personalized Routines</Text>
+            <Text className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1 font-medium">Protocols dynamically optimized for your hydration (93%) and barrier recovery</Text>
+          </View>
+          <Badge label="AI Personalization Active" variant="success" className="hidden sm:flex" />
+        </View>
+
         {/* AI Routine Insights Banner */}
         <View className="bg-sky-500/10 dark:bg-sky-500/20 p-5 rounded-3xl border border-sky-500/30 flex-row items-start shadow-sm">
           <Sparkles size={22} color="#1F7FC4" className="mt-0.5 mr-4 flex-shrink-0" />

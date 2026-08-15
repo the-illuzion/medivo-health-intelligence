@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Camera, Zap, Shield, Heart, Sparkles, Activity, ShieldCheck } from 'lucide-react-native';
+import { Camera, Zap, Shield, Heart, Sparkles, Activity } from 'lucide-react-native';
 import { aiServiceManager, CombinedAIReport, AIProviderType } from '../../src/services/ai';
 import { Badge, Button } from '../../src/components/ui';
 
@@ -24,17 +24,15 @@ export default function ScanScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100, paddingTop: 40 }}>
-      {/* Top Header */}
-      <View className="px-6 mb-8 max-w-7xl mx-auto w-full">
-        <Text className="text-slate-900 dark:text-white text-3xl font-extrabold mb-1.5">AI Health & Skin Telemetry</Text>
-        <Text className="text-slate-600 dark:text-slate-400 text-sm">
-          Real-time neural biomarker analysis powered by Perfect Corp & Shen AI
-        </Text>
-      </View>
+    <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
+      <View className="px-6 pt-6 gap-6 max-w-7xl mx-auto w-full">
+        {/* Page Title & Subtitle Banner */}
+        <View className="mb-1">
+          <Text className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-extrabold tracking-tight">AI Health & Skin Telemetry</Text>
+          <Text className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1 font-medium">Real-time neural biomarker analysis powered by Perfect Corp & Shen AI</Text>
+        </View>
 
-      {/* Main Split Layout Container for Desktop */}
-      <View className="px-6 max-w-7xl mx-auto w-full">
+        {/* Main Split Layout Container for Desktop */}
         <View className="flex-col lg:flex-row gap-8 items-start">
           
           {/* Left Panel: Provider Tabs & Camera Viewfinder */}

@@ -24,24 +24,26 @@ export default function HistoryScreen() {
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* Header */}
-      <View className="px-6 pt-10 lg:pt-6 pb-6 bg-slate-50 dark:bg-[#111827] border-b border-slate-200 dark:border-[#374151] shadow-sm">
-        <View className="max-w-7xl mx-auto w-full flex-row items-center justify-between">
-          <View className="flex-row items-center">
-            <TouchableOpacity onPress={() => router.back()} className="mr-4">
-              <ArrowLeft size={24} color="#1F7FC4" />
+      <View className="p-6 max-w-7xl mx-auto w-full gap-6">
+        {/* Page Title & Subtitle Banner */}
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center flex-1 min-w-0 mr-4">
+            <TouchableOpacity onPress={() => router.back()} className="mr-3.5 p-2 rounded-xl bg-slate-100 dark:bg-[#111827] border border-slate-200 dark:border-[#374151]">
+              <ArrowLeft size={20} color="#1F7FC4" />
             </TouchableOpacity>
-            <View>
-              <Text className="text-slate-900 dark:text-white text-2xl font-extrabold">Scan History & Trends</Text>
-              <Text className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">Longitudinal skin biomarker analysis</Text>
+            <View className="flex-1 min-w-0">
+              <Text className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-extrabold tracking-tight" numberOfLines={1}>
+                Scan History & Trends
+              </Text>
+              <Text className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-0.5 font-medium" numberOfLines={1}>
+                Longitudinal skin biomarker analysis
+              </Text>
             </View>
           </View>
-          <Badge label="+9% Monthly Growth" variant="success" />
+          <Badge label="+9% Monthly Growth" variant="success" className="hidden sm:flex" />
         </View>
-      </View>
 
-      {/* Desktop 2-Column Split View */}
-      <View className="p-6 max-w-7xl mx-auto w-full">
+        {/* Desktop 2-Column Split View */}
         <View className="flex-col lg:flex-row gap-8 items-start">
           
           {/* Left Column (2/3 width on Desktop): Line Chart & Trends */}
