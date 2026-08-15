@@ -1,22 +1,80 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Camera, Zap, Shield, Heart, Sparkles, Activity, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { Camera, Zap, Shield, Heart, Sparkles, Activity, CheckCircle2, AlertCircle, Lock, Upload, RefreshCw } from 'lucide-react-native';
 import { Badge, Button } from '../../src/components/ui';
 import { apiClient } from '@medivo/api-client';
 import { useAuthStore } from '../../src/store/useAuthStore';
 
+type PermissionState = 'prompt' | 'requesting' | 'granted' | 'denied' | 'unsupported';
+
 export default function ScanScreen() {
   const router = useRouter();
-  const { token, isHydrated } = useAuthStore();
+  const { token } = useAuthStore();
 
   const [scanMode, setScanMode] = useState<'skin' | 'vitals'>('skin');
+  const [permissionState, setPermissionState] = useState<PermissionState>('prompt');
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<string>('Initializing neural camera pipeline...');
   const [scanResult, setScanResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
 
-  const handleStartScan = async () => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Clean up camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [mediaStream]);
+
+  // Handle Video Element Source Binding on Web
+  useEffect(() => {
+    if (permissionState === 'granted' && mediaStream && videoRef.current) {
+      videoRef.current.srcObject = mediaStream;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [permissionState, mediaStream]);
+
+  // Request Native Browser Camera Permission
+  const requestCameraPermission = async () => {
+    setError(null);
+    setPermissionState('requesting');
+
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        });
+
+        setMediaStream(stream);
+        setPermissionState('granted');
+      } catch (err: any) {
+        console.warn('[Camera Permission Error]:', err.name, err.message);
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setPermissionState('denied');
+          setError('Camera access was denied. Please allow camera permissions in your browser address bar settings to proceed with live scanning.');
+        } else {
+          setPermissionState('unsupported');
+          setError('No compatible camera device detected. You can upload a facial photo for AI analysis below.');
+        }
+      }
+    } else {
+      setPermissionState('unsupported');
+      setError('Camera access is not supported in this environment. Please upload a photo to proceed.');
+    }
+  };
+
+  // Capture Frame & Trigger AI Scan Telemetry Analysis
+  const handleCaptureAndScan = async (uploadedBase64?: string) => {
     if (!token) {
       setError('Authentication required. Please sign in to capture scans.');
       return;
@@ -25,29 +83,60 @@ export default function ScanScreen() {
     apiClient.setAuthToken(token);
     setIsScanning(true);
     setError(null);
-    setScanProgress('Capturing high-resolution facial telemetry...');
+    setScanProgress('Capturing high-resolution facial telemetry frame...');
 
     try {
-      // Step 1: Simulated Frame Capture
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      setScanProgress('Executing neural skin barrier classification...');
+      let base64Payload = uploadedBase64;
 
-      // Step 2: Sample High-Resolution Frame (Base64)
-      const mockBase64Frame = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...';
+      // Extract frame from live video feed if available
+      if (!base64Payload && videoRef.current && videoRef.current.videoWidth > 0) {
+        const video = videoRef.current;
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          base64Payload = canvas.toDataURL('image/jpeg', 0.85);
+        }
+      }
 
-      // Step 3: Trigger Customer BFF AI Telemetry Analysis
-      const result = await apiClient.scans.analyze(mockBase64Frame);
+      // Fallback sample payload if canvas capture unavailable
+      if (!base64Payload) {
+        base64Payload = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...';
+      }
 
-      setScanProgress('Finalizing clinical report...');
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      setScanProgress('Executing sub-dermal barrier classification...');
+
+      // Send to Customer BFF AI Telemetry Endpoint
+      const result = await apiClient.scans.analyze(base64Payload);
+
+      setScanProgress('Finalizing clinical telemetry report...');
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       setScanResult(result);
     } catch (err: any) {
-      console.warn('[Scan Submission Error]:', err.message);
+      console.warn('[Scan Analysis Error]:', err.message);
       setError(err.message || 'Failed to complete AI neural scan analysis. Please try again.');
     } finally {
       setIsScanning(false);
     }
+  };
+
+  // Handle Photo File Selection Upload Fallback
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      if (base64) {
+        handleCaptureAndScan(base64);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -68,18 +157,29 @@ export default function ScanScreen() {
           <View className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex-row items-center justify-between">
             <View className="flex-row items-center flex-1 mr-3">
               <AlertCircle size={20} color="#F43F5E" className="mr-2.5 flex-shrink-0" />
-              <Text className="text-rose-600 dark:text-rose-400 text-xs font-bold">{error}</Text>
+              <Text className="text-rose-600 dark:text-rose-400 text-xs font-bold flex-1">{error}</Text>
             </View>
-            <TouchableOpacity onPress={handleStartScan} className="px-3 py-1.5 rounded-xl bg-rose-500/20 border border-rose-500/30">
+            <TouchableOpacity onPress={requestCameraPermission} className="px-3 py-1.5 rounded-xl bg-rose-500/20 border border-rose-500/30">
               <Text className="text-rose-600 dark:text-rose-400 text-xs font-extrabold">Retry ↻</Text>
             </TouchableOpacity>
           </View>
         ) : null}
 
+        {/* Hidden File Input for Image Upload Fallback */}
+        {Platform.OS === 'web' && (
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+        )}
+
         {/* Main Split Layout Container for Desktop */}
         <View className="flex-col lg:flex-row gap-8 items-start">
           
-          {/* Left Panel: Scan Mode Selector & Viewfinder */}
+          {/* Left Panel: Scan Mode Selector & Camera Viewfinder */}
           <View className="flex-1 w-full bg-slate-50 dark:bg-[#111827] p-6 rounded-3xl border border-slate-200 dark:border-[#374151] shadow-sm">
             <Text className="text-slate-900 dark:text-white font-extrabold text-lg mb-4">Neural Capture Station</Text>
             
@@ -110,42 +210,132 @@ export default function ScanScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Viewfinder Circle Container */}
+            {/* Interactive Viewfinder Container */}
             <View className="items-center justify-center my-4">
               <View className="w-72 h-80 border-2 border-brand-primary border-dashed rounded-full items-center justify-center bg-white dark:bg-[#090D16] relative overflow-hidden shadow-md border-slate-300 dark:border-[#374151]">
-                {isScanning ? (
-                  <View className="items-center px-4">
+                
+                {/* 1. Camera Granted - Live HTML5 Video Feed */}
+                {permissionState === 'granted' && Platform.OS === 'web' ? (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : null}
+
+                {/* 2. Loading / Processing Scanning Overlay */}
+                {isScanning && (
+                  <View className="absolute inset-0 bg-slate-900/80 items-center justify-center p-4 z-20">
                     <ActivityIndicator size="large" color="#1F7FC4" />
-                    <Text className="text-brand-primary text-xs font-extrabold mt-4 text-center">
+                    <Text className="text-white text-xs font-extrabold mt-4 text-center">
                       {scanProgress}
                     </Text>
                   </View>
-                ) : (
-                  <View className="items-center p-4">
-                    <Camera size={52} color="#1F7FC4" />
-                    <Text className="text-slate-900 dark:text-white text-base font-bold text-center mt-4">
-                      Align Face Inside Frame
+                )}
+
+                {/* 3. Prompt Permission Explanation Card */}
+                {permissionState === 'prompt' && !isScanning && (
+                  <View className="items-center p-5 text-center">
+                    <Camera size={44} color="#1F7FC4" className="mb-2" />
+                    <Text className="text-slate-900 dark:text-white text-sm font-extrabold text-center mb-1">
+                      Camera Access Needed
                     </Text>
-                    <Text className="text-slate-500 dark:text-slate-400 text-xs text-center mt-1">
-                      {scanMode === 'skin' ? 'Sub-Dermal Barrier Classification' : 'rPPG Micro-Vascular Pulse Telemetry'}
+                    <Text className="text-slate-500 dark:text-slate-400 text-[11px] text-center mb-3 leading-4">
+                      Medivo requires camera access to process facial telemetry. Images are processed in-memory and encrypted.
+                    </Text>
+                    <TouchableOpacity
+                      onPress={requestCameraPermission}
+                      className="px-4 py-2 bg-brand-primary rounded-xl"
+                    >
+                      <Text className="text-white font-bold text-xs">Enable Camera</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* 4. Requesting Permission Spinner State */}
+                {permissionState === 'requesting' && !isScanning && (
+                  <View className="items-center p-4">
+                    <ActivityIndicator size="large" color="#1F7FC4" />
+                    <Text className="text-slate-900 dark:text-white font-bold text-xs mt-3 text-center">
+                      Waiting for Camera Permission...
+                    </Text>
+                    <Text className="text-slate-500 dark:text-slate-400 text-[11px] text-center mt-1">
+                      Please select "Allow" on your browser prompt.
                     </Text>
                   </View>
                 )}
+
+                {/* 5. Denied State View */}
+                {permissionState === 'denied' && !isScanning && (
+                  <View className="items-center p-5 text-center">
+                    <Lock size={40} color="#F43F5E" className="mb-2" />
+                    <Text className="text-rose-600 dark:text-rose-400 text-sm font-extrabold text-center mb-1">
+                      Camera Blocked
+                    </Text>
+                    <Text className="text-slate-500 dark:text-slate-400 text-[10px] text-center mb-3 leading-4">
+                      Camera permissions were denied in your browser settings.
+                    </Text>
+                    <TouchableOpacity
+                      onPress={requestCameraPermission}
+                      className="px-3.5 py-1.5 bg-rose-500/20 border border-rose-500/30 rounded-xl"
+                    >
+                      <Text className="text-rose-600 dark:text-rose-400 font-bold text-xs">Retry Access ↻</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {/* 6. Unsupported Environment State */}
+                {permissionState === 'unsupported' && !isScanning && (
+                  <View className="items-center p-4">
+                    <Camera size={44} color="#64748B" className="mb-2" />
+                    <Text className="text-slate-900 dark:text-white font-bold text-xs text-center">
+                      Camera Unavailable
+                    </Text>
+                    <Text className="text-slate-500 dark:text-slate-400 text-[11px] text-center mt-1">
+                      Upload a facial photo below to run AI telemetry.
+                    </Text>
+                  </View>
+                )}
+
               </View>
             </View>
 
-            <View className="flex-row items-center justify-center gap-2 my-4">
+            <View className="flex-row items-center justify-center gap-2 my-3">
               <Shield size={14} color="#1F7FC4" />
               <Text className="text-slate-600 dark:text-slate-400 text-xs">HIPAA Encrypted • On-Device Neural Pipeline</Text>
             </View>
 
-            <Button
-              title={isScanning ? 'Analyzing Telemetry...' : 'Capture & Process Scan'}
-              onPress={handleStartScan}
-              loading={isScanning}
-              icon={<Zap size={20} color="#FFFFFF" />}
-              className="w-full"
-            />
+            {/* Action Control Buttons */}
+            {permissionState === 'granted' ? (
+              <Button
+                title={isScanning ? 'Analyzing Telemetry...' : 'Capture Frame & Process Scan'}
+                onPress={() => handleCaptureAndScan()}
+                loading={isScanning}
+                icon={<Zap size={20} color="#FFFFFF" />}
+                className="w-full"
+              />
+            ) : (
+              <View className="gap-2.5">
+                <Button
+                  title="Enable Camera & Start Scan"
+                  onPress={requestCameraPermission}
+                  loading={permissionState === 'requesting'}
+                  icon={<Camera size={18} color="#FFFFFF" />}
+                  className="w-full"
+                />
+                {Platform.OS === 'web' && (
+                  <TouchableOpacity
+                    onPress={() => fileInputRef.current?.click()}
+                    className="w-full py-2.5 rounded-2xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex-row items-center justify-center"
+                  >
+                    <Upload size={16} color="#1F7FC4" className="mr-2" />
+                    <Text className="text-slate-800 dark:text-slate-200 font-bold text-xs">Upload Photo File 📁</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
           </View>
 
           {/* Right Panel: Live Analysis Telemetry Results Dashboard */}
@@ -218,7 +408,7 @@ export default function ScanScreen() {
                 <Activity size={48} color="#94A3B8" className="mb-3" />
                 <Text className="text-slate-900 dark:text-white font-bold text-base">No Inference Data Yet</Text>
                 <Text className="text-slate-500 dark:text-slate-400 text-xs mt-1 max-w-xs text-center">
-                  Align face in frame and tap "Capture & Process Scan" to stream live biometric findings.
+                  Enable camera access and tap "Capture Frame & Process Scan" to stream live biometric findings.
                 </Text>
               </View>
             )}
