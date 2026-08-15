@@ -9,7 +9,7 @@ import { apiClient } from '@medivo/api-client';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { user, token } = useAuthStore();
+  const { user, token, isHydrated } = useAuthStore();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,20 +18,21 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     async function loadDashboardAPIs() {
-      if (!user?.id) {
+      // Wait for auth storage rehydration before firing APIs
+      if (!isHydrated) return;
+      if (!token) {
         setLoading(false);
         return;
       }
 
-      if (token) {
-        apiClient.setAuthToken(token);
-      }
+      apiClient.setAuthToken(token);
       setLoading(true);
       setError(null);
 
       try {
-        // 1. Fetch live telemetry scan history from Customer BFF / Postgres DB using dynamic user.id
-        const scans = await apiClient.scans.getHistory(user.id);
+        // 1. Fetch live telemetry scan history from Customer BFF / Postgres DB using authenticated session
+        const userId = user?.id;
+        const scans = await apiClient.scans.getHistory(userId);
         setScanHistory(scans || []);
 
         // 2. Fetch personalized skincare routines
@@ -49,7 +50,7 @@ export default function DashboardScreen() {
     }
 
     loadDashboardAPIs();
-  }, [user?.id, token]);
+  }, [isHydrated, token, user?.id]);
 
   const recentScan = scanHistory.length > 0 ? scanHistory[0] : null;
   const skinScore = recentScan?.overallScore || user?.score || 87;
@@ -70,12 +71,14 @@ export default function DashboardScreen() {
   const barrierVal = metrics.texture || 85;
   const collagenVal = metrics.pigmentation || 91;
 
-  // Dynamic Evening Protocol summary
+  // Dynamic Evening Protocol summary & completion step count
   const eveningProtocolSteps = eveningRoutine?.steps
     ? eveningRoutine.steps.map((s: any) => s.title).join(' + ')
     : 'Hydrating Serum + 0.5% Encapsulated Retinol + Niacinamide Repair Cream';
 
-  const eveningStepCount = eveningRoutine?.steps ? `${eveningRoutine.steps.length} Steps` : '3 Steps';
+  const eveningCompletedCount = eveningRoutine?.completedCount ?? (eveningRoutine?.steps?.filter((s: any) => s.completed).length || 2);
+  const eveningTotalCount = eveningRoutine?.totalSteps ?? (eveningRoutine?.steps?.length || 3);
+  const eveningStepBadge = `${eveningCompletedCount}/${eveningTotalCount} Steps`;
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
@@ -90,10 +93,11 @@ export default function DashboardScreen() {
             </View>
             <TouchableOpacity
               onPress={() => {
-                if (!user?.id) return;
+                if (!token) return;
                 setError(null);
                 setLoading(true);
-                apiClient.scans.getHistory(user.id)
+                apiClient.setAuthToken(token);
+                apiClient.scans.getHistory(user?.id)
                   .then((s) => setScanHistory(s))
                   .finally(() => setLoading(false));
               }}
@@ -246,7 +250,7 @@ export default function DashboardScreen() {
                   <Award size={18} color="#D97706" />
                   <Text className="text-slate-900 dark:text-white font-bold text-base ml-2">Evening Protocol</Text>
                 </View>
-                <Badge label={eveningStepCount} variant="warning" />
+                <Badge label={eveningStepBadge} variant="warning" />
               </View>
               <Text className="text-slate-600 dark:text-slate-400 text-xs mb-5 leading-5" numberOfLines={3}>
                 {eveningProtocolSteps}

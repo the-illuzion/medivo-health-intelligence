@@ -4,15 +4,23 @@ import { useRouter } from 'expo-router';
 import { CheckCircle2, Circle, Sun, Moon, Clock, ChevronRight, Sparkles, AlertCircle } from 'lucide-react-native';
 import { Badge } from '../../src/components/ui';
 import { apiClient } from '@medivo/api-client';
+import { useAuthStore } from '../../src/store/useAuthStore';
 
 export default function RoutinesScreen() {
   const router = useRouter();
+  const { token, isHydrated } = useAuthStore();
+
   const [routines, setRoutines] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [togglingStepId, setTogglingStepId] = useState<string | null>(null);
 
   const fetchRoutines = async () => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    apiClient.setAuthToken(token);
     setLoading(true);
     setError(null);
     try {
@@ -27,8 +35,10 @@ export default function RoutinesScreen() {
   };
 
   useEffect(() => {
+    // Wait for auth store rehydration before firing APIs on page reload
+    if (!isHydrated) return;
     fetchRoutines();
-  }, []);
+  }, [isHydrated, token]);
 
   const handleToggleStep = async (routineId: string, stepId: string, currentCompleted?: boolean) => {
     const newCompleted = !currentCompleted;
@@ -47,8 +57,11 @@ export default function RoutinesScreen() {
     );
 
     try {
-      // Save step state to Customer BFF backend
-      await apiClient.routines.toggleStep(routineId, stepId, newCompleted);
+      // Save step state to Customer BFF backend & receive persisted routine object
+      const updatedRoutine = await apiClient.routines.toggleStep(routineId, stepId, newCompleted);
+      if (updatedRoutine) {
+        setRoutines((prev) => prev.map((r) => (r.id === routineId ? updatedRoutine : r)));
+      }
     } catch (err: any) {
       console.warn('[Routine Persistence Error]:', err.message);
       // Rollback on failure
