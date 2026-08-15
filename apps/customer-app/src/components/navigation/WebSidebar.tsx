@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, Image } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
-import { Home, Sparkles, Camera, ShoppingBag, User, ShieldCheck, MessageSquare, Shield } from 'lucide-react-native';
+import { Home, Sparkles, Camera, ShoppingBag, User, ShieldCheck, MessageSquare } from 'lucide-react-native';
 import { useTheme } from '../../theme/ThemeProvider';
 
 export const WebSidebar: React.FC = () => {
@@ -22,14 +22,18 @@ export const WebSidebar: React.FC = () => {
 
   return (
     <View className="w-64 bg-slate-50 dark:bg-[#111827] border-r border-slate-200 dark:border-[#374151] h-full p-6 justify-between flex-shrink-0">
-      {/* Company Brand Logo Header */}
+      {/* Company Favicon Brand Logo Header */}
       <View>
         <TouchableOpacity
           onPress={() => router.push('/(tabs)')}
           className="flex-row items-center mb-8 active:opacity-80"
         >
-          <View className="w-10 h-10 bg-sky-500/10 dark:bg-sky-500/20 rounded-2xl items-center justify-center mr-3 border border-sky-500/30 shadow-sm">
-            <Shield size={22} color="#1F7FC4" />
+          <View className="w-10 h-10 bg-white dark:bg-[#192231] rounded-2xl items-center justify-center mr-3 border border-slate-200 dark:border-slate-700 shadow-sm p-1.5">
+            <Image
+              source={require('../../../assets/favicon.png')}
+              style={{ width: 28, height: 28 }}
+              resizeMode="contain"
+            />
           </View>
           <View>
             <Text className="text-slate-900 dark:text-white font-black text-xl tracking-tight">Medivo</Text>
