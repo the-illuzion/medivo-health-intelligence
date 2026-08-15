@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Sparkles, Camera, MessageSquare, ArrowRight, ShieldCheck, Droplet, Zap, Award, Activity, Heart, Sun, AlertCircle } from 'lucide-react-native';
 import { ScoreRing, MetricCard, Button, Badge } from '../../src/components/ui';
 import { AreaChart } from '../../src/components/charts';
@@ -16,41 +16,55 @@ export default function DashboardScreen() {
   const [scanHistory, setScanHistory] = useState<any[]>([]);
   const [eveningRoutine, setEveningRoutine] = useState<any | null>(null);
 
-  useEffect(() => {
-    async function loadDashboardAPIs() {
-      // Wait for auth storage rehydration before firing APIs
-      if (!isHydrated) return;
-      if (!token) {
-        setLoading(false);
-        return;
-      }
+  // Trigger real-time API sync whenever Dashboard comes into focus or rehydrates
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
 
-      apiClient.setAuthToken(token);
-      setLoading(true);
-      setError(null);
-
-      try {
-        // 1. Fetch live telemetry scan history from Customer BFF / Postgres DB using authenticated session
-        const userId = user?.id;
-        const scans = await apiClient.scans.getHistory(userId);
-        setScanHistory(scans || []);
-
-        // 2. Fetch personalized skincare routines
-        const routines = await apiClient.routines.list();
-        if (routines && routines.length > 0) {
-          const evening = routines.find((r: any) => r.timing === 'Evening') || routines[0];
-          setEveningRoutine(evening);
+      async function loadDashboardAPIs() {
+        if (!isHydrated) return;
+        if (!token) {
+          setLoading(false);
+          return;
         }
-      } catch (err: any) {
-        console.warn('[Dashboard API Sync Error]:', err.message);
-        setError(err.message || 'Unable to sync telemetry data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    }
 
-    loadDashboardAPIs();
-  }, [isHydrated, token, user?.id]);
+        apiClient.setAuthToken(token);
+        setLoading(true);
+        setError(null);
+
+        try {
+          const userId = user?.id;
+          const [scans, routines] = await Promise.all([
+            apiClient.scans.getHistory(userId),
+            apiClient.routines.list(),
+          ]);
+
+          if (isMounted) {
+            setScanHistory(scans || []);
+            if (routines && routines.length > 0) {
+              const evening = routines.find((r: any) => r.timing === 'Evening') || routines[0];
+              setEveningRoutine(evening);
+            }
+          }
+        } catch (err: any) {
+          if (isMounted) {
+            console.warn('[Dashboard API Sync Error]:', err.message);
+            setError(err.message || 'Unable to sync telemetry data. Please try again.');
+          }
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
+        }
+      }
+
+      loadDashboardAPIs();
+
+      return () => {
+        isMounted = false;
+      };
+    }, [isHydrated, token, user?.id])
+  );
 
   const recentScan = scanHistory.length > 0 ? scanHistory[0] : null;
   const skinScore = recentScan?.overallScore || user?.score || 87;
