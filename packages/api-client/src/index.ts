@@ -30,13 +30,13 @@ export class MedivoApiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`Backend health status: ${response.status} ${response.statusText}`);
+        throw new Error(`Connection response: ${response.status}`);
       }
 
       const json = await response.json();
       return { status: json.status || 'HEALTHY', timestamp: new Date().toISOString() };
     } catch (error: any) {
-      const err = new Error(error.name === 'AbortError' ? 'Backend connection timed out' : 'Backend service unavailable');
+      const err = new Error(error.name === 'AbortError' ? 'Connection request timed out' : 'Unable to connect to Medivo Services');
       if (this.onError) this.onError(err);
       throw err;
     }
@@ -67,11 +67,11 @@ export class MedivoApiClient {
             throw err;
           }
         } catch (e) {
-          if (e instanceof Error && e.message !== `HTTP Error ${response.status}: ${response.statusText}`) {
+          if (e instanceof Error && e.message !== `Unable to connect: ${response.status}`) {
             throw e;
           }
         }
-        const httpError = new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+        const httpError = new Error(`Unable to complete request (${response.status})`);
         if (response.status >= 500 && this.onError) this.onError(httpError);
         throw httpError;
       }
@@ -82,7 +82,7 @@ export class MedivoApiClient {
       console.warn(`[MedivoApiClient] Error requesting ${url}:`, error.message);
       // Notify onError handler for network unreachable failures (fetch throw)
       if (error.name === 'TypeError' || error.message.includes('Network') || error.message.includes('fetch')) {
-        if (this.onError) this.onError(new Error('Backend server is unreachable or offline'));
+        if (this.onError) this.onError(new Error('Unable to establish a connection to Medivo Services'));
       }
       throw error;
     }

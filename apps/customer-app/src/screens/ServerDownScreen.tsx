@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
-import { WifiOff, RefreshCw, Shield, AlertTriangle, PhoneCall } from 'lucide-react-native';
+import { WifiOff, RefreshCw, Shield, AlertTriangle } from 'lucide-react-native';
 import { useBackendStatusStore } from '../store/useBackendStatusStore';
 
 export const ServerDownScreen: React.FC = () => {
@@ -21,32 +21,30 @@ export const ServerDownScreen: React.FC = () => {
           />
         </View>
 
-        {/* Pulsing Offline Status Icon */}
+        {/* Pulsing Offline Connection Status Icon */}
         <View className="w-20 h-20 bg-amber-500/10 dark:bg-amber-500/20 rounded-full items-center justify-center mb-6 border border-amber-500/30">
           <WifiOff size={36} color="#D97706" />
         </View>
 
-        {/* Main Error Heading */}
+        {/* User-Friendly Main Heading */}
         <Text className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-extrabold tracking-tight text-center mb-3">
-          Service Temporarily Unavailable
+          Unable to Connect to Medivo
         </Text>
 
-        {/* Detailed Explanation */}
+        {/* Clear, Non-Technical Explanation */}
         <Text className="text-slate-600 dark:text-slate-400 text-sm sm:text-base text-center leading-relaxed mb-6">
-          We are currently unable to establish a secure connection to Medivo Health Intelligence API servers. Our engineering team is actively resolving the system maintenance.
+          We're having trouble connecting to Medivo services right now. Please check your internet connection or try again in a few moments.
         </Text>
 
-        {/* Technical Status Box */}
-        {errorMessage && (
-          <View className="w-full bg-slate-100 dark:bg-[#111827] p-4 rounded-2xl border border-slate-200 dark:border-[#374151] mb-6 flex-row items-center">
-            <AlertTriangle size={18} color="#D97706" className="mr-3 flex-shrink-0" />
-            <Text className="text-slate-700 dark:text-slate-300 text-xs font-mono flex-1 leading-tight">
-              {errorMessage}
-            </Text>
-          </View>
-        )}
+        {/* Friendly Status Information Box */}
+        <View className="w-full bg-slate-100 dark:bg-[#111827] p-4 rounded-2xl border border-slate-200 dark:border-[#374151] mb-6 flex-row items-center">
+          <AlertTriangle size={18} color="#D97706" className="mr-3 flex-shrink-0" />
+          <Text className="text-slate-700 dark:text-slate-300 text-xs font-semibold flex-1 leading-relaxed">
+            {errorMessage || 'Medivo services are temporarily unreachable. We are working to restore the connection.'}
+          </Text>
+        </View>
 
-        {/* Retry Button */}
+        {/* Action Button */}
         <TouchableOpacity
           onPress={() => checkHealth()}
           disabled={isChecking}
@@ -59,7 +57,7 @@ export const ServerDownScreen: React.FC = () => {
             <RefreshCw size={18} color="#FFFFFF" className="mr-2" />
           )}
           <Text className="text-white font-extrabold text-sm sm:text-base">
-            {isChecking ? 'Checking Connection...' : 'Check Connection & Retry ↻'}
+            {isChecking ? 'Reconnecting...' : 'Try Reconnecting ↻'}
           </Text>
         </TouchableOpacity>
 
@@ -67,14 +65,14 @@ export const ServerDownScreen: React.FC = () => {
         <View className="flex-row items-center justify-center gap-2 mb-8 bg-emerald-500/10 dark:bg-emerald-500/20 px-4 py-2 rounded-xl border border-emerald-500/30">
           <Shield size={14} color="#059669" />
           <Text className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
-            Your medical records & scan history remain safely encrypted
+            Your health records and scan history remain safe and secure
           </Text>
         </View>
 
         {/* Urgent Medical Disclaimer */}
         <View className="border-t border-slate-200 dark:border-slate-800 pt-6 w-full items-center">
           <Text className="text-slate-400 text-[11px] text-center leading-normal">
-            For urgent health concerns or medical emergencies, please do not wait for online service restoration. Contact your primary care physician or local emergency services immediately.
+            For immediate medical needs or emergencies, please contact your doctor or local emergency services directly.
           </Text>
         </View>
 

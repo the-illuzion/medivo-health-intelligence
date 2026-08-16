@@ -10,13 +10,13 @@ interface BackendStatusState {
   checkHealth: () => Promise<boolean>;
 }
 
-export const useBackendStatusStore = create<BackendStatusState>((set, get) => {
+export const useBackendStatusStore = create<BackendStatusState>((set) => {
   // Wire up apiClient error listener on store initialization
   apiClient.onError = (err: Error) => {
     console.warn('[Backend Status Listener]: API Request Failure —', err.message);
     set({
       isBackendDown: true,
-      errorMessage: err.message || 'Backend service is unreachable',
+      errorMessage: 'Medivo Health Network is temporarily unreachable.',
       lastChecked: new Date().toISOString(),
     });
   };
@@ -30,7 +30,7 @@ export const useBackendStatusStore = create<BackendStatusState>((set, get) => {
     setBackendDown: (isDown: boolean, message?: string) => {
       set({
         isBackendDown: isDown,
-        errorMessage: isDown ? message || 'Backend service is unreachable' : null,
+        errorMessage: isDown ? message || 'Medivo Health Network is temporarily unreachable.' : null,
         lastChecked: new Date().toISOString(),
       });
     },
@@ -50,7 +50,7 @@ export const useBackendStatusStore = create<BackendStatusState>((set, get) => {
         console.warn('[Health Check Failed]:', err.message);
         set({
           isBackendDown: true,
-          errorMessage: err.message || 'Unable to establish connection to Medivo API servers.',
+          errorMessage: 'Unable to connect to Medivo Services. Please check your connection or try again in a few moments.',
           isChecking: false,
           lastChecked: new Date().toISOString(),
         });
