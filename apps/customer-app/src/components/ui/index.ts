@@ -4,3 +4,4 @@ export * from './Button';
 export * from './Badge';
 export * from './Header';
 export * from './CommandPalette';
+export * from './CompanyLogo';

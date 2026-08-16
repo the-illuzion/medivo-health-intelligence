@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { WifiOff, RefreshCw, Shield, AlertTriangle } from 'lucide-react-native';
 import { useBackendStatusStore } from '../store/useBackendStatusStore';
+import { CompanyLogo } from '../components/ui/CompanyLogo';
 
 export const ServerDownScreen: React.FC = () => {
   const { isBackendDown, isChecking, errorMessage, checkHealth } = useBackendStatusStore();
@@ -12,13 +13,9 @@ export const ServerDownScreen: React.FC = () => {
     <View className="absolute inset-0 z-50 bg-white dark:bg-[#090D16] flex-1 items-center justify-center p-6 min-h-screen">
       <View className="max-w-md w-full items-center text-center">
         
-        {/* Brand Favicon / Logo Badge */}
-        <View className="w-16 h-16 bg-sky-500/10 dark:bg-sky-500/20 rounded-3xl items-center justify-center mb-6 border border-sky-500/30 p-2.5 shadow-sm">
-          <Image
-            source={require('../../assets/favicon.png')}
-            style={{ width: 40, height: 40 }}
-            resizeMode="contain"
-          />
+        {/* Brand SVG Logo Badge (No Background) */}
+        <View className="mb-6">
+          <CompanyLogo width={48} height={48} />
         </View>
 
         {/* Pulsing Offline Connection Status Icon */}
