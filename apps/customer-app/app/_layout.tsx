@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
 import { WebSidebar } from '../src/components/navigation/WebSidebar';
 import { Header } from '../src/components/ui/Header';
-import { ApiStatusBanner } from '../src/components/ui/ApiStatusBanner';
+import { ServerDownScreen } from '../src/screens/ServerDownScreen';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { GestureRoot } from '../src/components/navigation/GestureRoot';
 
@@ -76,9 +76,9 @@ function MainAppShell() {
 
   return (
     <View className="flex-1 flex-row bg-white dark:bg-[#090D16]" style={{ flex: 1, height: '100%' }}>
+      <ServerDownScreen />
       {showSidebar && <WebSidebar />}
       <View className="flex-1 h-full" style={{ flex: 1, height: '100%' }}>
-        <ApiStatusBanner />
         {showHeader && <Header />}
         <StackNavigator />
       </View>
