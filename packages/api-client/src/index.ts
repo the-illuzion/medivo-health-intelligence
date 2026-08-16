@@ -8,6 +8,7 @@ export interface ApiClientConfig {
 export class MedivoApiClient {
   private baseUrl: string;
   private authToken: string | null = null;
+  public onError?: (error: Error) => void;
 
   constructor(config?: ApiClientConfig) {
     this.baseUrl = config?.baseUrl || 'http://localhost:4000';
@@ -16,6 +17,29 @@ export class MedivoApiClient {
 
   public setAuthToken(token: string | null) {
     this.authToken = token;
+  }
+
+  public async healthCheck(): Promise<{ status: string; timestamp: string }> {
+    const url = `${this.baseUrl}/health`;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const response = await fetch(url, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Backend health status: ${response.status} ${response.statusText}`);
+      }
+
+      const json = await response.json();
+      return { status: json.status || 'HEALTHY', timestamp: new Date().toISOString() };
+    } catch (error: any) {
+      const err = new Error(error.name === 'AbortError' ? 'Backend connection timed out' : 'Backend service unavailable');
+      if (this.onError) this.onError(err);
+      throw err;
+    }
   }
 
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -38,20 +62,28 @@ export class MedivoApiClient {
         try {
           const json = await response.json();
           if (json && (json.error || json.message)) {
-            throw new Error(json.error || json.message);
+            const err = new Error(json.error || json.message);
+            if (response.status >= 500 && this.onError) this.onError(err);
+            throw err;
           }
         } catch (e) {
           if (e instanceof Error && e.message !== `HTTP Error ${response.status}: ${response.statusText}`) {
             throw e;
           }
         }
-        throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+        const httpError = new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+        if (response.status >= 500 && this.onError) this.onError(httpError);
+        throw httpError;
       }
 
       const json = await response.json();
       return json.data as T;
     } catch (error: any) {
       console.warn(`[MedivoApiClient] Error requesting ${url}:`, error.message);
+      // Notify onError handler for network unreachable failures (fetch throw)
+      if (error.name === 'TypeError' || error.message.includes('Network') || error.message.includes('fetch')) {
+        if (this.onError) this.onError(new Error('Backend server is unreachable or offline'));
+      }
       throw error;
     }
   }
