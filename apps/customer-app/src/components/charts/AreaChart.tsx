@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Path, Defs, LinearGradient, Stop, Circle, Line, Text as SvgText } from 'react-native-svg';
+import { useTheme } from '../../theme/ThemeProvider';
 
 export interface ChartDataPoint {
   x: string | number;
@@ -18,14 +19,16 @@ export interface AreaChartProps {
 export const AreaChart: React.FC<AreaChartProps> = ({
   data,
   title,
-  height = 200,
-  color = '#10B981',
+  height = 220,
+  color = '#1F7FC4',
 }) => {
+  const { isDark } = useTheme();
+
   const paddingLeft = 35;
-  const paddingBottom = 25;
-  const paddingTop = 15;
-  const paddingRight = 15;
-  const width = 320;
+  const paddingBottom = 30;
+  const paddingTop = 20;
+  const paddingRight = 20;
+  const width = 340;
 
   const yValues = data.map((d) => d.y);
   const minY = Math.min(...yValues) - 5;
@@ -46,39 +49,46 @@ export const AreaChart: React.FC<AreaChartProps> = ({
 
   const areaD = `${pathD} L ${points[points.length - 1]?.x || width} ${height - paddingBottom} L ${paddingLeft} ${height - paddingBottom} Z`;
 
+  // Theme-aware colors
+  const gridStroke = isDark ? '#374151' : '#CBD5E1';
+  const dashedGridStroke = isDark ? '#1F2937' : '#E2E8F0';
+  const labelColor = isDark ? '#94A3B8' : '#334155';
+  const circleStroke = isDark ? '#111827' : '#FFFFFF';
+
   return (
-    <View className="bg-surface-elevated rounded-2xl p-4 my-2 border border-[#2A4A43]">
+    <View className="bg-slate-50 dark:bg-[#111827] rounded-3xl p-5 border border-slate-200 dark:border-[#374151] shadow-sm my-2">
       {title && (
-        <Text className="text-white font-semibold text-base mb-2">{title}</Text>
+        <Text className="text-slate-900 dark:text-white font-extrabold text-base mb-3">{title}</Text>
       )}
       <View className="items-center">
         <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
           <Defs>
             <LinearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0%" stopColor={color} stopOpacity="0.4" />
+              <Stop offset="0%" stopColor={color} stopOpacity={isDark ? 0.35 : 0.25} />
               <Stop offset="100%" stopColor={color} stopOpacity="0.0" />
             </LinearGradient>
           </Defs>
 
           {/* Grid lines */}
-          <Line x1={paddingLeft} y1={height - paddingBottom} x2={width - paddingRight} y2={height - paddingBottom} stroke="#2A4A43" strokeWidth="1" />
-          <Line x1={paddingLeft} y1={paddingTop + chartHeight / 2} x2={width - paddingRight} y2={paddingTop + chartHeight / 2} stroke="#1C3833" strokeDasharray="4 4" strokeWidth="1" />
+          <Line x1={paddingLeft} y1={height - paddingBottom} x2={width - paddingRight} y2={height - paddingBottom} stroke={gridStroke} strokeWidth="1.5" />
+          <Line x1={paddingLeft} y1={paddingTop + chartHeight / 2} x2={width - paddingRight} y2={paddingTop + chartHeight / 2} stroke={dashedGridStroke} strokeDasharray="4 4" strokeWidth="1" />
 
           {/* Area fill */}
           <Path d={areaD} fill="url(#areaGradient)" />
 
           {/* Stroke path */}
-          <Path d={pathD} fill="none" stroke={color} strokeWidth="3" />
+          <Path d={pathD} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
-          {/* Data Points */}
+          {/* Data Points & Value Tooltips */}
           {points.map((pt, i) => (
             <React.Fragment key={i}>
-              <Circle cx={pt.x} cy={pt.y} r="4" fill={color} stroke="#0D1F1C" strokeWidth="2" />
+              <Circle cx={pt.x} cy={pt.y} r="5" fill={color} stroke={circleStroke} strokeWidth="2.5" />
               <SvgText
                 x={pt.x}
-                y={height - 5}
-                fill="#64748B"
-                fontSize="10"
+                y={height - 8}
+                fill={labelColor}
+                fontSize="11"
+                fontWeight="bold"
                 textAnchor="middle"
               >
                 {String(pt.raw.x)}

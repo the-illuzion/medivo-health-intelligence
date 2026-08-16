@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Sparkles, Camera, MessageSquare, ArrowRight, ShieldCheck, Droplet, Zap, Award, Activity, Heart, Sun, AlertCircle } from 'lucide-react-native';
+import { Sparkles, Camera, MessageSquare, ArrowRight, ShieldCheck, Droplet, Zap, Award, Activity, Heart, Sun, Moon, AlertCircle } from 'lucide-react-native';
 import { ScoreRing, MetricCard, Button, Badge } from '../../src/components/ui';
 import { AreaChart } from '../../src/components/charts';
 import { useAuthStore } from '../../src/store/useAuthStore';
@@ -14,6 +14,7 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scanHistory, setScanHistory] = useState<any[]>([]);
+  const [morningRoutine, setMorningRoutine] = useState<any | null>(null);
   const [eveningRoutine, setEveningRoutine] = useState<any | null>(null);
 
   // Core Dashboard API Fetcher: Executes 4 parallel Customer BFF endpoints
@@ -40,7 +41,10 @@ export default function DashboardScreen() {
       }
 
       if (routinesRes.status === 'fulfilled' && routinesRes.value && routinesRes.value.length > 0) {
-        const evening = routinesRes.value.find((r: any) => r.timing === 'Evening') || routinesRes.value[0];
+        const routinesList = routinesRes.value;
+        const morning = routinesList.find((r: any) => r.timing === 'Morning') || routinesList[0];
+        const evening = routinesList.find((r: any) => r.timing === 'Evening') || routinesList[1] || routinesList[0];
+        setMorningRoutine(morning);
         setEveningRoutine(evening);
       }
     } catch (err: any) {
@@ -91,7 +95,16 @@ export default function DashboardScreen() {
   const poreClarityVal = metrics.poreClarity !== undefined ? `${metrics.poreClarity}%` : '89%';
   const photoprotectionVal = metrics.photoprotection || 'SPF 50 Active';
 
-  // Dynamic Evening Protocol summary & completion step count
+  // Dynamic Morning Protocol summary & step counts
+  const morningProtocolSteps = morningRoutine?.steps
+    ? morningRoutine.steps.map((s: any) => s.title).join(' + ')
+    : 'Gentle Hydrating Cleanser + Vitamin C Antioxidant + Broad Spectrum SPF 50+';
+
+  const morningCompletedCount = morningRoutine?.completedCount ?? (morningRoutine?.steps?.filter((s: any) => s.completed).length || 3);
+  const morningTotalCount = morningRoutine?.totalSteps ?? (morningRoutine?.steps?.length || 3);
+  const morningStepBadge = `${morningCompletedCount}/${morningTotalCount} Steps`;
+
+  // Dynamic Evening Protocol summary & step counts
   const eveningProtocolSteps = eveningRoutine?.steps
     ? eveningRoutine.steps.map((s: any) => s.title).join(' + ')
     : 'Hydrating Serum + 0.5% Encapsulated Retinol + Niacinamide Repair Cream';
@@ -102,7 +115,7 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
-      <View className="px-6 pt-6 max-w-7xl mx-auto w-full">
+      <View className="px-4 sm:px-6 pt-6 max-w-7xl mx-auto w-full">
         
         {/* Error Banner State */}
         {error ? (
@@ -122,16 +135,16 @@ export default function DashboardScreen() {
           </View>
         ) : null}
 
-        <View className="flex-col lg:flex-row gap-8 items-start">
+        <View className="flex-col lg:flex-row gap-6 sm:gap-8 items-start">
 
           {/* Left Column (2/3 Width on Desktop) */}
           <View className="flex-1 w-full gap-6">
 
             {/* Score Ring & Telemetry Hero Card */}
-            <View className="bg-slate-50 dark:bg-[#111827] rounded-3xl p-6 border border-slate-200 dark:border-[#374151] flex-col md:flex-row items-center justify-between shadow-sm">
+            <View className="bg-slate-50 dark:bg-[#111827] rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-[#374151] flex-col md:flex-row items-center justify-between shadow-sm">
               <View className="items-center md:items-start mb-4 md:mb-0 flex-1 pr-0 md:pr-4">
                 <Badge label="Optimal Skin Barrier" icon={<ShieldCheck size={12} color="#1F7FC4" />} />
-                <Text className="text-slate-900 dark:text-white text-3xl font-extrabold tracking-tight mt-3 text-center md:text-left">
+                <Text className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-extrabold tracking-tight mt-3 text-center md:text-left">
                   Overall Skin Index
                 </Text>
                 <Text className="text-slate-600 dark:text-slate-400 text-xs mt-1 text-center md:text-left">
@@ -257,20 +270,46 @@ export default function DashboardScreen() {
           {/* Right Column / Desktop Sidebar Panel */}
           <View className="w-full lg:w-80 gap-6">
 
-            {/* Active Regimen Protocol Card (Dynamically Linked to Routine API) */}
-            <View className="bg-slate-50 dark:bg-[#111827] rounded-3xl p-6 border border-slate-200 dark:border-[#374151] shadow-sm">
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-row items-center">
-                  <Award size={18} color="#D97706" />
-                  <Text className="text-slate-900 dark:text-white font-bold text-base ml-2">Evening Protocol</Text>
+            {/* Active Regimen Protocols Card (Displays Morning & Evening Protocols) */}
+            <View className="bg-slate-50 dark:bg-[#111827] rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-[#374151] shadow-sm">
+              <Text className="text-slate-900 dark:text-white font-extrabold text-base mb-4">Daily Regimen Protocols</Text>
+
+              {/* 1. Morning Care Protocol */}
+              <View className="bg-white dark:bg-[#1F2937] p-4 rounded-2xl border border-slate-200 dark:border-[#374151] mb-3.5 shadow-sm">
+                <View className="flex-row items-center justify-between mb-2">
+                  <View className="flex-row items-center flex-1 min-w-0 pr-2">
+                    <Sun size={16} color="#D97706" className="mr-2 flex-shrink-0" />
+                    <Text className="text-slate-900 dark:text-white font-bold text-sm" numberOfLines={1}>Morning Protocol</Text>
+                  </View>
+                  <Badge
+                    label={morningStepBadge}
+                    variant={morningCompletedCount === morningTotalCount ? 'success' : 'warning'}
+                  />
                 </View>
-                <Badge label={eveningStepBadge} variant="warning" />
+                <Text className="text-slate-600 dark:text-slate-400 text-xs leading-5" numberOfLines={2}>
+                  {morningProtocolSteps}
+                </Text>
               </View>
-              <Text className="text-slate-600 dark:text-slate-400 text-xs mb-5 leading-5" numberOfLines={3}>
-                {eveningProtocolSteps}
-              </Text>
+
+              {/* 2. Evening Repair Protocol */}
+              <View className="bg-white dark:bg-[#1F2937] p-4 rounded-2xl border border-slate-200 dark:border-[#374151] mb-5 shadow-sm">
+                <View className="flex-row items-center justify-between mb-2">
+                  <View className="flex-row items-center flex-1 min-w-0 pr-2">
+                    <Moon size={16} color="#4F46E5" className="mr-2 flex-shrink-0" />
+                    <Text className="text-slate-900 dark:text-white font-bold text-sm" numberOfLines={1}>Evening Protocol</Text>
+                  </View>
+                  <Badge
+                    label={eveningStepBadge}
+                    variant={eveningCompletedCount === eveningTotalCount ? 'success' : 'warning'}
+                  />
+                </View>
+                <Text className="text-slate-600 dark:text-slate-400 text-xs leading-5" numberOfLines={2}>
+                  {eveningProtocolSteps}
+                </Text>
+              </View>
+
               <Button
-                title="View Full Routine"
+                title="View Full Routines"
                 onPress={() => router.push('/(tabs)/routines')}
                 variant="secondary"
                 size="sm"
@@ -280,7 +319,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* Real-time Biomarker Summary Card (Dynamically Populated from Backend Scan API) */}
-            <View className="bg-slate-50 dark:bg-[#111827] rounded-3xl p-6 border border-slate-200 dark:border-[#374151] shadow-sm">
+            <View className="bg-slate-50 dark:bg-[#111827] rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-[#374151] shadow-sm">
               <Text className="text-slate-900 dark:text-white font-bold text-base mb-4">Biomarker Summary</Text>
               
               <View className="gap-4">
@@ -307,7 +346,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* AI Telemedicine Banner */}
-            <View className="bg-sky-500/10 dark:bg-sky-500/20 rounded-3xl p-6 border border-sky-500/30 shadow-sm">
+            <View className="bg-sky-500/10 dark:bg-sky-500/20 rounded-3xl p-5 sm:p-6 border border-sky-500/30 shadow-sm">
               <Sparkles size={24} color="#1F7FC4" className="mb-2" />
               <Text className="text-slate-900 dark:text-white font-extrabold text-base mb-1">Dermatologist Review</Text>
               <Text className="text-slate-600 dark:text-slate-400 text-xs mb-4 leading-5">
