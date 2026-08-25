@@ -1,74 +1,62 @@
 # ============================================================================
-# Medivo Customer BFF REST API Dockerfile (Node.js 20 / Express)
-# Optimized for Sub-10s Incremental Docker Builds with BuildKit Caching
+# Medivo Customer BFF REST API (High-Performance Turbo-Pruned Docker Build)
 # Target Architecture: OCI Ubuntu / Coolify / Traefik
 # ============================================================================
 
-FROM node:20-alpine AS base
-RUN apk add --no-cache libc6-compat wget
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+# Stage 1: Prune monorepo to isolate @medivo/customer-bff and dependencies
+FROM node:20-alpine AS pruner
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+RUN npm install -g turbo@^2
+COPY . .
+RUN turbo prune @medivo/customer-bff --docker
 
-FROM base AS builder
+# Stage 2: Install dependencies and build
+FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat
+RUN npm install -g pnpm@9.0.0
 WORKDIR /app
 
-# Step 1: Copy workspace manifests first for maximal Docker layer caching
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json* ./
+# Copy pruned package.json manifests (Layer cached!)
+COPY --from=pruner /app/out/json/ .
+COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
-COPY packages/api-client/package.json ./packages/api-client/
-COPY packages/design-system/package.json ./packages/design-system/
-COPY packages/theme/package.json ./packages/theme/
-COPY packages/types/package.json ./packages/types/
-COPY packages/ui/package.json ./packages/ui/
-COPY packages/utils/package.json ./packages/utils/
-
-COPY apps/marketing-web/package.json ./apps/marketing-web/
-COPY apps/customer-app/package.json ./apps/customer-app/
-COPY apps/doctor-portal/package.json ./apps/doctor-portal/
-COPY apps/admin-panel/package.json ./apps/admin-panel/
-COPY apps/customer-bff/package.json ./apps/customer-bff/
-
-COPY services/ai/package.json ./services/ai/
-COPY services/api/package.json ./services/api/
-COPY services/appointments/package.json ./services/appointments/
-COPY services/auth/package.json ./services/auth/
-COPY services/commerce/package.json ./services/commerce/
-COPY services/notifications/package.json ./services/notifications/
-
-# Step 2: Install dependencies using BuildKit package cache (Cached across builds)
+# Install dependencies with persistent BuildKit store cache
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --no-frozen-lockfile
 
-# Step 3: Copy source code (Only code changes invalidate from here down)
-COPY . .
+# Copy full pruned source code
+COPY --from=pruner /app/out/full/ .
+COPY turbo.json turbo.json
 
-# Step 4: Build TypeScript dependencies and customer-bff
+# Build required TypeScript packages
 RUN pnpm --filter @medivo/types run build || true
 RUN pnpm --filter @medivo/service-api run build
 RUN pnpm --filter @medivo/customer-bff run build
 
-# ============================================================================
-# Production Runner Stage (Minimal Runtime Image)
-# ============================================================================
+# Stage 3: Minimal Production Runtime
 FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=4000
 
+RUN apk add --no-cache wget
+
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 appuser
 
 COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=appuser:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=appuser:nodejs /app/packages ./packages
-COPY --from=builder --chown=appuser:nodejs /app/services ./services
+COPY --from=builder --chown=appuser:nodejs /app/services/api ./services/api
 COPY --from=builder --chown=appuser:nodejs /app/apps/customer-bff ./apps/customer-bff
 
 USER appuser
 
 EXPOSE 4000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://127.0.0.1:4000/health || exit 1
 
 CMD ["node", "apps/customer-bff/dist/server.js"]
