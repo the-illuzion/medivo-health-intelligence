@@ -158,6 +158,9 @@ services:
       NODE_ENV: production
       PORT: 3000
       INTERNAL_API_URL: http://customer-bff:4000
+      INTERNAL_APP_URL: http://customer-app:8081
+      INTERNAL_DOCTOR_URL: http://doctor-portal:3001
+      INTERNAL_ADMIN_URL: http://admin-panel:3002
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
@@ -181,7 +184,38 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 6. Doctor Portal (Next.js 14 App Router)
+  # 6. Customer Web App (React Native Web / Expo 51)
+  # Container Port: 8081
+  # ============================================================================
+  customer-app:
+    build:
+      context: .
+      dockerfile: apps/customer-app/Dockerfile
+    container_name: medivo-customer-app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8081/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "coolify.managed=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.medivo-app.rule=Host(`${APP_DOMAIN:-app.example.com}`) || ((Host(`wftkumlt9lhq2hfvamqqavzu.80.225.215.96.sslip.io`) || Host(`${WEB_DOMAIN:-wftkumlt9lhq2hfvamqqavzu.80.225.215.96.sslip.io}`)) && PathPrefix(`/app`))"
+      - "traefik.http.routers.medivo-app.priority=85"
+      - "traefik.http.services.medivo-app.loadbalancer.server.port=8081"
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 256M
+    networks:
+      - medivo-network
+
+  # ============================================================================
+  # 7. Doctor Portal (Next.js 14 App Router)
   # Container Port: 3001
   # ============================================================================
   doctor-portal:
@@ -217,7 +251,7 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 7. Platform Admin Console (Next.js 14 App Router)
+  # 8. Platform Admin Console (Next.js 14 App Router)
   # Container Port: 3002
   # ============================================================================
   admin-panel:
@@ -253,7 +287,7 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 8. AI Vision Engine Microservice (Internal Microservice)
+  # 9. AI Vision Engine Microservice (Internal Microservice)
   # Container Port: 8080
   # ============================================================================
   service-ai:
@@ -287,7 +321,7 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 9. Auth & Session Microservice (Internal Microservice)
+  # 10. Auth & Session Microservice (Internal Microservice)
   # Container Port: 4001
   # ============================================================================
   service-auth:
@@ -317,7 +351,7 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 10. Appointments & Telehealth Microservice (Internal Microservice)
+  # 11. Appointments & Telehealth Microservice (Internal Microservice)
   # Container Port: 4002
   # ============================================================================
   service-appointments:
@@ -349,7 +383,7 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 11. Skincare Commerce Microservice (Internal Microservice)
+  # 12. Skincare Commerce Microservice (Internal Microservice)
   # Container Port: 4003
   # ============================================================================
   service-commerce:
@@ -381,7 +415,7 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 12. Notifications & Dispatcher Microservice (Internal Microservice)
+  # 13. Notifications & Dispatcher Microservice (Internal Microservice)
   # Container Port: 4004
   # ============================================================================
   service-notifications:
@@ -411,7 +445,7 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 13. Mailpit Mock SMTP Server (Optional / Staging Email Capture)
+  # 14. Mailpit Mock SMTP Server (Optional / Staging Email Capture)
   # Container Port: 1025
   # ============================================================================
   mailpit:

@@ -2,7 +2,7 @@ import React from 'react';
 import { Activity, ShieldCheck } from 'lucide-react';
 
 export function Footer() {
-  const customerPortalUrl = process.env.NEXT_PUBLIC_APP_URL || '#simulator';
+  const customerPortalUrl = process.env.NEXT_PUBLIC_APP_URL || '/app';
 
   return (
     <footer className="bg-slate-100 dark:bg-[#070a0f] border-t border-slate-200 dark:border-[#374151] py-16 text-slate-600 dark:text-slate-400 text-sm transition-colors">

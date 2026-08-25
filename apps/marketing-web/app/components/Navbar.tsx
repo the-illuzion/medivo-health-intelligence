@@ -6,7 +6,7 @@ import { Activity, Smartphone, ArrowRight } from 'lucide-react';
 import { ThemeToggle } from '@medivo/theme';
 
 export function Navbar() {
-  const webAppUrl = process.env.NEXT_PUBLIC_APP_URL || '#simulator';
+  const webAppUrl = process.env.NEXT_PUBLIC_APP_URL || '/app';
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-xl border-b border-slate-200 dark:border-[#374151] transition-colors">
