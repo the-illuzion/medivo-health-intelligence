@@ -1,0 +1,155 @@
+# ============================================================================
+# Medivo Health Intelligence Platform — Independent Frontends Stack
+# Deployable as an independent Coolify Resource / Docker Compose stack
+# Includes: Marketing Web, Customer App (React Native Web), Doctor Portal, Admin Panel
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # 1. Marketing Website (Next.js 14 App Router)
+  # Container Port: 3000
+  # ============================================================================
+  marketing-web:
+    build:
+      context: .
+      dockerfile: apps/marketing-web/Dockerfile
+    container_name: medivo-marketing-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      INTERNAL_API_URL: http://customer-bff:4000
+      INTERNAL_APP_URL: http://customer-app:8081
+      INTERNAL_DOCTOR_URL: http://doctor-portal:3001
+      INTERNAL_ADMIN_URL: http://admin-panel:3002
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "coolify.managed=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.medivo-web.rule=Host(`${WEB_DOMAIN:-example.com}`) || Host(`${WEB_WWW_DOMAIN:-www.example.com}`)"
+      - "traefik.http.routers.medivo-web.priority=10"
+      - "traefik.http.services.medivo-web.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+        reservations:
+          memory: 512M
+    networks:
+      - medivo-network
+
+  # ============================================================================
+  # 2. Customer Web App (React Native Web / Expo 51)
+  # Container Port: 8081
+  # ============================================================================
+  customer-app:
+    build:
+      context: .
+      dockerfile: apps/customer-app/Dockerfile
+    container_name: medivo-customer-app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8081/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "coolify.managed=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.medivo-app.rule=Host(`${APP_DOMAIN:-app.example.com}`)"
+      - "traefik.http.routers.medivo-app.priority=85"
+      - "traefik.http.services.medivo-app.loadbalancer.server.port=8081"
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 256M
+    networks:
+      - medivo-network
+
+  # ============================================================================
+  # 3. Doctor Portal (Next.js 14 App Router)
+  # Container Port: 3001
+  # ============================================================================
+  doctor-portal:
+    build:
+      context: .
+      dockerfile: apps/doctor-portal/Dockerfile
+    container_name: medivo-doctor-portal
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      INTERNAL_API_URL: http://customer-bff:4000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3001/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "coolify.managed=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.medivo-doctor.rule=Host(`${DOCTOR_DOMAIN:-doctor.example.com}`)"
+      - "traefik.http.routers.medivo-doctor.priority=80"
+      - "traefik.http.services.medivo-doctor.loadbalancer.server.port=3001"
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+        reservations:
+          memory: 512M
+    networks:
+      - medivo-network
+
+  # ============================================================================
+  # 4. Platform Admin Console (Next.js 14 App Router)
+  # Container Port: 3002
+  # ============================================================================
+  admin-panel:
+    build:
+      context: .
+      dockerfile: apps/admin-panel/Dockerfile
+    container_name: medivo-admin-panel
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      INTERNAL_API_URL: http://customer-bff:4000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3002/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "coolify.managed=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.medivo-admin.rule=Host(`${ADMIN_DOMAIN:-admin.example.com}`)"
+      - "traefik.http.routers.medivo-admin.priority=80"
+      - "traefik.http.services.medivo-admin.loadbalancer.server.port=3002"
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+        reservations:
+          memory: 512M
+    networks:
+      - medivo-network
+
+networks:
+  medivo-network:
+    name: medivo-network
+    external: true

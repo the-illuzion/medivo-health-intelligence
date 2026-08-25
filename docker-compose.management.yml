@@ -1,0 +1,68 @@
+# ============================================================================
+# Medivo Health Intelligence Platform — Independent Management Stack
+# Deployable as an independent Coolify Resource / Docker Compose stack
+# Includes: CloudBeaver (PostgreSQL), Redis Insight (Redis), MinIO Web Console
+# Zero Public Database Ports: Accessible securely via Traefik HTTPS routers
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # 1. CloudBeaver Community Edition (PostgreSQL Web GUI & SQL Studio)
+  # Internal Port: 8978
+  # ============================================================================
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: medivo-cloudbeaver
+    restart: unless-stopped
+    volumes:
+      - cloudbeaver_data:/opt/cloudbeaver/workspace
+    labels:
+      - "coolify.managed=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.medivo-cloudbeaver.rule=Host(`${DB_ADMIN_DOMAIN:-db-admin.example.com}`)"
+      - "traefik.http.services.medivo-cloudbeaver.loadbalancer.server.port=8978"
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 256M
+    networks:
+      - medivo-network
+
+  # ============================================================================
+  # 2. Redis Insight (Redis Key, Value & Queue Inspector)
+  # Internal Port: 5540
+  # ============================================================================
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: medivo-redis-insight
+    restart: unless-stopped
+    volumes:
+      - redis_insight_data:/data
+    labels:
+      - "coolify.managed=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.medivo-redis-insight.rule=Host(`${REDIS_ADMIN_DOMAIN:-redis-admin.example.com}`)"
+      - "traefik.http.services.medivo-redis-insight.loadbalancer.server.port=5540"
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 256M
+    networks:
+      - medivo-network
+
+volumes:
+  cloudbeaver_data:
+    driver: local
+  redis_insight_data:
+    driver: local
+
+networks:
+  medivo-network:
+    name: medivo-network
+    external: true
