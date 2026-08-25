@@ -1,7 +1,7 @@
 # ============================================================================
 # Medivo Health Intelligence Platform — Independent Management Stack
 # Deployable as an independent Coolify Resource / Docker Compose stack
-# Includes: CloudBeaver (PostgreSQL), Redis Insight (Redis), MinIO Web Console
+# Includes: CloudBeaver (PostgreSQL), Redis Insight (Redis)
 # Zero Public Database Ports: Accessible securely via Traefik HTTPS routers
 # ============================================================================
 
@@ -21,7 +21,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-cloudbeaver.rule=Host(`${DB_ADMIN_DOMAIN:-db-admin.example.com}`)"
+      - "traefik.http.routers.medivo-cloudbeaver.rule=Host(`${DB_ADMIN_DOMAIN:-db-admin.80.225.215.96.sslip.io}`)"
       - "traefik.http.services.medivo-cloudbeaver.loadbalancer.server.port=8978"
     deploy:
       resources:
@@ -45,7 +45,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-redis-insight.rule=Host(`${REDIS_ADMIN_DOMAIN:-redis-admin.example.com}`)"
+      - "traefik.http.routers.medivo-redis-insight.rule=Host(`${REDIS_ADMIN_DOMAIN:-redis-admin.80.225.215.96.sslip.io}`)"
       - "traefik.http.services.medivo-redis-insight.loadbalancer.server.port=5540"
     deploy:
       resources:
