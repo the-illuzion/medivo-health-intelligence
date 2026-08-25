@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import authRoutes from './auth.routes.js';
 import scanRoutes from './scan.routes.js';
 import routineRoutes from './routine.routes.js';
@@ -15,22 +15,34 @@ import { validateRequest } from '../middleware/errorHandler.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import { checkoutSchema } from '../schemas/dto.schemas.js';
 
-const apiRouter = Router();
+const mobileBffRouter = Router();
 
-apiRouter.use('/auth', authRoutes);
-apiRouter.use('/user', authRoutes);
-apiRouter.use('/scans', scanRoutes);
-apiRouter.use('/routines', routineRoutes);
-apiRouter.use('/coach', coachRoutes);
-apiRouter.use('/doctors', doctorRoutes);
-apiRouter.use('/appointments', appointmentRoutes);
-apiRouter.use('/products', productRoutes);
-apiRouter.use('/orders', orderRoutes);
-apiRouter.use('/notifications', notificationRoutes);
-apiRouter.use('/privacy', privacyRoutes);
-apiRouter.use('/admin', adminRoutes);
+// Mobile / Customer BFF Health Check
+mobileBffRouter.get('/health', (_req: Request, res: Response) => {
+  res.json({
+    status: 'HEALTHY',
+    service: 'Medivo Mobile Customer BFF',
+    timestamp: new Date().toISOString(),
+  });
+});
 
-// Explicit route for POST /api/v1/checkout
-apiRouter.post('/checkout', authenticateToken, validateRequest(checkoutSchema), checkout);
+// Authentication & Profile Endpoints
+mobileBffRouter.use('/auth', authRoutes);
+mobileBffRouter.use('/user', authRoutes);
 
-export default apiRouter;
+// Protected Clinical & E-Commerce Endpoints
+mobileBffRouter.use('/scans', scanRoutes);
+mobileBffRouter.use('/routines', routineRoutes);
+mobileBffRouter.use('/coach', coachRoutes);
+mobileBffRouter.use('/doctors', doctorRoutes);
+mobileBffRouter.use('/appointments', appointmentRoutes);
+mobileBffRouter.use('/products', productRoutes);
+mobileBffRouter.use('/orders', orderRoutes);
+mobileBffRouter.use('/notifications', notificationRoutes);
+mobileBffRouter.use('/privacy', privacyRoutes);
+mobileBffRouter.use('/admin', adminRoutes);
+
+// Protected Checkout
+mobileBffRouter.post('/checkout', authenticateToken, validateRequest(checkoutSchema), checkout);
+
+export default mobileBffRouter;

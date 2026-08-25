@@ -62,9 +62,7 @@ export default function MarketingLandingPage() {
               </a>
 
               <a
-                href="http://localhost:8081"
-                target="_blank"
-                rel="noopener noreferrer"
+                href={process.env.NEXT_PUBLIC_APP_URL || '#simulator'}
                 className="bg-slate-100 dark:bg-[#111827] hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-[#374151] text-slate-900 dark:text-white px-6 py-4 rounded-2xl font-bold text-sm transition-all"
               >
                 Launch Web Portal ↗
@@ -86,7 +84,7 @@ export default function MarketingLandingPage() {
           </div>
 
           {/* Interactive Skin Telemetry Simulator */}
-          <div>
+          <div id="simulator">
             <SkinScoreSimulator />
           </div>
         </div>

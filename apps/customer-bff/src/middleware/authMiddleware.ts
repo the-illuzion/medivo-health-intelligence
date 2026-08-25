@@ -15,7 +15,7 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
       success: false,
-      error: 'Authentication required. Please sign in to access this resource.',
+      error: 'Authentication required. Please sign in to access this protected clinical resource.',
       code: 'UNAUTHORIZED',
       timestamp: new Date().toISOString(),
     });
@@ -38,4 +38,18 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
       timestamp: new Date().toISOString(),
     });
   }
+};
+
+export const requireRole = (allowedRoles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        error: `Access denied. Sufficient privileges required (Allowed: ${allowedRoles.join(', ')}).`,
+        code: 'INSUFFICIENT_PERMISSIONS',
+        timestamp: new Date().toISOString(),
+      });
+    }
+    next();
+  };
 };

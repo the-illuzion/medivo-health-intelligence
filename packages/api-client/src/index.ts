@@ -19,13 +19,16 @@ export class MedivoApiClient {
     this.authToken = config?.authToken || null;
   }
 
-
   public setAuthToken(token: string | null) {
     this.authToken = token;
   }
 
+  public getAuthToken(): string | null {
+    return this.authToken;
+  }
+
   public async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    const url = `${this.baseUrl}/health`;
+    const url = `${this.baseUrl}/api/mobile-bff/health`;
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 4000);
@@ -85,7 +88,6 @@ export class MedivoApiClient {
       return json.data as T;
     } catch (error: any) {
       console.warn(`[MedivoApiClient] Error requesting ${url}:`, error.message);
-      // Notify onError handler for network unreachable failures (fetch throw)
       if (error.name === 'TypeError' || error.message.includes('Network') || error.message.includes('fetch')) {
         if (this.onError) this.onError(new Error('Unable to establish a connection to Medivo Services'));
       }
@@ -93,10 +95,12 @@ export class MedivoApiClient {
     }
   }
 
-  // Auth & Profile Group
+  // ============================================================================
+  // Mobile / Customer BFF Group (/api/mobile-bff)
+  // ============================================================================
   public auth = {
     login: async (email: string, passwordHash: string) => {
-      const result = await this.request<{ user: any; token: string }>('/api/v1/auth/login', {
+      const result = await this.request<{ user: any; token: string }>('/api/mobile-bff/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password: passwordHash }),
       });
@@ -106,7 +110,7 @@ export class MedivoApiClient {
       return result;
     },
     register: async (name: string, email: string, skinType?: string) => {
-      const result = await this.request<{ user: any; token: string }>('/api/v1/auth/register', {
+      const result = await this.request<{ user: any; token: string }>('/api/mobile-bff/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, email, skinType }),
       });
@@ -117,43 +121,41 @@ export class MedivoApiClient {
     },
     logout: async () => {
       try {
-        await this.request<any>('/api/v1/auth/logout', { method: 'POST' });
+        await this.request<any>('/api/mobile-bff/auth/logout', { method: 'POST' });
       } catch (e) {
       } finally {
         this.setAuthToken(null);
       }
     },
     getProfile: async () => {
-      return this.request<any>('/api/v1/user/profile');
+      return this.request<any>('/api/mobile-bff/user/profile');
     },
   };
 
-  // AI Skin Scans Telemetry Group
   public scans = {
     analyze: async (imageBase64: string) => {
-      return this.request<any>('/api/v1/scans/analyze', {
+      return this.request<any>('/api/mobile-bff/scans/analyze', {
         method: 'POST',
         body: JSON.stringify({ imageBase64 }),
       });
     },
     getHistory: async () => {
-      return this.request<any[]>('/api/v1/scans/history');
+      return this.request<any[]>('/api/mobile-bff/scans/history');
     },
     getDetails: async (scanId: string) => {
-      return this.request<any>(`/api/v1/scans/${scanId}`);
+      return this.request<any>(`/api/mobile-bff/scans/${scanId}`);
     },
   };
 
-  // Routines & AI Health Coach Group
   public routines = {
     list: async () => {
-      return this.request<any[]>('/api/v1/routines');
+      return this.request<any[]>('/api/mobile-bff/routines');
     },
     getDetails: async (routineId: string) => {
-      return this.request<any>(`/api/v1/routines/${routineId}`);
+      return this.request<any>(`/api/mobile-bff/routines/${routineId}`);
     },
     toggleStep: async (routineId: string, stepId: string, completed: boolean) => {
-      return this.request<any>('/api/v1/routines/step', {
+      return this.request<any>('/api/mobile-bff/routines/step', {
         method: 'POST',
         body: JSON.stringify({ routineId, stepId, completed }),
       });
@@ -162,74 +164,74 @@ export class MedivoApiClient {
 
   public coach = {
     chat: async (message: string) => {
-      return this.request<any>('/api/v1/coach/chat', {
+      return this.request<any>('/api/mobile-bff/coach/chat', {
         method: 'POST',
         body: JSON.stringify({ message }),
       });
     },
   };
 
-  // Doctors & Appointments Group
   public doctors = {
     list: async () => {
-      return this.request<Doctor[]>('/api/v1/doctors');
+      return this.request<Doctor[]>('/api/mobile-bff/doctors');
     },
   };
 
   public appointments = {
     list: async () => {
-      return this.request<any[]>('/api/v1/appointments');
+      return this.request<any[]>('/api/mobile-bff/appointments');
     },
     book: async (booking: { doctorId: string; doctorName: string; date: string; time: string; condition?: string }) => {
-      return this.request<any>('/api/v1/appointments/book', {
+      return this.request<any>('/api/mobile-bff/appointments/book', {
         method: 'POST',
         body: JSON.stringify(booking),
       });
     },
   };
 
-  // Ecommerce, Cart & Orders Group
   public products = {
     list: async () => {
-      return this.request<Product[]>('/api/v1/products');
+      return this.request<Product[]>('/api/mobile-bff/products');
     },
   };
 
   public orders = {
     getDetails: async (orderId: string) => {
-      return this.request<any>(`/api/v1/orders/${orderId}`);
+      return this.request<any>(`/api/mobile-bff/orders/${orderId}`);
     },
     checkout: async (items: any[], totalAmount: number) => {
-      return this.request<any>('/api/v1/checkout', {
+      return this.request<any>('/api/mobile-bff/checkout', {
         method: 'POST',
         body: JSON.stringify({ items, totalAmount }),
       });
     },
   };
 
-  // Notifications & Admin Console Group
   public notifications = {
     list: async () => {
-      return this.request<{ notifications: any[]; unreadCount: number }>('/api/v1/notifications');
+      return this.request<{ notifications: any[]; unreadCount: number }>('/api/mobile-bff/notifications');
     },
     markAsRead: async (notifId: string) => {
-      return this.request<{ notifications: any[]; unreadCount: number }>(`/api/v1/notifications/${notifId}/read`, {
+      return this.request<{ notifications: any[]; unreadCount: number }>(`/api/mobile-bff/notifications/${notifId}/read`, {
         method: 'PUT',
       });
     },
     markAllAsRead: async () => {
-      return this.request<{ notifications: any[]; unreadCount: number }>('/api/v1/notifications/mark-all-read', {
+      return this.request<{ notifications: any[]; unreadCount: number }>('/api/mobile-bff/notifications/mark-all-read', {
         method: 'POST',
       });
     },
   };
 
+  // ============================================================================
+  // Admin BFF Group (/api/admin-bff)
+  // ============================================================================
   public admin = {
     getHipaaAudit: async () => {
-      return this.request<any[]>('/api/v1/admin/hipaa-audit');
+      return this.request<any[]>('/api/admin-bff/hipaa-audit');
     },
     getTelemetryStats: async () => {
-      return this.request<any>('/api/v1/admin/telemetry-stats');
+      return this.request<any>('/api/admin-bff/telemetry-stats');
     },
   };
 }
