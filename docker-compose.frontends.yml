@@ -24,7 +24,7 @@ services:
       INTERNAL_APP_URL: http://customer-app:8081
       INTERNAL_DOCTOR_URL: http://doctor-portal:3001
       INTERNAL_ADMIN_URL: http://admin-panel:3002
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.80.225.215.96.sslip.io}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
       interval: 30s
@@ -34,7 +34,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-web.rule=Host(`${WEB_DOMAIN:-example.com}`) || Host(`${WEB_WWW_DOMAIN:-www.example.com}`)"
+      - "traefik.http.routers.medivo-web.rule=Host(`${WEB_DOMAIN:-80.225.215.96.sslip.io}`) || Host(`${WEB_WWW_DOMAIN:-www.80.225.215.96.sslip.io}`)"
       - "traefik.http.routers.medivo-web.service=medivo-web"
       - "traefik.http.routers.medivo-web.priority=10"
       - "traefik.http.services.medivo-web.loadbalancer.server.port=3000"
@@ -66,7 +66,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-app.rule=Host(`${APP_DOMAIN:-app.example.com}`)"
+      - "traefik.http.routers.medivo-app.rule=Host(`${APP_DOMAIN:-app.80.225.215.96.sslip.io}`)"
       - "traefik.http.routers.medivo-app.service=medivo-app"
       - "traefik.http.routers.medivo-app.priority=85"
       - "traefik.http.services.medivo-app.loadbalancer.server.port=8081"
@@ -93,7 +93,7 @@ services:
       NODE_ENV: production
       PORT: 3001
       INTERNAL_API_URL: http://customer-bff:4000
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.80.225.215.96.sslip.io}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3001/"]
       interval: 30s
@@ -103,7 +103,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-doctor.rule=Host(`${DOCTOR_DOMAIN:-doctor.example.com}`)"
+      - "traefik.http.routers.medivo-doctor.rule=Host(`${DOCTOR_DOMAIN:-doctor.80.225.215.96.sslip.io}`)"
       - "traefik.http.routers.medivo-doctor.service=medivo-doctor"
       - "traefik.http.routers.medivo-doctor.priority=80"
       - "traefik.http.services.medivo-doctor.loadbalancer.server.port=3001"
@@ -130,7 +130,7 @@ services:
       NODE_ENV: production
       PORT: 3002
       INTERNAL_API_URL: http://customer-bff:4000
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.80.225.215.96.sslip.io}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3002/"]
       interval: 30s
@@ -140,7 +140,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-admin.rule=Host(`${ADMIN_DOMAIN:-admin.example.com}`)"
+      - "traefik.http.routers.medivo-admin.rule=Host(`${ADMIN_DOMAIN:-admin.80.225.215.96.sslip.io}`)"
       - "traefik.http.routers.medivo-admin.service=medivo-admin"
       - "traefik.http.routers.medivo-admin.priority=80"
       - "traefik.http.services.medivo-admin.loadbalancer.server.port=3002"
