@@ -12,7 +12,6 @@
 # Dependencies & Build Artifacts
 node_modules
 dist
-!apps/customer-app/dist
 build
 .next
 .turbo

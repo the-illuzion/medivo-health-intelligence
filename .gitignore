@@ -4,7 +4,6 @@ node_modules/
 
 # Build outputs
 dist/
-!apps/customer-app/dist/
 build/
 .next/
 out/
