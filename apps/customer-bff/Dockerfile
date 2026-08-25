@@ -10,18 +10,10 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 FROM base AS builder
 WORKDIR /app
 
-# Copy root monorepo metadata
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+# Copy full workspace context for deterministic pnpm workspace resolution
+COPY . .
 
-# Copy required workspace packages & domain services
-COPY packages/ ./packages/
-COPY services/ ./services/
-COPY apps/customer-bff/ ./apps/customer-bff/
-
-# Install dependencies deterministically
 RUN pnpm install --frozen-lockfile
-
-# Build domain service and customer BFF
 RUN pnpm --filter @medivo/service-api run build
 RUN pnpm --filter @medivo/customer-bff run build
 
@@ -37,7 +29,6 @@ ENV PORT=4000
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 appuser
 
-# Copy installed node_modules and compiled dist outputs
 COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=appuser:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=appuser:nodejs /app/packages ./packages
@@ -48,7 +39,6 @@ USER appuser
 
 EXPOSE 4000
 
-# Healthcheck against actual /health endpoint
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://127.0.0.1:4000/health || exit 1
 

@@ -10,13 +10,8 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 FROM base AS builder
 WORKDIR /app
 
-# Copy root monorepo metadata
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
-
-# Copy required workspace packages
-COPY packages/ ./packages/
-COPY tooling/ ./tooling/
-COPY apps/marketing-web/ ./apps/marketing-web/
+# Copy full workspace context for deterministic pnpm workspace resolution
+COPY . .
 
 # Install dependencies deterministically
 RUN pnpm install --frozen-lockfile

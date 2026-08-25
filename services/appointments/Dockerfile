@@ -10,9 +10,8 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 FROM base AS builder
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
-COPY packages/ ./packages/
-COPY services/appointments/ ./services/appointments/
+# Copy full workspace context for deterministic pnpm workspace resolution
+COPY . .
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @medivo/service-appointments run build
