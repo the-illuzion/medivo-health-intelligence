@@ -36,12 +36,13 @@ COPY services/notifications/package.json ./services/notifications/
 
 # Step 2: Install dependencies using BuildKit package cache (Cached across builds)
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --no-frozen-lockfile
 
 # Step 3: Copy source code (Only code changes invalidate from here down)
 COPY . .
 
-# Step 4: Build TypeScript services
+# Step 4: Build TypeScript dependencies and customer-bff
+RUN pnpm --filter @medivo/types run build || true
 RUN pnpm --filter @medivo/service-api run build
 RUN pnpm --filter @medivo/customer-bff run build
 

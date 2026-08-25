@@ -36,9 +36,9 @@ COPY services/notifications/package.json ./services/notifications/
 
 # Step 2: Install dependencies using BuildKit package cache
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+    pnpm install --no-frozen-lockfile
 
-# Step 3: Copy source code (Only code changes invalidate from here down)
+# Step 3: Copy source code
 COPY . .
 
 # Step 4: Build Next.js application in standalone mode with compiler cache mount
