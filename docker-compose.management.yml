@@ -22,6 +22,7 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.http.routers.medivo-cloudbeaver.rule=Host(`${DB_ADMIN_DOMAIN:-db-admin.80.225.215.96.sslip.io}`)"
+      - "traefik.http.routers.medivo-cloudbeaver.service=medivo-cloudbeaver"
       - "traefik.http.services.medivo-cloudbeaver.loadbalancer.server.port=8978"
     deploy:
       resources:
@@ -46,6 +47,7 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.http.routers.medivo-redis-insight.rule=Host(`${REDIS_ADMIN_DOMAIN:-redis-admin.80.225.215.96.sslip.io}`)"
+      - "traefik.http.routers.medivo-redis-insight.service=medivo-redis-insight"
       - "traefik.http.services.medivo-redis-insight.loadbalancer.server.port=5540"
     deploy:
       resources:

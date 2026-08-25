@@ -35,6 +35,7 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.http.routers.medivo-web.rule=Host(`${WEB_DOMAIN:-example.com}`) || Host(`${WEB_WWW_DOMAIN:-www.example.com}`)"
+      - "traefik.http.routers.medivo-web.service=medivo-web"
       - "traefik.http.routers.medivo-web.priority=10"
       - "traefik.http.services.medivo-web.loadbalancer.server.port=3000"
     deploy:
@@ -66,6 +67,7 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.http.routers.medivo-app.rule=Host(`${APP_DOMAIN:-app.example.com}`)"
+      - "traefik.http.routers.medivo-app.service=medivo-app"
       - "traefik.http.routers.medivo-app.priority=85"
       - "traefik.http.services.medivo-app.loadbalancer.server.port=8081"
     deploy:
@@ -102,6 +104,7 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.http.routers.medivo-doctor.rule=Host(`${DOCTOR_DOMAIN:-doctor.example.com}`)"
+      - "traefik.http.routers.medivo-doctor.service=medivo-doctor"
       - "traefik.http.routers.medivo-doctor.priority=80"
       - "traefik.http.services.medivo-doctor.loadbalancer.server.port=3001"
     deploy:
@@ -138,6 +141,7 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.http.routers.medivo-admin.rule=Host(`${ADMIN_DOMAIN:-admin.example.com}`)"
+      - "traefik.http.routers.medivo-admin.service=medivo-admin"
       - "traefik.http.routers.medivo-admin.priority=80"
       - "traefik.http.services.medivo-admin.loadbalancer.server.port=3002"
     deploy:

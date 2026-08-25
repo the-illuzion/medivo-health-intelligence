@@ -42,6 +42,7 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.http.routers.medivo-bff.rule=Host(`${API_DOMAIN:-api.example.com}`)"
+      - "traefik.http.routers.medivo-bff.service=medivo-bff"
       - "traefik.http.routers.medivo-bff.priority=100"
       - "traefik.http.services.medivo-bff.loadbalancer.server.port=4000"
     deploy:
