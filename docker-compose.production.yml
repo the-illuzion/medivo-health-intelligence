@@ -2,7 +2,7 @@
 # Medivo Health Intelligence Platform — Production Coolify Compose Stack
 # Target Host: Oracle Cloud Infrastructure (OCI) Ubuntu (4 OCPU / 24 GB RAM)
 # Reverse Proxy: Traefik managed by Coolify (Host ports 80/443 owned by Traefik)
-# IMPORTANT: NO host port mappings to prevent port conflicts with Traefik!
+# Supports: Single Domain (Path-based Routing) AND Multi-Domain / Subdomains
 # ============================================================================
 
 version: '3.8'
@@ -94,8 +94,8 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 4. Customer BFF REST API Service (Public API Entry Point)
-  # Domain: https://${API_DOMAIN:-api.example.com} -> Container Port 4000
+  # 4. Customer BFF REST API Service (Public API Entry Point & /api Ingress)
+  # Container Port: 4000
   # ============================================================================
   customer-bff:
     build:
@@ -132,10 +132,11 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-bff.rule=Host(`${API_DOMAIN:-api.example.com}`)"
+      - "traefik.http.routers.medivo-bff.rule=Host(`${API_DOMAIN:-api.example.com}`) || (Host(`${WEB_DOMAIN:-example.com}`) && (PathPrefix(`/api`) || PathPrefix(`/health`)))"
       - "traefik.http.routers.medivo-bff.entrypoints=websecure"
       - "traefik.http.routers.medivo-bff.tls=true"
       - "traefik.http.routers.medivo-bff.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.medivo-bff.priority=100"
       - "traefik.http.services.medivo-bff.loadbalancer.server.port=4000"
     deploy:
       resources:
@@ -148,7 +149,7 @@ services:
 
   # ============================================================================
   # 5. Marketing Website (Next.js 14 App Router)
-  # Domain: https://${WEB_DOMAIN:-example.com} -> Container Port 3000
+  # Container Port: 3000
   # ============================================================================
   marketing-web:
     build:
@@ -159,7 +160,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      NEXT_PUBLIC_API_URL: https://${API_DOMAIN:-api.example.com}
+      INTERNAL_API_URL: http://customer-bff:4000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
       interval: 30s
@@ -173,6 +175,7 @@ services:
       - "traefik.http.routers.medivo-web.entrypoints=websecure"
       - "traefik.http.routers.medivo-web.tls=true"
       - "traefik.http.routers.medivo-web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.medivo-web.priority=10"
       - "traefik.http.services.medivo-web.loadbalancer.server.port=3000"
     deploy:
       resources:
@@ -185,7 +188,7 @@ services:
 
   # ============================================================================
   # 6. Doctor Portal (Next.js 14 App Router)
-  # Domain: https://${DOCTOR_DOMAIN:-doctor.example.com} -> Container Port 3001
+  # Container Port: 3001
   # ============================================================================
   doctor-portal:
     build:
@@ -196,7 +199,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      NEXT_PUBLIC_API_URL: https://${API_DOMAIN:-api.example.com}
+      INTERNAL_API_URL: http://customer-bff:4000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3001/"]
       interval: 30s
@@ -206,10 +210,11 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-doctor.rule=Host(`${DOCTOR_DOMAIN:-doctor.example.com}`)"
+      - "traefik.http.routers.medivo-doctor.rule=Host(`${DOCTOR_DOMAIN:-doctor.example.com}`) || (Host(`${WEB_DOMAIN:-example.com}`) && PathPrefix(`/doctor-portal`))"
       - "traefik.http.routers.medivo-doctor.entrypoints=websecure"
       - "traefik.http.routers.medivo-doctor.tls=true"
       - "traefik.http.routers.medivo-doctor.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.medivo-doctor.priority=80"
       - "traefik.http.services.medivo-doctor.loadbalancer.server.port=3001"
     deploy:
       resources:
@@ -222,7 +227,7 @@ services:
 
   # ============================================================================
   # 7. Platform Admin Console (Next.js 14 App Router)
-  # Domain: https://${ADMIN_DOMAIN:-admin.example.com} -> Container Port 3002
+  # Container Port: 3002
   # ============================================================================
   admin-panel:
     build:
@@ -233,7 +238,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3002
-      NEXT_PUBLIC_API_URL: https://${API_DOMAIN:-api.example.com}
+      INTERNAL_API_URL: http://customer-bff:4000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3002/"]
       interval: 30s
@@ -243,10 +249,11 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-admin.rule=Host(`${ADMIN_DOMAIN:-admin.example.com}`)"
+      - "traefik.http.routers.medivo-admin.rule=Host(`${ADMIN_DOMAIN:-admin.example.com}`) || (Host(`${WEB_DOMAIN:-example.com}`) && PathPrefix(`/admin-panel`))"
       - "traefik.http.routers.medivo-admin.entrypoints=websecure"
       - "traefik.http.routers.medivo-admin.tls=true"
       - "traefik.http.routers.medivo-admin.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.medivo-admin.priority=80"
       - "traefik.http.services.medivo-admin.loadbalancer.server.port=3002"
     deploy:
       resources:
@@ -258,8 +265,8 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 8. AI Vision Engine Microservice
-  # Internal Only: Accessible via service-ai:8080
+  # 8. AI Vision Engine Microservice (Internal Microservice)
+  # Container Port: 8080
   # ============================================================================
   service-ai:
     build:
@@ -292,8 +299,8 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 9. Auth & Session Microservice
-  # Internal Only: Accessible via service-auth:4001
+  # 9. Auth & Session Microservice (Internal Microservice)
+  # Container Port: 4001
   # ============================================================================
   service-auth:
     build:
@@ -322,8 +329,8 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 10. Appointments & Telehealth Microservice
-  # Internal Only: Accessible via service-appointments:4002
+  # 10. Appointments & Telehealth Microservice (Internal Microservice)
+  # Container Port: 4002
   # ============================================================================
   service-appointments:
     build:
@@ -354,8 +361,8 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 11. Skincare Commerce Microservice
-  # Internal Only: Accessible via service-commerce:4003
+  # 11. Skincare Commerce Microservice (Internal Microservice)
+  # Container Port: 4003
   # ============================================================================
   service-commerce:
     build:
@@ -386,8 +393,8 @@ services:
       - medivo-network
 
   # ============================================================================
-  # 12. Notifications & Dispatcher Microservice
-  # Internal Only: Accessible via service-notifications:4004
+  # 12. Notifications & Dispatcher Microservice (Internal Microservice)
+  # Container Port: 4004
   # ============================================================================
   service-notifications:
     build:
@@ -417,7 +424,7 @@ services:
 
   # ============================================================================
   # 13. Mailpit Mock SMTP Server (Optional / Staging Email Capture)
-  # Internal Only: Accessible via mailpit:1025
+  # Container Port: 1025
   # ============================================================================
   mailpit:
     image: axllent/mailpit:v1.15
