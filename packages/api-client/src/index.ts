@@ -5,18 +5,75 @@ export interface ApiClientConfig {
   authToken?: string | null;
 }
 
+export function getDefaultBaseUrl(): string {
+  // 1. Process environment (Next.js server-side, Node.js, or bundled Expo)
+  const envUrl =
+    (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) ||
+    (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
+    (typeof process !== 'undefined' && process.env?.API_URL);
+
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+    return envUrl.replace(/\/+$/, '');
+  }
+
+  // 2. Client browser runtime dynamic origin resolution
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    const port = window.location.port ? `:${window.location.port}` : '';
+
+    // If on app.80.225.215.96.sslip.io -> api.80.225.215.96.sslip.io
+    if (host.startsWith('app.')) {
+      return `${protocol}//${host.replace(/^app\./, 'api.')}${port}`;
+    }
+    // If on main.80.225.215.96.sslip.io -> api.80.225.215.96.sslip.io
+    if (host.startsWith('main.')) {
+      return `${protocol}//${host.replace(/^main\./, 'api.')}${port}`;
+    }
+    // If on doctor.80.225.215.96.sslip.io -> api.80.225.215.96.sslip.io
+    if (host.startsWith('doctor.')) {
+      return `${protocol}//${host.replace(/^doctor\./, 'api.')}${port}`;
+    }
+    // If on admin.80.225.215.96.sslip.io -> api.80.225.215.96.sslip.io
+    if (host.startsWith('admin.')) {
+      return `${protocol}//${host.replace(/^admin\./, 'api.')}${port}`;
+    }
+    // If on raw IP sslip.io: 80.225.215.96.sslip.io -> api.80.225.215.96.sslip.io
+    if (host.endsWith('sslip.io')) {
+      return `${protocol}//api.${host}${port}`;
+    }
+
+    // If on localhost in dev browser (e.g. localhost:8081 -> localhost:4000)
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:4000';
+    }
+
+    // Default to current origin / window.location.origin
+    return window.location.origin;
+  }
+
+  return 'http://localhost:4000';
+}
+
 export class MedivoApiClient {
-  private baseUrl: string;
+  private customBaseUrl?: string;
   private authToken: string | null = null;
   public onError?: (error: Error) => void;
 
   constructor(config?: ApiClientConfig) {
-    const envUrl =
-      (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) ||
-      (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
-      (typeof process !== 'undefined' && process.env?.API_URL);
-    this.baseUrl = config?.baseUrl || envUrl || 'http://localhost:4000';
+    if (config?.baseUrl) {
+      this.customBaseUrl = config.baseUrl;
+    }
     this.authToken = config?.authToken || null;
+  }
+
+  public getBaseUrl(): string {
+    if (this.customBaseUrl) return this.customBaseUrl.replace(/\/+$/, '');
+    return getDefaultBaseUrl();
+  }
+
+  public setBaseUrl(url: string) {
+    this.customBaseUrl = url;
   }
 
   public setAuthToken(token: string | null) {
@@ -28,7 +85,7 @@ export class MedivoApiClient {
   }
 
   public async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    const url = `${this.baseUrl}/api/mobile-bff/health`;
+    const url = `${this.getBaseUrl()}/api/mobile-bff/health`;
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 4000);
@@ -51,7 +108,7 @@ export class MedivoApiClient {
   }
 
   private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    const url = `${this.getBaseUrl()}${endpoint}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options?.headers as Record<string, string>),
@@ -88,7 +145,7 @@ export class MedivoApiClient {
       return json.data as T;
     } catch (error: any) {
       console.warn(`[MedivoApiClient] Error requesting ${url}:`, error.message);
-      if (error.name === 'TypeError' || error.message.includes('Network') || error.message.includes('fetch')) {
+      if (error.name === 'TypeError' || error.message?.includes('Network') || error.message?.includes('fetch')) {
         if (this.onError) this.onError(new Error('Unable to establish a connection to Medivo Services'));
       }
       throw error;

@@ -62,6 +62,7 @@ function MainAppShell() {
   const { width } = useWindowDimensions();
   const pathname = usePathname();
   const { isAuthenticated } = useAuthStore();
+  const { isDark, colors } = useTheme();
 
   const isAuthRoute =
     pathname === '/splash' ||
@@ -75,10 +76,16 @@ function MainAppShell() {
   const showSidebar = Platform.OS === 'web' && width >= 1024 && isAuthenticated && !isAuthRoute;
 
   return (
-    <View className="flex-1 flex-row bg-white dark:bg-[#090D16]" style={{ flex: 1, height: '100%' }}>
+    <View
+      className={`flex-1 flex-row ${isDark ? 'bg-[#090D16]' : 'bg-white'}`}
+      style={{ flex: 1, height: '100%', backgroundColor: colors.background }}
+    >
       <ServerDownScreen />
       {showSidebar && <WebSidebar />}
-      <View className="flex-1 h-full" style={{ flex: 1, height: '100%' }}>
+      <View
+        className="flex-1 h-full"
+        style={{ flex: 1, height: '100%', backgroundColor: colors.background }}
+      >
         {showHeader && <Header />}
         <StackNavigator />
       </View>

@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Platform } from 'react-native';
-import { colorScheme as nwColorScheme, useColorScheme } from 'react-native-css-interop';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { Platform, Appearance } from 'react-native';
+import { colorScheme as nwColorScheme } from 'react-native-css-interop';
 import { ThemeMode, darkThemeColors, lightThemeColors, ThemeColors } from '@medivo/theme';
 
 const STORAGE_KEY = 'medivo_customer_theme';
@@ -20,8 +20,6 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const currentScheme = useColorScheme();
-
   const [mode, setModeState] = useState<ThemeMode>(() => {
     if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
       const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
@@ -32,16 +30,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return 'system';
   });
 
-  const getSystemIsDark = () => {
+  const getSystemIsDark = useCallback((): boolean => {
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
-    return currentScheme.colorScheme === 'dark';
-  };
+    const rnScheme = Appearance.getColorScheme();
+    return rnScheme === 'dark';
+  }, []);
 
   const [systemIsDark, setSystemIsDark] = useState<boolean>(getSystemIsDark);
 
   useEffect(() => {
+    // 1. Web media query listener
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const listener = (e: MediaQueryListEvent) => {
@@ -50,37 +50,31 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setSystemIsDark(mediaQuery.matches);
       mediaQuery.addEventListener('change', listener);
       return () => mediaQuery.removeEventListener('change', listener);
-    } else {
-      setSystemIsDark(currentScheme.colorScheme === 'dark');
     }
-  }, [currentScheme.colorScheme]);
+
+    // 2. React Native Appearance listener
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setSystemIsDark(colorScheme === 'dark');
+    });
+    return () => subscription.remove();
+  }, [getSystemIsDark]);
 
   const isDark = mode === 'system' ? systemIsDark : mode === 'dark';
-  const colors = isDark ? darkThemeColors : lightThemeColors;
+  const colors = useMemo(() => (isDark ? darkThemeColors : lightThemeColors), [isDark]);
 
-  const setMode = (newMode: ThemeMode) => {
+  const setMode = useCallback((newMode: ThemeMode) => {
     setModeState(newMode);
     if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, newMode);
     }
     try {
-      if (newMode === 'system') {
-        nwColorScheme.set('system');
-      } else {
-        nwColorScheme.set(newMode);
-      }
-    } catch (e) {
-      console.warn('CSS Interop colorScheme fallback:', e);
-    }
-  };
+      nwColorScheme.set(newMode === 'system' ? 'system' : newMode);
+    } catch (e) {}
+  }, []);
 
   useEffect(() => {
     try {
-      if (mode === 'system') {
-        nwColorScheme.set('system');
-      } else {
-        nwColorScheme.set(mode);
-      }
+      nwColorScheme.set(mode === 'system' ? 'system' : mode);
     } catch (e) {}
 
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -90,6 +84,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (isDark) {
         root.classList.add('dark');
         root.classList.remove('light');
+        root.style.colorScheme = 'dark';
         if (body) {
           body.style.backgroundColor = '#090D16';
           body.style.color = '#FFFFFF';
@@ -97,6 +92,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } else {
         root.classList.add('light');
         root.classList.remove('dark');
+        root.style.colorScheme = 'light';
         if (body) {
           body.style.backgroundColor = '#FFFFFF';
           body.style.color = '#0F172A';
