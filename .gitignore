@@ -69,3 +69,5 @@ workbox-*.js
 # Temporary
 tmp/
 temp/
+scratch/
+**/scratch/

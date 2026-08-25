@@ -1,6 +1,6 @@
 # ============================================================================
-# Medivo Customer BFF REST API Dockerfile (Node.js 20 / Express)
-# Target Architecture: OCI Ubuntu / Coolify / Traefik
+# Medivo Notification & Dispatcher Service Dockerfile (Node.js 20 / Express)
+# Target Architecture: OCI Ubuntu / Coolify Internal Microservice
 # ============================================================================
 
 FROM node:20-alpine AS base
@@ -10,46 +10,35 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 FROM base AS builder
 WORKDIR /app
 
-# Copy root monorepo metadata
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
-
-# Copy required workspace packages & domain services
 COPY packages/ ./packages/
-COPY services/ ./services/
-COPY apps/customer-bff/ ./apps/customer-bff/
+COPY services/notifications/ ./services/notifications/
 
-# Install dependencies deterministically
 RUN pnpm install --frozen-lockfile
-
-# Build domain service and customer BFF
-RUN pnpm --filter @medivo/service-api run build
-RUN pnpm --filter @medivo/customer-bff run build
+RUN pnpm --filter @medivo/service-notifications run build
 
 # ============================================================================
-# Production Runner Stage (Minimal Runtime Image)
+# Production Runner Stage
 # ============================================================================
 FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=4000
+ENV PORT=4004
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 appuser
 
-# Copy installed node_modules and compiled dist outputs
 COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=appuser:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=appuser:nodejs /app/packages ./packages
-COPY --from=builder --chown=appuser:nodejs /app/services ./services
-COPY --from=builder --chown=appuser:nodejs /app/apps/customer-bff ./apps/customer-bff
+COPY --from=builder --chown=appuser:nodejs /app/services/notifications ./services/notifications
 
 USER appuser
 
-EXPOSE 4000
+EXPOSE 4004
 
-# Healthcheck against actual /health endpoint
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://127.0.0.1:4000/health || exit 1
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1:4004/health || exit 1
 
-CMD ["node", "apps/customer-bff/dist/server.js"]
+CMD ["node", "services/notifications/dist/server.js"]

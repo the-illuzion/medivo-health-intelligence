@@ -1,51 +1,37 @@
 # Current Session State
 
-- **Agent**: Platform Infrastructure & Full-Stack Systems Agent
-- **Last Updated**: 2026-08-13T20:48:50Z
-- **Task**: Docker & Docker Compose Containerization Infrastructure Across Medivo Monorepo
+- **Agent**: Cloud Infrastructure & Production Deployment Agent
+- **Last Updated**: 2026-08-25T12:20:00Z
+- **Task**: Production Deployment Configuration for OCI (Ubuntu, 4 OCPU, 24GB RAM) with Docker, Coolify & Traefik
 - **Branch**: `main`
-- **Status**: ✅ Complete (100% Configured & Committed)
+- **Status**: ✅ Complete (100% Configured & Production Ready)
 
 ---
 
 ## Active Work Completed
 
-- [x] **Docker Infrastructure & Multi-Container Stack (`docker-compose.yml`)**:
-  - Provisioned **PostgreSQL 16** with automatic 13-schema DDL initialization (`services/api/src/infrastructure/db/schema.sql`).
-  - Provisioned **Redis 7** container for BullMQ queue management and session caching.
-  - Provisioned **MinIO S3** Object Storage container for AI scan image vault storage (`medivo`).
-  - Provisioned **Mailpit SMTP** mock server for email notification testing.
-  - Provisioned multi-stage `Dockerfile` files for `apps/customer-bff`, `apps/marketing-web`, `apps/doctor-portal`, and `apps/admin-panel`.
-- [x] **Theme FOUC & System Preference Fix**:
-  - Added `ThemeScript` inline IIFE anti-FOUC script component in `@medivo/theme` and injected into `<head>` in `marketing-web`, `admin-panel`, and `doctor-portal` `layout.tsx` to eliminate light theme flashing on page reload.
-  - Updated Customer App `ThemeProvider` with active `window.matchMedia('(prefers-color-scheme: dark)')` listener so `System` mode detects dark mode instantly.
-- [x] **Customer App (`apps/customer-app`)**:
-  - Refactored NativeWind `ThemeProvider` with `react-native-css-interop` for runtime theme switching without errors.
-  - Moved `WebSidebar` to `app/_layout.tsx` for persistent desktop app shell across all 19 routes.
-  - Implemented custom `CustomTabBar` floating pill renderer with pixel-calculated flexbox centering (`alignItems: 'center'`), active highlights, and elevated Scan CTA.
-  - Overhauled multi-column desktop grid layouts for Dashboard, Scan, Routines, Products, Profile, Coach, Consultations, History, Cart, Checkout.
-- [x] **Marketing Website (`apps/marketing-web`)**:
-  - Added `'use client';` directives to `@medivo/theme` for Next.js 14 App Router compatibility.
-  - Integrated Clinical Blue (`#1F7FC4`) theme tokens in `globals.css` and `tailwind.config.js`.
-  - Refactored Navbar, Footer, Landing Page, SkinScoreSimulator, Pricing, Clinical Studies, and About pages for full light/dark mode responsiveness.
-- [x] **Platform Admin Console (`apps/admin-panel`)**:
-  - Updated Sidebar, Header, Executive Dashboard, Live HIPAA Audit Viewer, User Registry, Dermatologist Hub, and Product Inventory with Clinical Blue tokens and high-contrast light/dark mode tables.
-- [x] **Doctor Portal (`apps/doctor-portal`)**:
-  - Added `postcss.config.js` for PostCSS & Tailwind compilation.
-  - Refactored Dermatologist Dashboard, patient consultation queue, telemetry metrics, and header controls with Clinical Blue tokens and multi-theme support.
-- [x] **Customer BFF REST API (`apps/customer-bff`)**:
-  - Built and started Node.js/Express BFF REST API server on port 4000 (`HEALTHY`).
-
----
-
-## Workspace Container & Service Ports
-
-- **PostgreSQL 16 Cluster**: `localhost:5432` (`medivo` database, 13 domain schemas)
-- **Redis 7 Cache**: `localhost:6379`
-- **MinIO S3 Console**: `localhost:9000` / `localhost:9001`
-- **Mailpit Web UI**: `localhost:8025` (SMTP `localhost:1025`)
-- **Customer BFF REST API**: `http://localhost:4000`
-- **Customer Web Portal**: `http://localhost:8081`
-- **Marketing Website**: `http://localhost:3000`
-- **Doctor Portal**: `http://localhost:3001`
-- **Platform Admin Console**: `http://localhost:3002`
+- [x] **Repository & Stack Assessment**:
+  - Identified 4 frontend applications (`marketing-web`, `doctor-portal`, `admin-panel`, and Expo mobile `customer-app`), 1 BFF gateway (`customer-bff`), 5 backend microservices (`ai`, `auth`, `appointments`, `commerce`, `notifications`), 1 shared domain package (`@medivo/service-api`), and core infrastructure (PostgreSQL 16 with 13 schemas, Redis 7, MinIO S3, Mailpit).
+- [x] **Next.js Standalone Optimization**:
+  - Configured `output: 'standalone'` and comprehensive `transpilePackages` across all Next.js applications (`apps/marketing-web/next.config.mjs`, `apps/doctor-portal/next.config.mjs`, `apps/admin-panel/next.config.mjs`).
+  - Added `public/.gitkeep` placeholders to guarantee fail-safe multi-stage Docker builds.
+- [x] **Multi-Stage Production Dockerfiles**:
+  - Created/updated deterministic, secure, non-root multi-stage Dockerfiles with exact HTTP healthchecks (using `127.0.0.1`):
+    - `apps/marketing-web/Dockerfile` (Port 3000)
+    - `apps/doctor-portal/Dockerfile` (Port 3001)
+    - `apps/admin-panel/Dockerfile` (Port 3002)
+    - `apps/customer-bff/Dockerfile` (Port 4000)
+    - `services/ai/Dockerfile` (Port 8080)
+    - `services/auth/Dockerfile` (Port 4001)
+    - `services/appointments/Dockerfile` (Port 4002)
+    - `services/commerce/Dockerfile` (Port 4003)
+    - `services/notifications/Dockerfile` (Port 4004)
+- [x] **Production Coolify Compose Stack (`docker-compose.production.yml`)**:
+  - Configured complete production compose stack strictly following the Coolify port rule (NO host port mappings). Traefik manages host ports 80 and 443 with TLS certificates.
+  - Implemented Traefik routing labels for public domains (`example.com`, `doctor.example.com`, `admin.example.com`, `api.example.com`).
+  - Configured internal Docker networking (`medivo-network`) for all microservices and databases without exposing internal ports.
+  - Added memory reservations and resource limits tuned for OCI 4 OCPU / 24 GB RAM.
+- [x] **Production Environment Template (`.env.production.example`)**:
+  - Documented all public parameters vs server secrets with clear demarcation and guidance.
+- [x] **OCI + Coolify Deployment Guide (`docs/deployment/COOLIFY_OCI_DEPLOYMENT.md`)**:
+  - Authored comprehensive documentation detailing OCI security list ingress, Ubuntu firewall configuration, Coolify setup, resource allocation table, and verification commands.
