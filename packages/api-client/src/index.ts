@@ -11,9 +11,14 @@ export class MedivoApiClient {
   public onError?: (error: Error) => void;
 
   constructor(config?: ApiClientConfig) {
-    this.baseUrl = config?.baseUrl || 'http://localhost:4000';
+    const envUrl =
+      (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) ||
+      (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ||
+      (typeof process !== 'undefined' && process.env?.API_URL);
+    this.baseUrl = config?.baseUrl || envUrl || 'http://localhost:4000';
     this.authToken = config?.authToken || null;
   }
+
 
   public setAuthToken(token: string | null) {
     this.authToken = token;
