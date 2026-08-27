@@ -72,12 +72,16 @@ services:
     container_name: medivo-dbgate
     restart: unless-stopped
     environment:
+      # 1. Mandatory Web Authentication (Enforces Login Screen on http://db...)
+      LOGIN: "${MANAGEMENT_USER:-admin}"
+      PASSWORD: "${MANAGEMENT_PASSWORD:-MedivoAdmin@2026!}"
+
+      # 2. Pre-configured connection endpoints (Requires password entry to open database)
       CONNECTIONS: "postgres,redis"
       LABEL_postgres: "Medivo PostgreSQL (13 Schemas)"
       SERVER_postgres: "postgres"
       PORT_postgres: "5432"
       USER_postgres: "${DATABASE_USER:-postgres}"
-      PASSWORD_postgres: "${DATABASE_PASSWORD:-medivo_secure_password_change_in_prod}"
       DATABASE_postgres: "${DATABASE_NAME:-medivo}"
       ENGINE_postgres: "postgres@dbgate-plugin-postgres"
 
