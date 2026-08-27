@@ -1,7 +1,10 @@
 # ============================================================================
 # Medivo Health Intelligence Platform — Independent Management Stack
 # Deployable as an independent Coolify Resource / Docker Compose stack
-# Includes: CloudBeaver (PostgreSQL), Redis Insight (Redis)
+# Includes:
+#   1. CloudBeaver (PostgreSQL Web GUI & SQL Studio)
+#   2. Redis Insight (Redis Key, Value & Queue Inspector)
+#   3. DbGate (All-in-One Modern Database & Redis Manager)
 # Zero Public Database Ports: Accessible securely via Traefik HTTPS routers
 # ============================================================================
 
@@ -60,10 +63,52 @@ services:
     networks:
       - medivo-network
 
+  # ============================================================================
+  # 3. DbGate (All-in-One Web Manager for PostgreSQL + Redis)
+  # Internal Port: 3000
+  # ============================================================================
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: medivo-dbgate
+    restart: unless-stopped
+    environment:
+      CONNECTIONS: "postgres,redis"
+      LABEL_postgres: "Medivo PostgreSQL (13 Schemas)"
+      SERVER_postgres: "postgres"
+      PORT_postgres: "5432"
+      USER_postgres: "${DATABASE_USER:-postgres}"
+      PASSWORD_postgres: "${DATABASE_PASSWORD:-medivo_secure_password_change_in_prod}"
+      DATABASE_postgres: "${DATABASE_NAME:-medivo}"
+      ENGINE_postgres: "postgres@dbgate-plugin-postgres"
+
+      LABEL_redis: "Medivo Redis Cache"
+      SERVER_redis: "redis"
+      PORT_redis: "6379"
+      ENGINE_redis: "redis@dbgate-plugin-redis"
+    volumes:
+      - dbgate_data:/root/.dbgate
+    labels:
+      - "coolify.managed=true"
+      - "traefik.enable=true"
+      - "traefik.http.routers.medivo-dbgate.rule=Host(`db.80.225.215.96.sslip.io`) || Host(`dbgate.80.225.215.96.sslip.io`) || Host(`${DBGATE_DOMAIN:-db.80.225.215.96.sslip.io}`)"
+      - "traefik.http.routers.medivo-dbgate.service=medivo-dbgate"
+      - "traefik.http.routers.medivo-dbgate.priority=200"
+      - "traefik.http.services.medivo-dbgate.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    networks:
+      - medivo-network
+
 volumes:
   cloudbeaver_data:
     driver: local
   redis_insight_data:
+    driver: local
+  dbgate_data:
     driver: local
 
 networks:

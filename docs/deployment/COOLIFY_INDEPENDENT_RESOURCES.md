@@ -248,6 +248,13 @@ Deployable together using `docker-compose.management.yml`:
 - **Persistent Volume**: `redis_insight_data` -> `/data`
 - **Internal Access**: Connects directly to `redis:6379` without exposing Redis port 6379 to the public internet.
 
+#### 16. `dbgate` (All-in-One PostgreSQL + Redis Manager)
+- **Docker Image**: `dbgate/dbgate:latest`
+- **Container Port**: `3000`
+- **Public Domain**: `https://db.example.com` / `https://dbgate.example.com`
+- **Persistent Volume**: `dbgate_data` -> `/root/.dbgate`
+- **Internal Access**: Pre-configured automatic connections to both `postgres:5432` and `redis:6379`.
+
 ---
 
 ## 4. OCI Resource Allocation Budget (4 OCPU / 24 GB RAM)
