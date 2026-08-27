@@ -5,9 +5,15 @@ import mobileBffRouter from './routes/index.js';
 import adminBffRouter from './routes/admin-bff.routes.js';
 import doctorBffRouter from './routes/doctor-bff.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { DatabasePool } from '@medivo/service-api';
 
 const app = express();
 const PORT = env.PORT || 4000;
+
+// Auto-initialize PostgreSQL 13 domain schemas on startup
+DatabasePool.initializeSchemas().catch((err) => {
+  console.warn('[Database Auto-Init]:', err.message);
+});
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
