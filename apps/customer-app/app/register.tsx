@@ -18,8 +18,12 @@ export default function RegisterScreen() {
       setErrorMessage('Please fill in all required fields.');
       return;
     }
+    if (password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters.');
+      return;
+    }
     setErrorMessage('');
-    const success = await register(name, email, skinType);
+    const success = await register(name, email, password, skinType);
     if (success) {
       router.replace('/otp-verify');
     } else {

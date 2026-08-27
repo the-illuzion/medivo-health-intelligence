@@ -166,10 +166,10 @@ export class MedivoApiClient {
       }
       return result;
     },
-    register: async (name: string, email: string, skinType?: string) => {
+    register: async (name: string, email: string, password: string, skinType?: string) => {
       const result = await this.request<{ user: any; token: string }>('/api/mobile-bff/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, email, skinType }),
+        body: JSON.stringify({ name, email, password, skinType: skinType || 'Combination' }),
       });
       if (result && result.token) {
         this.setAuthToken(result.token);

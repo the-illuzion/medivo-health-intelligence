@@ -20,13 +20,13 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, skinType } = req.body;
+    const { name, email, password, skinType } = req.body;
     const id = `usr-${Date.now()}`;
     const newUser = new User({
       id,
       name,
       email,
-      passwordHash: 'hashed_pw_' + Date.now(),
+      passwordHash: password,
       skinType: skinType || 'Combination',
       hipaaConsent: true,
       createdAt: new Date(),

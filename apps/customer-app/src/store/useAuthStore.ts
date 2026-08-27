@@ -24,7 +24,7 @@ interface AuthState {
   
   // Actions
   login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, skinType?: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string, skinType?: string) => Promise<boolean>;
   verifyOtp: (code: string) => Promise<boolean>;
   resetPassword: (email: string) => Promise<boolean>;
   completeOnboarding: (skinType: string, goals: string[]) => Promise<boolean>;
@@ -73,10 +73,10 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (name: string, email: string, skinType: string = 'Combination') => {
+      register: async (name: string, email: string, password: string, skinType: string = 'Combination') => {
         set({ isLoading: true, error: null });
         try {
-          const res = await apiClient.auth.register(name, email, skinType);
+          const res = await apiClient.auth.register(name, email, password, skinType);
           apiClient.setAuthToken(res.token);
           set({
             user: res.user,
