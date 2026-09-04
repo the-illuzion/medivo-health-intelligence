@@ -1,8 +1,11 @@
+'use client';
+
 import React from 'react';
 import { Activity, ShieldCheck } from 'lucide-react';
+import { useDomainUrls } from '../utils/domainHelper';
 
 export function Footer() {
-  const customerPortalUrl = process.env.NEXT_PUBLIC_APP_URL || '/app';
+  const { appUrl, doctorUrl, adminUrl, apiUrl } = useDomainUrls();
 
   return (
     <footer className="bg-slate-100 dark:bg-[#070a0f] border-t border-slate-200 dark:border-[#374151] py-16 text-slate-600 dark:text-slate-400 text-sm transition-colors">
@@ -26,10 +29,10 @@ export function Footer() {
         <div>
           <h4 className="font-bold text-slate-900 dark:text-white mb-4">Monorepo Apps</h4>
           <ul className="space-y-2.5 text-xs font-medium">
-            <li><a href={customerPortalUrl} className="hover:text-brand-primary dark:hover:text-white transition-colors">Customer Web Portal</a></li>
-            <li><a href="/doctor-portal" className="hover:text-brand-primary dark:hover:text-white transition-colors">Doctor Clinical Portal</a></li>
-            <li><a href="/admin-panel" className="hover:text-brand-primary dark:hover:text-white transition-colors">Platform Admin Console</a></li>
-            <li><a href="/api/mobile-bff/health" target="_blank" className="hover:text-brand-primary dark:hover:text-white transition-colors">Mobile BFF Health API</a></li>
+            <li><a href={appUrl} className="hover:text-brand-primary dark:hover:text-white transition-colors">Customer Web Portal</a></li>
+            <li><a href={doctorUrl} className="hover:text-brand-primary dark:hover:text-white transition-colors">Doctor Clinical Portal</a></li>
+            <li><a href={adminUrl} className="hover:text-brand-primary dark:hover:text-white transition-colors">Platform Admin Console</a></li>
+            <li><a href={`${apiUrl}/api/mobile-bff/health`} target="_blank" rel="noopener noreferrer" className="hover:text-brand-primary dark:hover:text-white transition-colors">Mobile BFF Health API</a></li>
             <li><a href="/medivo-health-mobile-arm64-25MB.apk" className="hover:text-brand-primary dark:hover:text-white transition-colors">Android Release APK (25MB)</a></li>
           </ul>
         </div>

@@ -18,7 +18,8 @@ export function getDefaultBaseUrl(): string {
 
   // 2. Client browser runtime dynamic origin resolution
   if (typeof window !== 'undefined' && window.location) {
-    const host = window.location.hostname;
+    const rawHost = window.location.hostname;
+    const host = rawHost.replace(/^www\./, '');
     const protocol = window.location.protocol;
     const port = window.location.port ? `:${window.location.port}` : '';
 

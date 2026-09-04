@@ -4,9 +4,10 @@ import React from 'react';
 import Link from 'next/link';
 import { Activity, Smartphone, ArrowRight } from 'lucide-react';
 import { ThemeToggle } from '@medivo/theme';
+import { useDomainUrls } from '../utils/domainHelper';
 
 export function Navbar() {
-  const webAppUrl = process.env.NEXT_PUBLIC_APP_URL || '/app';
+  const { appUrl } = useDomainUrls();
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-[#090D16]/80 backdrop-blur-xl border-b border-slate-200 dark:border-[#374151] transition-colors">
@@ -35,7 +36,7 @@ export function Navbar() {
           <ThemeToggle />
 
           <a
-            href={webAppUrl}
+            href={appUrl}
             className="text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-brand-primary dark:hover:text-white px-3 py-2 rounded-xl transition-colors hidden sm:block"
           >
             Launch Web App
