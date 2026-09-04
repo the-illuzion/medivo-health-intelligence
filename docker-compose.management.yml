@@ -21,15 +21,10 @@ services:
     restart: unless-stopped
     volumes:
       - cloudbeaver_data:/opt/cloudbeaver/workspace
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8978/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
+      - "traefik.docker.network=medivo-network"
       - "traefik.http.routers.medivo-cloudbeaver.rule=Host(`${DB_ADMIN_DOMAIN:-db-admin.80.225.215.96.sslip.io}`) || Host(`db-admin.medivo.duckdns.org`)"
       - "traefik.http.routers.medivo-cloudbeaver.service=medivo-cloudbeaver"
       - "traefik.http.routers.medivo-cloudbeaver.priority=200"
@@ -53,15 +48,10 @@ services:
     restart: unless-stopped
     volumes:
       - redis_insight_data:/data
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:5540/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
+      - "traefik.docker.network=medivo-network"
       - "traefik.http.routers.medivo-redis-insight.rule=Host(`${REDIS_ADMIN_DOMAIN:-redis-admin.80.225.215.96.sslip.io}`) || Host(`redis-admin.medivo.duckdns.org`)"
       - "traefik.http.routers.medivo-redis-insight.service=medivo-redis-insight"
       - "traefik.http.routers.medivo-redis-insight.priority=200"
@@ -104,15 +94,10 @@ services:
       ENGINE_redis: "redis@dbgate-plugin-redis"
     volumes:
       - dbgate_data:/root/.dbgate
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
+      - "traefik.docker.network=medivo-network"
       - "traefik.http.routers.medivo-dbgate.rule=Host(`db.80.225.215.96.sslip.io`) || Host(`db.medivo.duckdns.org`) || Host(`dbgate.80.225.215.96.sslip.io`) || Host(`dbgate.medivo.duckdns.org`) || Host(`${DBGATE_DOMAIN:-db.80.225.215.96.sslip.io}`)"
       - "traefik.http.routers.medivo-dbgate.service=medivo-dbgate"
       - "traefik.http.routers.medivo-dbgate.priority=200"
