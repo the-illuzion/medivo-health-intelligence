@@ -53,7 +53,7 @@ services:
       NODE_ENV: production
       PORT: 3001
       INTERNAL_API_URL: http://customer-bff:4000
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.80.225.215.96.sslip.io}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3001/"]
       interval: 30s
@@ -90,7 +90,7 @@ services:
       NODE_ENV: production
       PORT: 3002
       INTERNAL_API_URL: http://customer-bff:4000
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.80.225.215.96.sslip.io}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3002/"]
       interval: 30s
@@ -130,7 +130,7 @@ services:
       INTERNAL_APP_URL: http://customer-app:8081
       INTERNAL_DOCTOR_URL: http://doctor-portal:3001
       INTERNAL_ADMIN_URL: http://admin-panel:3002
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api.80.225.215.96.sslip.io}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
       interval: 30s
