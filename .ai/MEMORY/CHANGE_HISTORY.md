@@ -34,7 +34,13 @@ All entries must strictly adhere to the following block format. Do not use table
 
 ## History Log
 
-### 2026-08-07 - Monorepo Design System & Multi-Theme Alignment Across Web & Mobile Apps
+### 2026-09-04 - Universal DuckDNS Multi-Subdomain Routing, Dynamic App Subdomains & WWW Support
+- **Agent/Author**: Antigravity Cloud & Production Routing Agent
+- **Type**: Feature / Bugfix / Architecture
+- **Impact Level**: High
+- **Description**: Configured comprehensive multi-subdomain Traefik routing rules and dynamic domain helpers across all frontends, BFF gateway, and database management suites (`dbgate`, `redis-insight`, `cloudbeaver`). Added universal `www.` alias support for all DuckDNS and sslip.io subdomains (`www.db.medivo.duckdns.org`, `www.app.medivo.duckdns.org`, etc.), updated marketing web app links (`apps/marketing-web`) to dynamically route directly to `https://app.medivo.duckdns.org`, and normalized API client origin resolution.
+- **Domains Affected**: Traefik Reverse Proxy, Frontend Routing, Marketing Web, Management Stack, API Client
+- **Key Files**: `docker-compose.management.yml`, `docker-compose.frontends.yml`, `docker-compose.bff.yml`, `docker-compose.production.yml`, `apps/marketing-web/app/utils/domainHelper.ts`, `packages/api-client/src/index.ts`
 - **Agent/Author**: Design System & Full-Stack UI Alignment Agent
 - **Type**: Feature / Refactor / Architecture
 - **Impact Level**: High
