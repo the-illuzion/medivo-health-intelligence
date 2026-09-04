@@ -22,6 +22,7 @@ config.resolver.extraNodeModules = {
   '@medivo/utils': path.resolve(workspaceRoot, 'packages/utils/src'),
   '@medivo/design-system': path.resolve(workspaceRoot, 'packages/design-system/src'),
   '@medivo/ui': path.resolve(workspaceRoot, 'packages/ui/src'),
+  '@medivo/theme': path.resolve(workspaceRoot, 'packages/theme/src'),
   '@medivo/api-client': path.resolve(workspaceRoot, 'packages/api-client/src'),
 };
 

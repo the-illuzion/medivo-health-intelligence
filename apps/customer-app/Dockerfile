@@ -35,6 +35,7 @@ RUN pnpm --filter @medivo/types run build || true
 RUN pnpm --filter @medivo/utils run build || true
 RUN pnpm --filter @medivo/api-client run build || true
 RUN pnpm --filter @medivo/theme run build || true
+RUN pnpm --filter @medivo/design-system run build || true
 
 # Export Expo Web Bundle
 WORKDIR /app/apps/customer-app
@@ -45,14 +46,14 @@ RUN --mount=type=cache,target=/root/.metro \
 
 # Stage 3: High-Performance Nginx Alpine Runner
 FROM nginx:alpine AS runner
-RUN apk add --no-cache wget
+RUN apk add --no-cache wget curl
 
 COPY apps/customer-app/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/apps/customer-app/dist /usr/share/nginx/html
 
-EXPOSE 8081
+EXPOSE 8081 80
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://127.0.0.1:8081/health || exit 1
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1:8081/health || curl -sf http://127.0.0.1:8081/health || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
