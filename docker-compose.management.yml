@@ -108,10 +108,14 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.docker.network=medivo-network"
-      # HTTP Router (Port 80)
+      # HTTP-to-HTTPS Auto-Redirect Middleware
+      - "traefik.http.middlewares.medivo-redirect-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.medivo-redirect-https.redirectscheme.permanent=true"
+      # HTTP Router (Port 80) -> Redirects directly to HTTPS
       - "traefik.http.routers.medivo-dbgate.rule=Host(`db.80.225.215.96.sslip.io`) || Host(`db.medivo.duckdns.org`) || Host(`dbgate.80.225.215.96.sslip.io`) || Host(`dbgate.medivo.duckdns.org`) || Host(`${DBGATE_DOMAIN:-db.80.225.215.96.sslip.io}`)"
       - "traefik.http.routers.medivo-dbgate.service=medivo-dbgate"
       - "traefik.http.routers.medivo-dbgate.priority=200"
+      - "traefik.http.routers.medivo-dbgate.middlewares=medivo-redirect-https"
       # HTTPS Router (Port 443 with Let's Encrypt TLS)
       - "traefik.http.routers.medivo-dbgate-secure.rule=Host(`db.80.225.215.96.sslip.io`) || Host(`db.medivo.duckdns.org`) || Host(`dbgate.80.225.215.96.sslip.io`) || Host(`dbgate.medivo.duckdns.org`) || Host(`${DBGATE_DOMAIN:-db.80.225.215.96.sslip.io}`)"
       - "traefik.http.routers.medivo-dbgate-secure.service=medivo-dbgate"
