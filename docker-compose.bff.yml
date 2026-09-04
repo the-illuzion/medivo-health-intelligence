@@ -41,7 +41,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-bff.rule=Host(`api.80.225.215.96.sslip.io`) || Host(`${API_DOMAIN:-api.80.225.215.96.sslip.io}`) || ((Host(`main.80.225.215.96.sslip.io`) || Host(`80.225.215.96.sslip.io`)) && (PathPrefix(`/api`) || PathPrefix(`/health`)))"
+      - "traefik.http.routers.medivo-bff.rule=Host(`api.80.225.215.96.sslip.io`) || Host(`api.medivo.duckdns.org`) || Host(`${API_DOMAIN:-api.80.225.215.96.sslip.io}`) || ((Host(`main.80.225.215.96.sslip.io`) || Host(`main.medivo.duckdns.org`) || Host(`medivo.duckdns.org`) || Host(`80.225.215.96.sslip.io`) || Host(`${WEB_DOMAIN:-main.80.225.215.96.sslip.io}`)) && (PathPrefix(`/api`) || PathPrefix(`/health`)))"
       - "traefik.http.routers.medivo-bff.service=medivo-bff"
       - "traefik.http.routers.medivo-bff.priority=100"
       - "traefik.http.services.medivo-bff.loadbalancer.server.port=4000"

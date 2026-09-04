@@ -38,6 +38,14 @@ export function getDefaultBaseUrl(): string {
     if (host.startsWith('admin.')) {
       return `${protocol}//${host.replace(/^admin\./, 'api.')}${port}`;
     }
+    // If on duckdns.org root (e.g. medivo.duckdns.org -> api.medivo.duckdns.org)
+    if (host.endsWith('duckdns.org')) {
+      const parts = host.split('.');
+      if (parts.length === 3) {
+        return `${protocol}//api.${host}${port}`;
+      }
+    }
+
     // If on raw IP sslip.io: 80.225.215.96.sslip.io -> api.80.225.215.96.sslip.io
     if (host.endsWith('sslip.io')) {
       return `${protocol}//api.${host}${port}`;

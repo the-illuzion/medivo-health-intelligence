@@ -132,7 +132,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-bff.rule=Host(`api.80.225.215.96.sslip.io`) || Host(`${API_DOMAIN:-api.80.225.215.96.sslip.io}`) || ((Host(`main.80.225.215.96.sslip.io`) || Host(`80.225.215.96.sslip.io`)) && (PathPrefix(`/api`) || PathPrefix(`/health`)))"
+      - "traefik.http.routers.medivo-bff.rule=Host(`api.80.225.215.96.sslip.io`) || Host(`api.medivo.duckdns.org`) || Host(`${API_DOMAIN:-api.80.225.215.96.sslip.io}`) || ((Host(`main.80.225.215.96.sslip.io`) || Host(`main.medivo.duckdns.org`) || Host(`medivo.duckdns.org`) || Host(`80.225.215.96.sslip.io`) || Host(`${WEB_DOMAIN:-main.80.225.215.96.sslip.io}`)) && (PathPrefix(`/api`) || PathPrefix(`/health`)))"
       - "traefik.http.routers.medivo-bff.service=medivo-bff"
       - "traefik.http.routers.medivo-bff.priority=100"
       - "traefik.http.services.medivo-bff.loadbalancer.server.port=4000"
@@ -164,7 +164,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-app.rule=Host(`app.80.225.215.96.sslip.io`) || Host(`${APP_DOMAIN:-app.80.225.215.96.sslip.io}`) || PathPrefix(`/app`)"
+      - "traefik.http.routers.medivo-app.rule=Host(`app.80.225.215.96.sslip.io`) || Host(`app.medivo.duckdns.org`) || Host(`${APP_DOMAIN:-app.80.225.215.96.sslip.io}`) || PathPrefix(`/app`)"
       - "traefik.http.routers.medivo-app.service=medivo-app"
       - "traefik.http.routers.medivo-app.priority=85"
       - "traefik.http.services.medivo-app.loadbalancer.server.port=8081"
@@ -201,7 +201,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-doctor.rule=Host(`doctor.80.225.215.96.sslip.io`) || Host(`${DOCTOR_DOMAIN:-doctor.80.225.215.96.sslip.io}`) || PathPrefix(`/doctor-portal`)"
+      - "traefik.http.routers.medivo-doctor.rule=Host(`doctor.80.225.215.96.sslip.io`) || Host(`doctor.medivo.duckdns.org`) || Host(`${DOCTOR_DOMAIN:-doctor.80.225.215.96.sslip.io}`) || PathPrefix(`/doctor-portal`)"
       - "traefik.http.routers.medivo-doctor.service=medivo-doctor"
       - "traefik.http.routers.medivo-doctor.priority=80"
       - "traefik.http.services.medivo-doctor.loadbalancer.server.port=3001"
@@ -238,7 +238,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-admin.rule=Host(`admin.80.225.215.96.sslip.io`) || Host(`${ADMIN_DOMAIN:-admin.80.225.215.96.sslip.io}`) || PathPrefix(`/admin-panel`)"
+      - "traefik.http.routers.medivo-admin.rule=Host(`admin.80.225.215.96.sslip.io`) || Host(`admin.medivo.duckdns.org`) || Host(`${ADMIN_DOMAIN:-admin.80.225.215.96.sslip.io}`) || PathPrefix(`/admin-panel`)"
       - "traefik.http.routers.medivo-admin.service=medivo-admin"
       - "traefik.http.routers.medivo-admin.priority=80"
       - "traefik.http.services.medivo-admin.loadbalancer.server.port=3002"
@@ -278,7 +278,7 @@ services:
     labels:
       - "coolify.managed=true"
       - "traefik.enable=true"
-      - "traefik.http.routers.medivo-web.rule=Host(`main.80.225.215.96.sslip.io`) || Host(`80.225.215.96.sslip.io`) || Host(`${WEB_DOMAIN:-main.80.225.215.96.sslip.io}`) || HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.medivo-web.rule=Host(`main.80.225.215.96.sslip.io`) || Host(`main.medivo.duckdns.org`) || Host(`medivo.duckdns.org`) || Host(`80.225.215.96.sslip.io`) || Host(`${WEB_DOMAIN:-main.80.225.215.96.sslip.io}`) || HostRegexp(`{host:.+}`)"
       - "traefik.http.routers.medivo-web.service=medivo-web"
       - "traefik.http.routers.medivo-web.priority=10"
       - "traefik.http.services.medivo-web.loadbalancer.server.port=3000"
