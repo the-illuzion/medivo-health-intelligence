@@ -1,5 +1,8 @@
 import { IAIProviderAdapter, AIProviderResult } from './IAIProviderAdapter.js';
 import { env } from '../config/env.js';
+import { trackedFetch, createLogger } from '@medivo/utils';
+
+const adapterLogger = createLogger('shen-ai-adapter');
 
 export class ShenAIAdapter implements IAIProviderAdapter {
   public name = 'ShenAI';
@@ -14,18 +17,24 @@ export class ShenAIAdapter implements IAIProviderAdapter {
     }
 
     try {
-      const response = await fetch(env.SHEN_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${env.SHEN_API_KEY}`,
-          'X-Client-Secret': env.SHEN_CLIENT_SECRET!,
+      const response = await trackedFetch(
+        env.SHEN_ENDPOINT,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${env.SHEN_API_KEY}`,
+            'X-Client-Secret': env.SHEN_CLIENT_SECRET!,
+          },
+          body: JSON.stringify({
+            payload: imageBase64,
+            analysis_type: 'vital_telemetry',
+          }),
+          serviceName: 'shen-ai-api',
+          operationName: 'POST /vitals/telemetry/rppg',
         },
-        body: JSON.stringify({
-          payload: imageBase64,
-          analysis_type: 'vital_telemetry',
-        }),
-      });
+        adapterLogger
+      );
 
       if (!response.ok) {
         throw new Error(`Shen AI API HTTP Error ${response.status}: ${response.statusText}`);
@@ -65,8 +74,9 @@ export class ShenAIAdapter implements IAIProviderAdapter {
         providerName: this.name,
       };
     } catch (err: any) {
-      console.warn('[ShenAIAdapter] Remote API call error:', err.message);
+      adapterLogger.warn('[ShenAIAdapter] External provider call error:', { error: err.message });
       throw err;
     }
   }
 }
+

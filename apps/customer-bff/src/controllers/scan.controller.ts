@@ -4,10 +4,12 @@ import { auditService } from '../services/audit.service.js';
 import { notificationService } from '../services/notification.service.js';
 import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 import { env } from '../config/env.js';
+import { trackedFetch, createLogger } from '@medivo/utils';
 
 const scanRepo = new PostgresSkinScanRepository();
 const aiService = new SimulatedAIInferenceService();
 const submitSkinScanUseCase = new SubmitSkinScanUseCase(scanRepo, aiService);
+const scanLogger = createLogger('scan-controller');
 
 export const analyzeScan = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
@@ -29,14 +31,25 @@ export const analyzeScan = async (req: AuthenticatedRequest, res: Response, next
 
     // 1. Attempt AI Microservice RPC invocation
     try {
+      const reqId = (req as any).reqId || (req.headers['x-request-id'] as string) || `req-${Date.now()}`;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 4000);
-      const aiResponse = await fetch(`${env.AI_SERVICE_URL}/api/ai/telemetry/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, imageBase64, consentGiven, consentVersion }),
-        signal: controller.signal,
-      });
+      const aiResponse = await trackedFetch(
+        `${env.AI_SERVICE_URL}/api/ai/telemetry/analyze`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-request-id': reqId,
+          },
+          body: JSON.stringify({ userId, imageBase64, consentGiven, consentVersion }),
+          signal: controller.signal,
+          serviceName: 'ai-microservice-rpc',
+          operationName: 'POST /api/ai/telemetry/analyze',
+          reqId,
+        },
+        scanLogger
+      );
       clearTimeout(timeoutId);
 
       if (aiResponse.ok) {
@@ -60,7 +73,7 @@ export const analyzeScan = async (req: AuthenticatedRequest, res: Response, next
       }
     } catch (rpcErr: any) {
       // Graceful fallback to local domain use-case if microservice is offline
-      console.warn('[ScanController] AI Microservice RPC unreached, using domain use-case:', rpcErr.message);
+      scanLogger.warn('[ScanController] AI Microservice RPC unreached, using domain fallback:', { error: rpcErr.message });
     }
 
     // 2. Fallback to domain use case if not handled by remote microservice

@@ -1,5 +1,8 @@
 import { IAIProviderAdapter, AIProviderResult } from './IAIProviderAdapter.js';
 import { env } from '../config/env.js';
+import { trackedFetch, createLogger } from '@medivo/utils';
+
+const adapterLogger = createLogger('perfect-corp-adapter');
 
 export class PerfectCorpAdapter implements IAIProviderAdapter {
   public name = 'PerfectCorp';
@@ -14,18 +17,24 @@ export class PerfectCorpAdapter implements IAIProviderAdapter {
     }
 
     try {
-      const response = await fetch(env.PERFECT_CORP_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Api-Key': env.PERFECT_CORP_API_KEY!,
-          'X-Secret-Key': env.PERFECT_CORP_SECRET_KEY!,
+      const response = await trackedFetch(
+        env.PERFECT_CORP_ENDPOINT,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Api-Key': env.PERFECT_CORP_API_KEY!,
+            'X-Secret-Key': env.PERFECT_CORP_SECRET_KEY!,
+          },
+          body: JSON.stringify({
+            image_data: imageBase64,
+            features: ['hydration', 'spots', 'wrinkles', 'texture', 'dark_circles'],
+          }),
+          serviceName: 'perfect-corp-api',
+          operationName: 'POST /ai-api/v1/skin/analysis',
         },
-        body: JSON.stringify({
-          image_data: imageBase64,
-          features: ['hydration', 'spots', 'wrinkles', 'texture', 'dark_circles'],
-        }),
-      });
+        adapterLogger
+      );
 
       if (!response.ok) {
         throw new Error(`Perfect Corp API HTTP Error ${response.status}: ${response.statusText}`);
@@ -66,8 +75,9 @@ export class PerfectCorpAdapter implements IAIProviderAdapter {
         providerName: this.name,
       };
     } catch (err: any) {
-      console.warn('[PerfectCorpAdapter] Remote API call error:', err.message);
+      adapterLogger.warn('[PerfectCorpAdapter] External provider call error:', { error: err.message });
       throw err;
     }
   }
 }
+

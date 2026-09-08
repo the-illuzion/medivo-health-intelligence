@@ -273,3 +273,86 @@ export const logger = new Logger('medivo-system');
 export function createLogger(serviceName: string, defaultContext: LogContext = {}): Logger {
   return new Logger(serviceName, defaultContext);
 }
+
+export interface TrackedFetchOptions extends RequestInit {
+  serviceName?: string;
+  operationName?: string;
+  reqId?: string;
+}
+
+/**
+ * Universal Outbound HTTP Client with automatic latency measurement, status tracking,
+ * correlation ID propagation, and secure header credential redaction.
+ */
+export async function trackedFetch(
+  url: string,
+  options: TrackedFetchOptions = {},
+  parentLogger?: Logger
+): Promise<Response> {
+  const loggerInstance = parentLogger || createLogger(options.serviceName || 'outbound-http');
+  const start = Date.now();
+  const method = options.method || 'GET';
+  const opName = options.operationName || `${method} ${url.split('?')[0]}`;
+  const reqId = options.reqId || `out-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  const safeHeaders: Record<string, string> = {};
+  if (options.headers) {
+    const rawHeaders = options.headers as Record<string, string>;
+    for (const [k, v] of Object.entries(rawHeaders)) {
+      const lower = k.toLowerCase();
+      if (lower.includes('key') || lower.includes('secret') || lower.includes('auth') || lower.includes('token')) {
+        safeHeaders[k] = '[REDACTED_HEADER]';
+      } else {
+        safeHeaders[k] = v;
+      }
+    }
+  }
+
+  loggerInstance.debug(`[ThirdParty Request] Initiating ${opName}`, {
+    reqId,
+    targetUrl: url.split('?')[0],
+    method,
+    headers: safeHeaders,
+  });
+
+  try {
+    const response = await fetch(url, options);
+    const durationMs = Date.now() - start;
+
+    if (!response.ok) {
+      loggerInstance.warn(`[ThirdParty Response Warn] ${opName} -> ${response.status} (${durationMs}ms)`, {
+        reqId,
+        targetUrl: url.split('?')[0],
+        method,
+        statusCode: response.status,
+        statusText: response.statusText,
+        durationMs,
+      });
+    } else {
+      loggerInstance.info(`[ThirdParty Response OK] ${opName} -> ${response.status} (${durationMs}ms)`, {
+        reqId,
+        targetUrl: url.split('?')[0],
+        method,
+        statusCode: response.status,
+        durationMs,
+      });
+    }
+
+    return response;
+  } catch (err: any) {
+    const durationMs = Date.now() - start;
+    loggerInstance.error(
+      `[ThirdParty Request Failed] ${opName} error: ${err.message} (${durationMs}ms)`,
+      {
+        reqId,
+        targetUrl: url.split('?')[0],
+        method,
+        durationMs,
+        errorName: err.name,
+      },
+      err
+    );
+    throw err;
+  }
+}
+

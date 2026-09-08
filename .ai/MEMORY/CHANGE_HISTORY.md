@@ -34,6 +34,14 @@ All entries must strictly adhere to the following block format. Do not use table
 
 ## History Log
 
+### 2026-09-08 - Third-Party API Egress Telemetry & Process Crash Hardening
+- **Agent/Author**: Antigravity Observability & Third-Party Integration Agent
+- **Type**: Feature / Security / Architecture
+- **Impact Level**: High
+- **Description**: Implemented universal outbound HTTP client `trackedFetch` in `@medivo/utils` with automatic request/response logging, duration (ms) measurement, correlation ID propagation, and automatic redaction of confidential headers (`Authorization`, `X-Api-Key`, `X-Secret-Key`, `X-Client-Secret`). Integrated `trackedFetch` into third-party AI vision providers (`PerfectCorpAdapter`, `ShenAIAdapter`) and BFF-to-microservice RPC calls. Added global uncaught exception (`uncaughtException`), unhandled rejection (`unhandledRejection`), and graceful shutdown (`SIGTERM`, `SIGINT`) handlers across `customer-bff` and `service-ai` to ensure process crashes are reliably logged before termination. Added comprehensive unit tests for `trackedFetch`.
+- **Domains Affected**: Outbound HTTP Egress, AI Vision Provider Adapters (`services/ai`), BFF RPC (`apps/customer-bff`), Platform Core (`@medivo/utils`)
+- **Key Files**: `packages/utils/src/logger.ts`, `services/ai/src/providers/PerfectCorpAdapter.ts`, `services/ai/src/providers/ShenAIAdapter.ts`, `apps/customer-bff/src/controllers/scan.controller.ts`, `apps/customer-bff/src/server.ts`, `services/ai/src/server.ts`
+
 ### 2026-09-08 - Automated Tracked Database Migrations System & Schema Self-Healing
 - **Agent/Author**: Antigravity Database Engineering & Reliability Agent
 - **Type**: Architecture / Feature
@@ -41,6 +49,7 @@ All entries must strictly adhere to the following block format. Do not use table
 - **Description**: Upgraded database lifecycle management to automatically execute tracked migrations on every deployment and container startup. Created `public.schema_migrations` tracking table (`version`, `name`, `applied_at`) to idempotently execute pending migrations in sequence. Embedded migrations `001` through `004` directly into the TypeScript runtime for 100% reliability in pruned production Docker containers, alongside disk-based `.sql` file detection. Added migration `004_audit_logs_metadata_and_indexes.sql` to permanently manage audit log schema evolution.
 - **Domains Affected**: PostgreSQL Database Layer, Migration Runner, BFF Startup Lifecycle
 - **Key Files**: `services/api/src/infrastructure/db/migrations/runner.ts`, `services/api/src/infrastructure/db/DatabasePool.ts`, `services/api/src/infrastructure/db/migrations/004_audit_logs_metadata_and_indexes.sql`, `services/api/src/infrastructure/__tests__/MigrationRunner.test.ts`
+
 
 ### 2026-09-08 - Comprehensive Multi-Tier Logging System Architecture & Observability Hardening
 - **Agent/Author**: Antigravity Platform Reliability & Logging Architecture Agent

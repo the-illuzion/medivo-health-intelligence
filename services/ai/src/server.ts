@@ -27,10 +27,44 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/v1/ai', aiRoutes);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+// Global Uncaught Exception & Promise Rejection Handlers
+process.on('uncaughtException', (error: Error) => {
+  serverLogger.fatal('Uncaught Exception occurred in AI Service process', {
+    errorMessage: error.message,
+    stack: error.stack,
+  }, error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  serverLogger.fatal('Unhandled Promise Rejection occurred in AI Service process', {
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
+});
+
+const server = app.listen(PORT, () => {
   serverLogger.info(`🧠 Medivo AI Vision Service running on http://localhost:${PORT}`, {
     port: PORT,
     environment: env.NODE_ENV,
     modelVersion: env.MODEL_VERSION,
   });
 });
+
+// Graceful Shutdown
+process.on('SIGTERM', () => {
+  serverLogger.info('Received SIGTERM signal. Initiating graceful shutdown of AI Service...');
+  server.close(() => {
+    serverLogger.info('AI Service HTTP server closed. Process terminating.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  serverLogger.info('Received SIGINT signal. Initiating graceful shutdown of AI Service...');
+  server.close(() => {
+    serverLogger.info('AI Service HTTP server closed. Process terminating.');
+    process.exit(0);
+  });
+});
+

@@ -10,13 +10,18 @@
 
 ## Active Work Completed
 
-- [x] **Universal Structured Logger (`packages/utils/src/logger.ts`)**:
+- [x] **Universal Structured Logger & Tracked HTTP Client (`packages/utils/src/logger.ts`)**:
   - Implemented multi-level logging (`DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `AUDIT`).
   - Automated recursive HIPAA/GDPR PII/PHI redaction (`password`, `token`, `authorization`, `creditCard`, `cvv`, `ssn`).
   - Base64 biometric image stream protection (replaces large image payloads with `[BASE64_IMAGE_STREAM <size>KB]`).
+  - Built `trackedFetch` universal client for third-party API tracking: latency measurement (`durationMs`), HTTP status logging (`200 OK` vs `4xx/5xx Warn/Error`), correlation ID propagation, and automated credential header redaction (`[REDACTED_HEADER]`).
   - Dual console output: Colored human-readable output in local development, JSON in production (`NODE_ENV === 'production'`).
   - Automatic persistent rotating file sinks (`combined.log`, `error.log`, `audit.log`) with 10MB size-based rotation.
   - Comprehensive unit test suite with 100% pass rate (`packages/utils/src/__tests__/logger.test.ts`).
+- [x] **Third-Party API Integration & Process Crash Resilience**:
+  - Wired `trackedFetch` into AI vision adapters: `PerfectCorpAdapter.ts` (Perfect Corp Skin API) and `ShenAIAdapter.ts` (Shen AI Telemetry API).
+  - Wired `trackedFetch` into BFF scan controller for AI Microservice RPC calls (`scan.controller.ts`).
+  - Attached top-level `uncaughtException`, `unhandledRejection`, and graceful shutdown (`SIGTERM`, `SIGINT`) handlers to `customer-bff` and `service-ai` server runtimes.
 - [x] **Distributed Request Tracing & HTTP Access Logging (`apps/customer-bff`, `services/ai`)**:
   - Correlation ID propagation middleware (`x-request-id`, `x-correlation-id`).
   - HTTP access logger recording method, path, response status, duration (ms), IP hash, and authenticated user ID.

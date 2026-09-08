@@ -8,14 +8,20 @@
 
 ## Summary of Work Completed
 
-1. **Universal Structured Logger (`packages/utils/src/logger.ts`)**:
+1. **Universal Structured Logger & Tracked HTTP Client (`packages/utils/src/logger.ts`)**:
    - Universal `Logger` supporting `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `AUDIT`.
+   - Outbound HTTP tracking with `trackedFetch` measuring external latency (`durationMs`), logging request initiation, response status codes, and network exceptions.
+   - Automatic header credential redaction (`[REDACTED_HEADER]`) for `Authorization`, `X-Api-Key`, `X-Secret-Key`, and `X-Client-Secret`.
    - Automatic recursive PII/PHI redaction (`password`, `token`, `authorization`, `creditCard`, `cvv`, `ssn`).
    - Base64 biometric image stream protection (replaces large image payloads with `[BASE64_IMAGE_STREAM <size>KB]`).
    - Dual console output: Colored human-readable output in local development, JSON in production (`NODE_ENV === 'production'`).
    - Automatic persistent rotating file sinks (`combined.log`, `error.log`, `audit.log`) with 10MB size-based rotation.
    - Comprehensive unit test suite with 100% pass rate (`packages/utils/src/__tests__/logger.test.ts`).
-2. **Distributed Request Tracing & HTTP Access Logging (`apps/customer-bff`, `services/ai`)**:
+2. **Third-Party Integrations & Process Crash Resilience**:
+   - Integrated `trackedFetch` into `PerfectCorpAdapter.ts` and `ShenAIAdapter.ts` in `services/ai`.
+   - Integrated `trackedFetch` into `apps/customer-bff/src/controllers/scan.controller.ts` with correlation ID propagation (`reqId`).
+   - Added global `uncaughtException`, `unhandledRejection`, and graceful shutdown handlers to `customer-bff` and `service-ai` servers.
+3. **Distributed Request Tracing & HTTP Access Logging (`apps/customer-bff`, `services/ai`)**:
    - Correlation ID propagation middleware (`x-request-id`, `x-correlation-id`).
    - HTTP access logger recording method, path, response status, duration (ms), IP hash, and authenticated user ID.
    - Centralized error handler capturing 4xx client errors and 5xx server exceptions with stack traces.

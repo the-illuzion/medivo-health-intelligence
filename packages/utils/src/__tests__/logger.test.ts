@@ -79,3 +79,69 @@ describe('Universal Logger', () => {
     consoleSpy.mockRestore();
   });
 });
+
+describe('trackedFetch Universal HTTP Client', () => {
+  it('should track latency, status, and redact confidential headers on request', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: async () => ({ success: true }),
+    };
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn().mockResolvedValue(mockResponse as any);
+
+    const { trackedFetch } = await import('../logger.js');
+    const res = await trackedFetch('https://api.external.com/v1/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer secret-token-12345',
+        'X-Api-Key': 'my-super-secret-key',
+      },
+      body: JSON.stringify({ test: 123 }),
+      serviceName: 'test-http',
+    });
+
+    expect(res.status).toBe(200);
+    expect(consoleSpy).toHaveBeenCalled();
+    const allCalls = consoleSpy.mock.calls.map((c) => c[0]).join(' ');
+    expect(allCalls).toContain('ThirdParty Response OK');
+    expect(allCalls).toContain('https://api.external.com/v1/analyze');
+
+    globalThis.fetch = originalFetch;
+    consoleSpy.mockRestore();
+  });
+
+  it('should record warning and error when third party returns non-200 or throws', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const originalFetch = globalThis.fetch;
+
+    // 1. HTTP 500 error response
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+    } as any);
+
+    const { trackedFetch } = await import('../logger.js');
+    const res = await trackedFetch('https://api.external.com/v1/fail', {
+      serviceName: 'test-fail-http',
+    });
+    expect(res.status).toBe(500);
+
+    // 2. Network throw error
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network Connection Refused'));
+    await expect(
+      trackedFetch('https://api.external.com/v1/crash', {
+        serviceName: 'test-crash-http',
+      })
+    ).rejects.toThrow('Network Connection Refused');
+
+    globalThis.fetch = originalFetch;
+    consoleSpy.mockRestore();
+  });
+});
+
