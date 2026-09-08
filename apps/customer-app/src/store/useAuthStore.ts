@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { apiClient } from '@medivo/api-client';
 import { authStorage } from '../utils/authStorage';
+import { useScanStore } from './useScanStore';
 
 export interface UserProfile {
   id: string;
@@ -134,6 +135,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (e) {
         } finally {
           apiClient.setAuthToken(null);
+          useScanStore.getState().resetScanState();
           set({
             user: null,
             token: null,

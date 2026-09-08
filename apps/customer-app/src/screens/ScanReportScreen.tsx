@@ -36,31 +36,45 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
     loadData();
   }, [scanId, activeScan]);
 
-  const score = report?.overallScore ?? 87;
+  const hasReport = !!report;
+
+  if (!hasReport && !activeScan && (!scanHistory || scanHistory.length === 0)) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => onNavigate('dashboard')}>
+            <Feather name="arrow-left" size={20} color="#1E1B4B" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>AI Skin & Vitals Report</Text>
+          <View style={{ width: 38 }} />
+        </View>
+
+        <View style={styles.emptyCard}>
+          <View style={styles.emptyIconCircle}>
+            <Feather name="bar-chart-2" size={32} color="#4338CA" />
+          </View>
+          <Text style={styles.emptyTitle}>No Diagnostic Report Found</Text>
+          <Text style={styles.emptySub}>
+            You haven't completed any AI scans yet. Capture a 10-second facial scan to compute all 15 clinical skin
+            attributes and view your comprehensive diagnostic dossier.
+          </Text>
+          <TouchableOpacity
+            style={styles.emptyScanBtn}
+            onPress={() => onNavigate('faceMatch')}
+            activeOpacity={0.85}
+          >
+            <Feather name="camera" size={16} color="#FFFFFF" />
+            <Text style={styles.emptyScanBtnText}>Take First AI Scan</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  const score = report?.overallScore ?? 0;
   const grade = report?.grade ?? (score >= 85 ? 'Optimal Grade' : score >= 70 ? 'Good Condition' : 'Attention Advised');
   const riskLevel = report?.riskLevel ?? 'LOW';
-  const metrics: SkinMetrics = report?.metrics ?? {
-    hydration: 88,
-    oiliness: 58,
-    texture: 85,
-    poreClarity: 84,
-    pigmentation: 89,
-    wrinkles: 86,
-    acneScore: 92,
-    darkCircles: 74,
-    eyeBags: 78,
-    rednessScore: 12,
-    firmness: 85,
-    radiance: 87,
-    skinAge: 26,
-    skinType: 'Combination',
-    barrierHealth: 92,
-    photoprotection: 'SPF 50 Active',
-    heartRate: 72,
-    stressIndex: 18,
-    oilinessLevel: 'Balanced Sebum',
-  };
-
+  const metrics: SkinMetrics = report?.metrics || ({} as SkinMetrics);
 
   const recommendations = (report?.recommendations && report.recommendations.length > 0)
     ? report.recommendations
@@ -729,4 +743,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ghostBtnText: { color: '#64748B', fontWeight: '600', fontSize: 13, marginLeft: 6 },
+  emptyCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 32,
+    borderRadius: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EEF0F7',
+    marginTop: 20,
+  },
+  emptyIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1E1B4B', marginBottom: 8 },
+  emptySub: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+  emptyScanBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 16,
+  },
+  emptyScanBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', marginLeft: 6 },
 });

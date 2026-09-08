@@ -19,6 +19,7 @@ interface ScanState {
   fetchScanById: (scanId: string) => Promise<SkinScanResult | null>;
   setActiveScan: (scan: SkinScanResult | null) => void;
   clearActiveScan: () => void;
+  resetScanState: () => void;
   clearError: () => void;
 }
 
@@ -62,10 +63,10 @@ export const useScanStore = create<ScanState>()(
         set({ isLoadingHistory: true, error: null });
         try {
           const history = await apiClient.scans.getHistory();
-          if (Array.isArray(history) && history.length > 0) {
+          if (Array.isArray(history)) {
             set({
               scanHistory: history,
-              activeScan: get().activeScan || history[0],
+              activeScan: history.length > 0 ? (get().activeScan || history[0]) : null,
               isLoadingHistory: false,
             });
             return history;
@@ -95,6 +96,7 @@ export const useScanStore = create<ScanState>()(
 
       setActiveScan: (scan: SkinScanResult | null) => set({ activeScan: scan }),
       clearActiveScan: () => set({ activeScan: null }),
+      resetScanState: () => set({ activeScan: null, scanHistory: [], error: null, isScanning: false, isLoadingHistory: false }),
       clearError: () => set({ error: null }),
     }),
     {

@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { ScreenKey } from '@medivo/types';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface CheckoutScreenProps {
   onNavigate: (screen: ScreenKey) => void;
 }
 
 export function CheckoutScreen({ onNavigate }: CheckoutScreenProps) {
+  const { user } = useAuthStore();
   const [deliveryMethod, setDeliveryMethod] = useState('express');
+  const recipientName = user?.name || 'Valued Patient';
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -26,7 +29,7 @@ export function CheckoutScreen({ onNavigate }: CheckoutScreenProps) {
           <Feather name="map-pin" size={18} color="#4338CA" />
           <Text style={styles.cardTitle}>Shipping Address</Text>
         </View>
-        <Text style={styles.nameText}>Sarah Jenkins</Text>
+        <Text style={styles.nameText}>{recipientName}</Text>
         <Text style={styles.addressText}>742 Evergreen Terrace, Suite 4B</Text>
         <Text style={styles.addressText}>Springfield, OR 97477</Text>
       </View>

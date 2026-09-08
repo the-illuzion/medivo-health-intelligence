@@ -32,6 +32,14 @@ All entries must strictly adhere to the following block format. Do not use table
 
 ---
 
+### 2026-09-08 - Customer App Dynamic Dashboard & History Overhaul
+- **Agent/Author**: Antigravity Health Intelligence & Mobile Experience Agent
+- **Type**: Feature / Refactor / Bugfix
+- **Impact Level**: High
+- **Description**: Eliminated all hardcoded, static mock scores (`87`), trends (`+4 this week`), fake names (`Sarah`), and seeded demo history (`usr-demo`) across the Customer Platform (`apps/customer-app`). Upgraded `DashboardScreen` to dynamically render time-of-day greetings, authenticated user initials, actual latest scan scores with real calculated deltas vs prior scans, dynamic AI summaries based on real telemetry, and clean baseline-prompt states (`--/100`) for new users. Overhauled `HistoryScreen` with true dynamic lifetime progress tracking, chronological sparkline charts, color-coded score badges, and a rich empty state for 0-scan accounts. Integrated session reset logic in `useScanStore` and connected `ProfileScreen`, `EditProfileScreen`, `AICoachScreen`, and `CheckoutScreen` to live user state.
+- **Domains Affected**: Customer App (`apps/customer-app`), State Management (`useAuthStore`, `useScanStore`), UI Screens
+- **Key Files**: `apps/customer-app/src/screens/DashboardScreen.tsx`, `apps/customer-app/src/screens/HistoryScreen.tsx`, `apps/customer-app/src/screens/ProfileScreen.tsx`, `apps/customer-app/src/screens/EditProfileScreen.tsx`, `apps/customer-app/src/screens/ScanReportScreen.tsx`, `apps/customer-app/src/screens/AICoachScreen.tsx`, `apps/customer-app/src/store/useScanStore.ts`
+
 ### 2026-09-08 - Fixed AI Telemetry 404 Route Mismatch & Expanded Full 15 Perfect AI Skin Attributes
 - **Agent/Author**: Antigravity AI Engineering & Frontend Diagnostics Agent
 - **Type**: Bugfix / Feature / Architecture

@@ -2,13 +2,19 @@
 
 ## Last Session Details
 
-- **Agent**: Antigravity Platform Reliability & Logging Architecture Agent
-- **Completed**: 2026-09-08T17:00:00Z
+- **Agent**: Antigravity Health Intelligence & Mobile Experience Agent
+- **Completed**: 2026-09-08T22:10:00Z
 - **Branch**: `main`
 
 ## Summary of Work Completed
 
-1. **AI Telemetry Route Fix & Full 15 Perfect AI Clinical Attributes**:
+1. **Customer App Dynamic Dashboard & History Overhaul (`apps/customer-app`)**:
+   - **DashboardScreen**: Fully dynamic for new users (placeholder states, `--/100`, "Baseline Needed", scan prompts) and existing users (real scores, calculated trends vs previous scan, dynamic time greeting, and personalized AI summary).
+   - **HistoryScreen**: Removed hardcoded `usr-demo` seed data; implemented true dynamic timeline, lifetime progress tracker, chronological sparkline bar chart, and empty state.
+   - **ScanReportScreen & AICoachScreen**: Dynamic biomarker binding, empty state handling, and personalized coach greetings.
+   - **Stores & Profile**: Clean scan state reset on logout, dynamic profile viewing and editing.
+
+2. **AI Telemetry Route Fix & Full 15 Perfect AI Clinical Attributes**:
    - Fixed 404 route error (`POST /api/ai/telemetry/analyze -> 404`) by configuring multi-path route mounts (`/api/ai/telemetry`, `/api/ai`, `/api/v1/ai`, `/api/v1/ai/telemetry`) in `services/ai/src/server.ts` and `ai.routes.ts`.
    - Expanded `SkinMetrics` in `@medivo/types` to support all 15 clinical skin attributes:
      1. Stratum Corneum Hydration, 2. Sebum & Lipid Balance, 3. Surface Micro-Texture, 4. Pore Clarity & Visibility, 5. Melanin Uniformity & Spots, 6. Fine Lines & Wrinkles, 7. Acne & Blemish Defense, 8. Periorbital Dark Circles, 9. Under-Eye Bags & Contour, 10. Dermal Erythema & Redness, 11. Dermal Elasticity & Firmness, 12. Luminosity & Radiance, 13. Estimated Biological Skin Age, 14. Clinical Skin Type, and 15. Epidermal Barrier Integrity / Photoprotection.

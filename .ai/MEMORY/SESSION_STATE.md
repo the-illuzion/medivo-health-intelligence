@@ -1,14 +1,34 @@
 # Current Session State
 
-- **Agent**: Antigravity Platform Reliability & Logging Architecture Agent
-- **Last Updated**: 2026-09-08T17:00:00Z
-- **Task**: Comprehensive Multi-Tier Logging System Architecture & Observability Hardening
+- **Agent**: Antigravity Health Intelligence & Mobile Experience Agent
+- **Last Updated**: 2026-09-08T22:10:00Z
+- **Task**: Customer App Dynamic Dashboard & History Overhaul (Eliminating Hardcoded Data)
 - **Branch**: `main`
 - **Status**: ✅ Complete (Build Verified, Test Suites 100% Passing)
 
 ---
 
 ## Active Work Completed
+
+- [x] **Customer App 100% Dynamic Dashboard & History Flow (`apps/customer-app`)**:
+  - **DashboardScreen**:
+    - Eliminated all hardcoded scores (`87`), fake trends (`+4 this week`), fake names (`Sarah`), and static telemetry.
+    - Implemented dynamic time-of-day greeting (`Good Morning` / `Good Afternoon` / `Good Evening`) and dynamic initials/user name from `useAuthStore`.
+    - Added comprehensive support for **New Users** (0 scans): displays `--/100`, "Baseline Needed" badge, "Start First Scan" prompt, and empty telemetry placeholders (`--%`) instead of fake score data.
+    - Added dynamic trend calculation for **Existing Users**: computes real score delta between latest scan and previous scan (`+X pts vs last scan` / `-X pts vs last scan` / `Stable baseline`), real grade, and dynamic clinical AI summary synthesized from actual dermal biomarkers & recommendations.
+  - **HistoryScreen**:
+    - Completely removed fake hardcoded seed records (`usr-demo` scans).
+    - Added dedicated empty state for new users ("No Scan History Yet") with "Take First AI Scan" CTA.
+    - Built dynamic summary card for users with scans: computes real lifetime progress (`latestScore - baselineScore`), dynamic progress badges, and sparkline bar chart visualizing recent scans with score values and dates.
+    - Rendered dynamic historical scan timeline with color-coded score badges, accurate timestamps, clinical grades, and hydration indicators; clicking any scan loads its complete 15 attributes into `ScanReportScreen`.
+  - **ScanReportScreen & AICoachScreen**:
+    - Added empty state handling when no scan records exist.
+    - Bound AICoachScreen initial greeting to dynamic user name and active scan status.
+  - **Auth & Scan Stores (`useAuthStore`, `useScanStore`)**:
+    - Updated `fetchScanHistory` in `useScanStore` to properly reset state when history is empty.
+    - Added `resetScanState` action to `useScanStore` and connected it to `useAuthStore.logout()` to prevent data leakage between user sessions.
+  - **Profile, EditProfile & Checkout Screens**:
+    - Connected `ProfileScreen`, `EditProfileScreen`, and `CheckoutScreen` to dynamic authenticated user profile state.
 
 - [x] **AI Telemetry Route Fix & Full 15 Perfect AI Clinical Attributes**:
   - Fixed 404 route error (`POST /api/ai/telemetry/analyze -> 404`) by configuring multi-path route mounts (`/api/ai/telemetry`, `/api/ai`, `/api/v1/ai`, `/api/v1/ai/telemetry`) in `services/ai/src/server.ts` and `ai.routes.ts`.

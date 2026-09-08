@@ -3,12 +3,20 @@ import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Activi
 import { Feather } from '@expo/vector-icons';
 import { ChatMessage } from '@medivo/types';
 import { apiClient } from '@medivo/api-client';
+import { useAuthStore } from '../store/useAuthStore';
+import { useScanStore } from '../store/useScanStore';
 
 export function AICoachScreen() {
+  const { user } = useAuthStore();
+  const { activeScan } = useScanStore();
+  const userName = user?.name ? user.name.split(' ')[0] : 'Patient';
+
+  const initialGreeting = activeScan
+    ? `Hello ${userName}! Your latest health score is ${activeScan.overallScore}/100 (${activeScan.grade || 'Optimal'}). How can I help optimize your skincare or clinical routine today?`
+    : `Hello ${userName}! Welcome to Medivo AI Health Coach. I'm ready to answer your dermatological questions, analyze your routine, or help you prepare for your first biometric scan. What's on your mind?`;
+
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { sender: 'ai', text: "Good morning! Your hydration score is looking solid 🎉 How is your current routine feeling today?" },
-    { sender: 'user', text: "I've been drinking more water and using the moisturizer consistently." },
-    { sender: 'ai', text: "That's an excellent combination! Consistent barrier moisturization locks in epidermal hydration." }
+    { sender: 'ai', text: initialGreeting },
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -27,7 +35,7 @@ export function AICoachScreen() {
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { sender: 'ai', text: "Great question! Maintaining your hydration and using mineral SPF 50 daily will keep your cellular barrier resilient." },
+        { sender: 'ai', text: "Maintaining adequate hydration and using broad-spectrum SPF 50 daily will keep your cellular barrier resilient." },
       ]);
     } finally {
       setIsTyping(false);

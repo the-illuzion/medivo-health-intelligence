@@ -2,17 +2,39 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, TextInput, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { ScreenKey } from '@medivo/types';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface EditProfileScreenProps {
   onNavigate: (screen: ScreenKey) => void;
 }
 
 export function EditProfileScreen({ onNavigate }: EditProfileScreenProps) {
-  const [name, setName] = useState('Sarah Jenkins');
-  const [email, setEmail] = useState('sarah.j@example.com');
-  const [phone, setPhone] = useState('+1 (555) 234-5678');
-  const [allergies, setAllergies] = useState('Fragrance, Niacinamide > 5%');
-  const [goals, setGoals] = useState('Barrier Repair, Hyperpigmentation Reduction');
+  const { user, updateProfile } = useAuthStore();
+
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [allergies, setAllergies] = useState(user?.allergies || '');
+  const [goals, setGoals] = useState(user?.goals?.join(', ') || 'Barrier Repair, Hyperpigmentation Reduction');
+
+  const initials = (name || user?.name || 'Patient')
+    .split(' ')
+    .map((n) => n[0])
+    .filter(Boolean)
+    .join('')
+    .toUpperCase()
+    .substring(0, 2) || 'MP';
+
+  const handleSave = async () => {
+    await updateProfile({
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      allergies: allergies.trim(),
+      goals: goals.split(',').map((g) => g.trim()).filter(Boolean),
+    });
+    onNavigate('profile');
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -21,7 +43,7 @@ export function EditProfileScreen({ onNavigate }: EditProfileScreenProps) {
           <Feather name="arrow-left" size={20} color="#1E1B4B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity onPress={() => onNavigate('profile')}>
+        <TouchableOpacity onPress={handleSave}>
           <Text style={styles.saveText}>Save</Text>
         </TouchableOpacity>
       </View>
@@ -29,7 +51,7 @@ export function EditProfileScreen({ onNavigate }: EditProfileScreenProps) {
       {/* Avatar Change */}
       <View style={styles.avatarBox}>
         <View style={styles.avatarCircle}>
-          <Text style={styles.avatarInitials}>SJ</Text>
+          <Text style={styles.avatarInitials}>{initials}</Text>
         </View>
         <TouchableOpacity style={styles.changePicBtn}>
           <Feather name="camera" size={14} color="#4338CA" />
