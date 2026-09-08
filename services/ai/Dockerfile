@@ -27,6 +27,9 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
 
+# Build required TypeScript packages
+RUN pnpm --filter @medivo/types run build || true
+RUN pnpm --filter @medivo/utils run build
 RUN pnpm --filter @medivo/service-ai run build
 
 # Stage 3: Minimal Production Runtime

@@ -32,6 +32,7 @@ COPY turbo.json turbo.json
 
 # Build required TypeScript packages
 RUN pnpm --filter @medivo/types run build || true
+RUN pnpm --filter @medivo/utils run build
 RUN pnpm --filter @medivo/service-api run build
 RUN pnpm --filter @medivo/customer-bff run build
 
