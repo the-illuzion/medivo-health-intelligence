@@ -41,17 +41,10 @@ export function getDefaultBaseUrl(): string {
     }
     // If on DuckDNS domain
     if (host.endsWith('duckdns.org')) {
-      if (host.startsWith('medivo-') || host === 'medivo.duckdns.org') {
-        return `${protocol}//medivo-api.duckdns.org${port}`;
+      if (host.startsWith('app.') || host.startsWith('doctor.') || host.startsWith('admin.') || host.startsWith('main.') || host.startsWith('api.')) {
+        return `${protocol}//api.${host.replace(/^(app|doctor|admin|main|api)\./, '')}${port}`;
       }
-      if (host.startsWith('app.') || host.startsWith('doctor.') || host.startsWith('admin.') || host.startsWith('main.')) {
-        return `${protocol}//api.${host.replace(/^(app|doctor|admin|main)\./, '')}${port}`;
-      }
-      const parts = host.split('.');
-      if (parts.length === 3) {
-        return `${protocol}//api.${host}${port}`;
-      }
-      return `${protocol}//medivo-api.duckdns.org${port}`;
+      return `${protocol}//api.${host}${port}`;
     }
 
     // If on raw IP sslip.io: 80.225.215.96.sslip.io -> api.80.225.215.96.sslip.io

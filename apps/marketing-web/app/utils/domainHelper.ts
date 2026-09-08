@@ -18,15 +18,12 @@ export function getAppUrl(): string {
     const protocol = window.location.protocol;
     const port = window.location.port ? `:${window.location.port}` : '';
 
-    // DuckDNS domain routing (e.g. medivo.duckdns.org -> medivo-app.duckdns.org)
+    // DuckDNS domain routing (e.g. medivo.duckdns.org -> app.medivo.duckdns.org)
     if (host.endsWith('duckdns.org')) {
-      if (host.startsWith('medivo-') || host === 'medivo.duckdns.org') {
-        return `${protocol}//medivo-app.duckdns.org${port}`;
+      if (host.startsWith('main.') || host.startsWith('doctor.') || host.startsWith('admin.') || host.startsWith('api.') || host.startsWith('app.')) {
+        return `${protocol}//app.${host.replace(/^(main|doctor|admin|api|app)\./, '')}${port}`;
       }
-      if (host.startsWith('main.') || host.startsWith('doctor.') || host.startsWith('admin.')) {
-        return `${protocol}//app.${host.replace(/^(main|doctor|admin)\./, '')}${port}`;
-      }
-      return `${protocol}//medivo-app.duckdns.org${port}`;
+      return `${protocol}//app.${host}${port}`;
     }
 
     // sslip.io domain routing (e.g. main.80.225.215.96.sslip.io -> app.80.225.215.96.sslip.io)
@@ -49,7 +46,7 @@ export function getAppUrl(): string {
     return `${protocol}//app.${host}${port}`;
   }
 
-  return 'https://medivo-app.duckdns.org';
+  return 'https://app.medivo.duckdns.org';
 }
 
 /**
@@ -67,13 +64,10 @@ export function getDoctorUrl(): string {
     const port = window.location.port ? `:${window.location.port}` : '';
 
     if (host.endsWith('duckdns.org')) {
-      if (host.startsWith('medivo-') || host === 'medivo.duckdns.org') {
-        return `${protocol}//medivo-doctor.duckdns.org${port}`;
+      if (host.startsWith('main.') || host.startsWith('app.') || host.startsWith('admin.') || host.startsWith('api.') || host.startsWith('doctor.')) {
+        return `${protocol}//doctor.${host.replace(/^(main|app|admin|api|doctor)\./, '')}${port}`;
       }
-      if (host.startsWith('main.') || host.startsWith('app.') || host.startsWith('admin.')) {
-        return `${protocol}//doctor.${host.replace(/^(main|app|admin)\./, '')}${port}`;
-      }
-      return `${protocol}//medivo-doctor.duckdns.org${port}`;
+      return `${protocol}//doctor.${host}${port}`;
     }
 
     if (host.endsWith('sslip.io')) {
@@ -93,7 +87,7 @@ export function getDoctorUrl(): string {
     return `${protocol}//doctor.${host}${port}`;
   }
 
-  return 'https://medivo-doctor.duckdns.org';
+  return 'https://doctor.medivo.duckdns.org';
 }
 
 /**
@@ -111,13 +105,10 @@ export function getAdminUrl(): string {
     const port = window.location.port ? `:${window.location.port}` : '';
 
     if (host.endsWith('duckdns.org')) {
-      if (host.startsWith('medivo-') || host === 'medivo.duckdns.org') {
-        return `${protocol}//medivo-admin.duckdns.org${port}`;
+      if (host.startsWith('main.') || host.startsWith('app.') || host.startsWith('doctor.') || host.startsWith('api.') || host.startsWith('admin.')) {
+        return `${protocol}//admin.${host.replace(/^(main|app|doctor|api|admin)\./, '')}${port}`;
       }
-      if (host.startsWith('main.') || host.startsWith('app.') || host.startsWith('doctor.')) {
-        return `${protocol}//admin.${host.replace(/^(main|app|doctor)\./, '')}${port}`;
-      }
-      return `${protocol}//medivo-admin.duckdns.org${port}`;
+      return `${protocol}//admin.${host}${port}`;
     }
 
     if (host.endsWith('sslip.io')) {
@@ -137,7 +128,7 @@ export function getAdminUrl(): string {
     return `${protocol}//admin.${host}${port}`;
   }
 
-  return 'https://medivo-admin.duckdns.org';
+  return 'https://admin.medivo.duckdns.org';
 }
 
 /**
@@ -155,13 +146,10 @@ export function getApiUrl(): string {
     const port = window.location.port ? `:${window.location.port}` : '';
 
     if (host.endsWith('duckdns.org')) {
-      if (host.startsWith('medivo-') || host === 'medivo.duckdns.org') {
-        return `${protocol}//medivo-api.duckdns.org${port}`;
+      if (host.startsWith('main.') || host.startsWith('app.') || host.startsWith('doctor.') || host.startsWith('admin.') || host.startsWith('api.')) {
+        return `${protocol}//api.${host.replace(/^(main|app|doctor|admin|api)\./, '')}${port}`;
       }
-      if (host.startsWith('main.') || host.startsWith('app.') || host.startsWith('doctor.') || host.startsWith('admin.')) {
-        return `${protocol}//api.${host.replace(/^(main|app|doctor|admin)\./, '')}${port}`;
-      }
-      return `${protocol}//medivo-api.duckdns.org${port}`;
+      return `${protocol}//api.${host}${port}`;
     }
 
     if (host.endsWith('sslip.io')) {
@@ -181,7 +169,7 @@ export function getApiUrl(): string {
     return `${protocol}//api.${host}${port}`;
   }
 
-  return 'https://medivo-api.duckdns.org';
+  return 'https://api.medivo.duckdns.org';
 }
 
 /**
