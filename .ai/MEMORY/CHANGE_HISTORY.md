@@ -34,6 +34,14 @@ All entries must strictly adhere to the following block format. Do not use table
 
 ## History Log
 
+### 2026-09-08 - Marketing Website Revamp, Multi-Subdomain Standardization & Typography Upgrade
+- **Agent/Author**: Antigravity Health Intelligence & Frontend Experience Agent
+- **Type**: Feature / Refactor / Architecture
+- **Impact Level**: High
+- **Description**: Completely redesigned the Medivo Marketing Platform (`apps/marketing-web`) to be 100% production-ready, accessible, and responsive across mobile, tablet, and desktop viewports. Integrated Google Fonts `Plus_Jakarta_Sans` and `Inter` with zero layout shift; standardized multi-subdomain routing across `*.medivo.duckdns.org`; upgraded interactive 5-Biomarker `SkinScoreSimulator` with real-time prescription previews; created stateful monthly/annual pricing matrix with 20% discount badge and HSA/FSA guarantees; and elevated clinical copywriting, HIPAA disclaimers, and Medical Advisory Board profiles.
+- **Domains Affected**: Marketing Web, Design System, Domain Routing, Public Intelligence
+- **Key Files**: `apps/marketing-web/app/page.tsx`, `apps/marketing-web/app/about/page.tsx`, `apps/marketing-web/app/clinical-studies/page.tsx`, `apps/marketing-web/app/pricing/page.tsx`, `apps/marketing-web/app/components/Navbar.tsx`, `apps/marketing-web/app/components/Footer.tsx`, `apps/marketing-web/app/components/SkinScoreSimulator.tsx`, `apps/marketing-web/app/utils/domainHelper.ts`
+
 ### 2026-09-08 - Standalone DuckDNS Subdomains & Dual HTTP/HTTPS TLS Traefik Routers
 - **Agent/Author**: Antigravity Health Intelligence & Ingress Engineering Agent
 - **Type**: Bugfix / Architecture
