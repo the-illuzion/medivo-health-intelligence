@@ -8,14 +8,19 @@ export interface TelemetryMetrics {
   rednessScore?: number;
   poreClarity?: number;
   photoprotection?: string;
+  acneScore?: number;
+  oilinessLevel?: string;
 }
 
 export interface TelemetryAnalysisResult {
   scanId: string;
   userId: string;
   overallScore: number;
+  grade?: string;
   metrics: TelemetryMetrics;
   recommendations: string[];
+  riskLevel?: 'LOW' | 'MODERATE' | 'HIGH';
+  consentVersion?: string;
   modelVersion: string;
   timestamp: string;
 }

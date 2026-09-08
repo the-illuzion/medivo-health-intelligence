@@ -11,22 +11,28 @@ export class InMemorySkinScanRepository implements ISkinScanRepository {
         id: 'scn-901',
         userId: 'usr-101',
         overallScore: 87,
+        grade: 'Optimal Grade',
         metrics: { hydration: 76, texture: 84, pigmentation: 79, darkCircles: 72 },
         recommendations: [
           'Incorporate Hyaluronic Serum twice daily',
           'Daily SPF 50 Application',
           'Hydra-Gel Eye Contour for periorbital circles',
         ],
+        riskLevel: 'LOW',
+        consentVersion: 'v1.0',
         scannedAt: new Date('2026-07-28T09:15:00Z'),
       }),
       new SkinScan({
         id: 'scn-900',
         userId: 'usr-101',
         overallScore: 83,
+        grade: 'Good Condition',
         metrics: { hydration: 70, texture: 82, pigmentation: 76, darkCircles: 71 },
         recommendations: [
           'Increase water intake and apply barrier cream',
         ],
+        riskLevel: 'LOW',
+        consentVersion: 'v1.0',
         scannedAt: new Date('2026-07-21T08:30:00Z'),
       })
     );

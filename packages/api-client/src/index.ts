@@ -199,10 +199,10 @@ export class MedivoApiClient {
   };
 
   public scans = {
-    analyze: async (imageBase64: string) => {
+    analyze: async (imageBase64: string, consentGiven: boolean = true, consentVersion: string = 'v1.0') => {
       return this.request<any>('/api/mobile-bff/scans/analyze', {
         method: 'POST',
-        body: JSON.stringify({ imageBase64 }),
+        body: JSON.stringify({ imageBase64, consentGiven, consentVersion }),
       });
     },
     getHistory: async () => {

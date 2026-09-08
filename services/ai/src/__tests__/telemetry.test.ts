@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { SubDermalTelemetryEngine } from '../domain/SubDermalTelemetryEngine.js';
 
 describe('SubDermalTelemetryEngine', () => {

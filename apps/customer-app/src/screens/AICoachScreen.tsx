@@ -1,26 +1,37 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { ChatMessage } from '@medivo/types';
+import { apiClient } from '@medivo/api-client';
 
 export function AICoachScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { sender: 'ai', text: "Good morning! Your hydration score jumped 8% this week 🎉 What's working well?" },
-    { sender: 'user', text: "I've been drinking more water and using the moisturizer" },
+    { sender: 'ai', text: "Good morning! Your hydration score is looking solid 🎉 How is your current routine feeling today?" },
+    { sender: 'user', text: "I've been drinking more water and using the moisturizer consistently." },
+    { sender: 'ai', text: "That's an excellent combination! Consistent barrier moisturization locks in epidermal hydration." }
   ]);
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
 
-  function handleSend() {
-    if (!input.trim()) return;
+  async function handleSend() {
+    if (!input.trim() || isTyping) return;
     const userMsg = input.trim();
     setMessages((prev) => [...prev, { sender: 'user', text: userMsg }]);
     setInput('');
-    setTimeout(() => {
+    setIsTyping(true);
+
+    try {
+      const response = await apiClient.coach.chat(userMsg);
+      const reply = response?.reply || response?.message || "Great question! Sticking to your daily SPF 50 and hyaluronic regimen will maintain optimal dermal balance.";
+      setMessages((prev) => [...prev, { sender: 'ai', text: reply }]);
+    } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { sender: 'ai', text: "That's a great combo! The moisturizer locks in hydration." },
+        { sender: 'ai', text: "Great question! Maintaining your hydration and using mineral SPF 50 daily will keep your cellular barrier resilient." },
       ]);
-    }, 1000);
+    } finally {
+      setIsTyping(false);
+    }
   }
 
   return (

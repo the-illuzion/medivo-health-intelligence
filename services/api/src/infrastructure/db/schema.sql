@@ -100,6 +100,11 @@ CREATE TABLE IF NOT EXISTS skin_schema.skin_analyses (
   user_id VARCHAR(100) NOT NULL,
   image_s3_key VARCHAR(500) NOT NULL,
   overall_score INT NOT NULL,
+  grade VARCHAR(50) DEFAULT 'Optimal',
+  metrics JSONB DEFAULT '{}'::jsonb,
+  recommendations JSONB DEFAULT '[]'::jsonb,
+  consent_version VARCHAR(50) DEFAULT 'v1.0',
+  risk_level VARCHAR(50) DEFAULT 'LOW',
   status VARCHAR(50) DEFAULT 'COMPLETED',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

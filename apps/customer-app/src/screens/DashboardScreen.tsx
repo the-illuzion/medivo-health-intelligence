@@ -1,41 +1,80 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { ScreenKey } from '@medivo/types';
+import { useAuthStore } from '../store/useAuthStore';
+import { useScanStore } from '../store/useScanStore';
 
 interface DashboardScreenProps {
   onNavigate: (screen: ScreenKey) => void;
 }
 
 export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
+  const { user } = useAuthStore();
+  const { activeScan, fetchScanHistory } = useScanStore();
+
+  useEffect(() => {
+    fetchScanHistory();
+  }, []);
+
+  const userName = user?.name || 'Sarah';
+  const initials = userName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2) || 'SJ';
+
+  const score = activeScan?.overallScore ?? 87;
+  const grade = activeScan?.grade ?? (score >= 85 ? 'Optimal Grade' : score >= 70 ? 'Good Condition' : 'Attention Advised');
+  const metrics = activeScan?.metrics ?? {
+    hydration: 86,
+    texture: 84,
+    pigmentation: 88,
+    darkCircles: 74,
+    skinAge: 26,
+    rednessScore: 12,
+    poreClarity: 88,
+    photoprotection: 'SPF 50 Active',
+  };
+
+  const aiSummaryText = activeScan
+    ? `Your dermal hydration is at ${metrics.hydration}% with a texture index of ${metrics.texture}/100. AI suggests maintaining your morning hydration routine.`
+    : `Your skin hydration is up +6% this week following your updated morning regimen. Dark circles are looking softer.`;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header Identity Bar */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Good Morning, Sarah 👋</Text>
-          <Text style={styles.subtitle}>Your Skin Score updated today</Text>
+          <Text style={styles.greeting}>Good Morning, {userName.split(' ')[0]} 👋</Text>
+          <Text style={styles.subtitle}>Your AI Skin Score updated today</Text>
         </View>
         <TouchableOpacity style={styles.avatar} onPress={() => onNavigate('profile')}>
-          <Text style={styles.avatarText}>SJ</Text>
+          <Text style={styles.avatarText}>{initials}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Hero Score Card */}
-      <TouchableOpacity style={styles.heroCard} onPress={() => onNavigate('scanReport')} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.heroCard} onPress={() => onNavigate('scanReport')} activeOpacity={0.85}>
         <View style={styles.heroTop}>
-          <Text style={styles.heroTag}>YOUR HEALTH SCORE</Text>
+          <Text style={styles.heroTag}>YOUR AI HEALTH SCORE</Text>
           <View style={styles.inspectBadge}>
             <Text style={styles.inspectBadgeText}>Inspect Report ›</Text>
           </View>
         </View>
         <View style={styles.scoreContainer}>
-          <Text style={styles.scoreNumber}>87</Text>
+          <Text style={styles.scoreNumber}>{score}</Text>
           <Text style={styles.scoreMax}>/100</Text>
         </View>
-        <View style={styles.trendBadge}>
-          <Feather name="trending-up" size={14} color="#059669" />
-          <Text style={styles.trendText}>+4 this week</Text>
+        <View style={styles.badgeRow}>
+          <View style={styles.trendBadge}>
+            <Feather name="trending-up" size={13} color="#059669" />
+            <Text style={styles.trendText}>+4 this week</Text>
+          </View>
+          <View style={styles.gradeBadge}>
+            <Text style={styles.gradeBadgeText}>{grade}</Text>
+          </View>
         </View>
       </TouchableOpacity>
 
@@ -45,9 +84,7 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
           <Feather name="zap" size={16} color="#4338CA" />
           <Text style={styles.aiTitle}>Today's AI Summary</Text>
         </View>
-        <Text style={styles.aiText}>
-          Your skin hydration is up <Text style={styles.highlight}>+6%</Text> this week following your updated morning regimen. Dark circles are looking softer.
-        </Text>
+        <Text style={styles.aiText}>{aiSummaryText}</Text>
       </View>
 
       {/* Quick Action Pills Grid */}
@@ -118,17 +155,17 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
         <View style={styles.metricCard}>
           <Feather name="droplet" size={18} color="#0EA5E9" />
           <Text style={styles.metricLabel}>Hydration</Text>
-          <Text style={styles.metricVal}>76%</Text>
+          <Text style={styles.metricVal}>{metrics.hydration}%</Text>
         </View>
         <View style={styles.metricCard}>
           <Feather name="sun" size={18} color="#D97706" />
           <Text style={styles.metricLabel}>Pigmentation</Text>
-          <Text style={styles.metricVal}>84</Text>
+          <Text style={styles.metricVal}>{metrics.pigmentation}</Text>
         </View>
         <View style={styles.metricCard}>
           <Feather name="moon" size={18} color="#7C3AED" />
           <Text style={styles.metricLabel}>Dark Circles</Text>
-          <Text style={styles.metricVal}>73</Text>
+          <Text style={styles.metricVal}>{metrics.darkCircles}</Text>
         </View>
       </TouchableOpacity>
     </ScrollView>
@@ -151,13 +188,15 @@ const styles = StyleSheet.create({
   scoreContainer: { flexDirection: 'row', alignItems: 'baseline', marginVertical: 8 },
   scoreNumber: { fontSize: 48, fontWeight: '800', color: '#1E1B4B' },
   scoreMax: { fontSize: 16, color: '#78716C', marginLeft: 4 },
-  trendBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  trendText: { color: '#059669', fontSize: 12, fontWeight: '700', marginLeft: 4 },
+  badgeRow: { flexDirection: 'row', gap: 8 },
+  trendBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16 },
+  trendText: { color: '#059669', fontSize: 11, fontWeight: '700', marginLeft: 4 },
+  gradeBadge: { backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16 },
+  gradeBadgeText: { color: '#4338CA', fontSize: 11, fontWeight: '700' },
   aiCard: { backgroundColor: '#EEF2FF', padding: 18, borderRadius: 20, marginBottom: 20 },
   aiHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   aiTitle: { fontSize: 14, fontWeight: '700', color: '#1E1B4B', marginLeft: 6 },
   aiText: { fontSize: 13, color: '#44403C', lineHeight: 20 },
-  highlight: { color: '#059669', fontWeight: '700' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1E1B4B', marginBottom: 12 },
   quickActionsGrid: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16 },
   actionBtn: { alignItems: 'center' },

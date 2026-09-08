@@ -1,37 +1,55 @@
 # Current Session State
 
-- **Agent**: Antigravity Cloud & Production Routing Agent
-- **Last Updated**: 2026-09-04T12:43:00Z
-- **Task**: DuckDNS Subdomain Routing, Dynamic App Subdomains, WWW Aliases & Management Healthchecks
+- **Agent**: Antigravity Health Intelligence & AI Vision Engineering Agent
+- **Last Updated**: 2026-09-08T14:47:00Z
+- **Task**: Bulletproofing AI Scans, Dynamic Telemetry Extraction, HIPAA Compliance, and Dynamic Scan Reports
 - **Branch**: `main`
-- **Status**: ✅ Complete (Synced & Pushed to GitHub)
+- **Status**: ✅ Complete (Build Verified, Test Suites 100% Passing)
 
 ---
 
 ## Active Work Completed
 
-- [x] **Repository & Stack Assessment**:
-  - Identified 4 frontend applications (`marketing-web`, `doctor-portal`, `admin-panel`, and Expo mobile `customer-app`), 1 BFF gateway (`customer-bff`), 5 backend microservices (`ai`, `auth`, `appointments`, `commerce`, `notifications`), 1 shared domain package (`@medivo/service-api`), and core infrastructure (PostgreSQL 16 with 13 schemas, Redis 7, MinIO S3, Mailpit).
-- [x] **Next.js Standalone Optimization**:
-  - Configured `output: 'standalone'` and comprehensive `transpilePackages` across all Next.js applications (`apps/marketing-web/next.config.mjs`, `apps/doctor-portal/next.config.mjs`, `apps/admin-panel/next.config.mjs`).
-  - Added `public/.gitkeep` placeholders to guarantee fail-safe multi-stage Docker builds.
-- [x] **Multi-Stage Production Dockerfiles**:
-  - Created/updated deterministic, secure, non-root multi-stage Dockerfiles with exact HTTP healthchecks (using `127.0.0.1`):
-    - `apps/marketing-web/Dockerfile` (Port 3000)
-    - `apps/doctor-portal/Dockerfile` (Port 3001)
-    - `apps/admin-panel/Dockerfile` (Port 3002)
-    - `apps/customer-bff/Dockerfile` (Port 4000)
-    - `services/ai/Dockerfile` (Port 8080)
-    - `services/auth/Dockerfile` (Port 4001)
-    - `services/appointments/Dockerfile` (Port 4002)
-    - `services/commerce/Dockerfile` (Port 4003)
-    - `services/notifications/Dockerfile` (Port 4004)
-- [x] **Production Coolify Compose Stack (`docker-compose.production.yml`)**:
-  - Configured complete production compose stack strictly following the Coolify port rule (NO host port mappings). Traefik manages host ports 80 and 443 with TLS certificates.
-  - Implemented Traefik routing labels for public domains (`example.com`, `doctor.example.com`, `admin.example.com`, `api.example.com`).
-  - Configured internal Docker networking (`medivo-network`) for all microservices and databases without exposing internal ports.
-  - Added memory reservations and resource limits tuned for OCI 4 OCPU / 24 GB RAM.
-- [x] **Production Environment Template (`.env.production.example`)**:
-  - Documented all public parameters vs server secrets with clear demarcation and guidance.
-- [x] **OCI + Coolify Deployment Guide (`docs/deployment/COOLIFY_OCI_DEPLOYMENT.md`)**:
-  - Authored comprehensive documentation detailing OCI security list ingress, Ubuntu firewall configuration, Coolify setup, resource allocation table, and verification commands.
+- [x] **Database & Schema Persistence (PostgreSQL `skin_schema`)**:
+  - Updated `skin_schema.skin_analyses` table definition in `services/api/src/infrastructure/db/schema.sql` to include `grade`, `metrics JSONB`, `recommendations JSONB`, `consent_version`, and `risk_level`.
+  - Authored Migration `003_skin_analysis_metrics_and_consent.sql` with fail-safe `IF NOT EXISTS` columns.
+  - Refactored `PostgresSkinScanRepository.ts` to write and parse structured JSONB telemetry rather than hardcoded metrics.
+  - Updated `InMemorySkinScanRepository.ts` to support initial seed telemetry with grades and clinical risk levels.
+- [x] **Intelligent Telemetry & AI Microservice RPC (`services/ai` & `services/api`)**:
+  - Enhanced `SubDermalEngineAdapter.ts` and `SimulatedAIInferenceService.ts` to dynamically calculate:
+    - Overall score & clinical grade (`Optimal Grade`, `Good Condition`, `Attention Advised`, `Clinical Review Recommended`).
+    - Dermal age estimation based on cellular texture and hydration offset.
+    - Dermal erythema / redness score & pore clarity index.
+    - Dynamic photoprotection status (`SPF 50 Active` / `SPF 30 Active`).
+    - Targeted clinical formulation recommendations matching sub-score deficits.
+  - Added HIPAA consent verification guard (Rule H-2) in `ai.controller.ts` and `scan.controller.ts`.
+- [x] **Customer BFF Gateway Orchestration (`apps/customer-bff`)**:
+  - Added `AI_SERVICE_URL` to BFF environment configuration.
+  - Updated `scan.controller.ts` to attempt microservice RPC invocation (`/api/ai/telemetry/analyze`) with automatic domain use-case fallback.
+  - Verified encrypted audit logging (`SCAN_DATA_ENCRYPTED_AES256`) and customer push notifications.
+- [x] **Universal Client & Types (`packages/types` & `packages/api-client`)**:
+  - Added `SkinMetrics` and `SkinScanResult` interfaces with full type safety across monorepo.
+  - Updated `apiClient.scans.analyze(imageBase64, consentGiven, consentVersion)`.
+- [x] **Zustand Scan Store (`apps/customer-app/src/store/useScanStore.ts`)**:
+  - Created full lifecycle store supporting active scan state, history caching, consent toggle, and API orchestration.
+- [x] **Bulletproof Camera & Scan Interface (`apps/customer-app/src/screens/CameraScanScreen.tsx`)**:
+  - Live HTML5 WebRTC video stream with canvas frame capture on Web.
+  - Photo upload fallback from gallery/device.
+  - HIPAA consent verification checkbox and warning.
+  - 4-phase animated telemetry HUD extraction pipeline.
+  - Graceful error handling and retry mechanism.
+- [x] **Dynamic Scan Report Screen (`apps/customer-app/src/screens/ScanReportScreen.tsx`)**:
+  - Dynamic score hero badge with clinical grade and trend indicator.
+  - Secondary dermal indicators (Dermal Age, Erythema %, Pore Clarity %, Photoprotection).
+  - Diagnostic breakdown progress bars.
+  - Tailored regimen recommendations.
+  - HIPAA Clinical AI Wellness Notice disclaimer (Rule A-1).
+  - Native Web Share API & clipboard share integration.
+  - Direct CTAs to Medical Skincare Store and Dermatologist Consultations.
+- [x] **Dashboard, History & Coach Integration**:
+  - `DashboardScreen.tsx`: Real user name and live score/hydration rendering.
+  - `HistoryScreen.tsx`: Dynamic historical scans timeline and progress sparkline chart.
+  - `AICoachScreen.tsx`: Connected to live `apiClient.coach.chat`.
+- [x] **Quality Verification**:
+  - TypeScript compilation across all packages and apps: 0 errors.
+  - Vitest test suites (7 tests in `services/api`, 1 test in `services/ai`): 100% passing.

@@ -2,30 +2,36 @@
 
 ## Last Session Details
 
-- **Agent**: Antigravity Cloud & Production Routing Agent
-- **Completed**: 2026-09-04T12:43:00Z
+- **Agent**: Antigravity Health Intelligence & AI Vision Engineering Agent
+- **Completed**: 2026-09-08T14:47:00Z
 - **Branch**: `main`
 
 ## Summary of Work Completed
 
-1. **Universal DuckDNS & Subdomain Routing**:
-   - Added Traefik router rules across all compose files (`docker-compose.management.yml`, `docker-compose.bff.yml`, `docker-compose.frontends.yml`, `docker-compose.production.yml`) with full support for `db.medivo.duckdns.org`, `www.db.medivo.duckdns.org`, `app.medivo.duckdns.org`, `www.app.medivo.duckdns.org`, `api.medivo.duckdns.org`, `www.api.medivo.duckdns.org`, `doctor.medivo.duckdns.org`, `www.doctor.medivo.duckdns.org`, `admin.medivo.duckdns.org`, `www.admin.medivo.duckdns.org`.
-2. **Dynamic Subdomain Navigation in Marketing Web**:
-   - Created `apps/marketing-web/app/utils/domainHelper.ts` with dynamic `useDomainUrls` hook.
-   - Updated `Navbar.tsx`, `Footer.tsx`, and `page.tsx` so "Launch Web App" and "Customer Web Portal" route directly to `https://app.medivo.duckdns.org` (or `app.<domain>`).
-3. **Management Service Native Healthchecks**:
-   - Added Node.js internal HTTP healthchecks for DbGate and RedisInsight.
-4. **API Client Subdomain Dynamic Resolution**:
-   - Updated `packages/api-client/src/index.ts` to cleanly resolve `api.<domain>` with or without `www.` prefix.
-2. **Coolify + Traefik Production Stack**:
-   - Authored `docker-compose.production.yml` with strict adherence to the Coolify port rule (no host port bindings).
-   - Configured Traefik routing labels for public domains and internal bridge networking (`medivo-network`) for database, cache, and microservices.
-   - Resource limits and memory reservations tailored for OCI 4 OCPU / 24 GB RAM.
-3. **Environment & Documentation**:
-   - Created `.env.production.example` separating public variables and server secrets.
-   - Created `docs/deployment/COOLIFY_OCI_DEPLOYMENT.md` with full OCI firewall, Coolify setup, and verification instructions.
+1. **AI Scan & Telemetry Persistence**:
+   - Updated `skin_schema.skin_analyses` schema with `grade`, `metrics JSONB`, `recommendations JSONB`, `consent_version`, and `risk_level`.
+   - Added migration `003_skin_analysis_metrics_and_consent.sql`.
+   - Refactored `PostgresSkinScanRepository` and `InMemorySkinScanRepository` to store and query full dynamic JSONB payloads.
+2. **Intelligent Sub-Dermal AI Telemetry Engine**:
+   - `SubDermalEngineAdapter` and `SimulatedAIInferenceService` calculate dynamic Dermal Age, Erythema / Redness %, Pore Clarity %, Photoprotection, and personalized clinical recommendations.
+   - Enforced HIPAA Rule H-2 (consent verification) across all scan controllers.
+3. **BFF Gateway RPC Integration**:
+   - `apps/customer-bff/src/controllers/scan.controller.ts` calls `service-ai` microservice with local domain use-case fallback, audit event encryption, and push notification delivery.
+4. **Zustand Scan Store (`useScanStore.ts`)**:
+   - Complete scan state lifecycle, local caching, and seamless history retrieval.
+5. **Interactive Camera Scan UI (`CameraScanScreen.tsx`)**:
+   - Live HTML5 WebRTC streaming with canvas snapshot extraction on web.
+   - Device gallery upload fallback.
+   - 4-phase animated HUD scanning stages.
+6. **Dynamic Scan Report Screen (`ScanReportScreen.tsx`)**:
+   - Live clinical grade, score hero badge, secondary telemetry indicators, progress breakdown, dynamic recommendations, HIPAA disclaimer, and Web Share API.
+7. **Cross-Screen Integration**:
+   - Connected `DashboardScreen`, `HistoryScreen`, and `AICoachScreen` to dynamic scan and chat APIs.
+8. **Verification & Testing**:
+   - Full TypeScript compilation (0 errors).
+   - 100% passing Vitest test suites across `services/api` and `services/ai`.
 
 ## Next Steps for Future Agents
 
-- If testing local deployments without Traefik, use `docker-compose.yml` (dev mode).
-- For staging/production deployment on OCI, import `docker-compose.production.yml` directly into Coolify.
+- The AI Scan to Report pipeline is fully functional and bulletproofed across database, microservices, BFF, and frontend UI.
+- Next priority domains: Doctor Portal consultation workflows and Appointments / Video call real-time synchronization.

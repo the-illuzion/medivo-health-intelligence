@@ -8,15 +8,18 @@ export class SubmitSkinScanUseCase {
     private aiService: SimulatedAIInferenceService
   ) {}
 
-  async execute(userId: string, imageBase64: string) {
+  async execute(userId: string, imageBase64: string, consentVersion: string = 'v1.0') {
     const aiResult = await this.aiService.processFaceScan(imageBase64);
 
     const scan = new SkinScan({
       id: `scn-${Date.now()}`,
       userId,
       overallScore: aiResult.overallScore,
+      grade: aiResult.grade,
       metrics: aiResult.metrics,
       recommendations: aiResult.recommendations,
+      riskLevel: aiResult.riskLevel,
+      consentVersion,
       scannedAt: new Date(),
     });
 

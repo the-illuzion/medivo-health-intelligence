@@ -8,7 +8,8 @@
       "@medivo/theme": ["../../packages/theme/src"],
       "@medivo/types": ["../../packages/types/src"],
       "@medivo/utils": ["../../packages/utils/src"],
-      "@medivo/design-system": ["../../packages/design-system/src"]
+      "@medivo/design-system": ["../../packages/design-system/src"],
+      "@medivo/api-client": ["../../packages/api-client/src"]
     }
   },
   "include": [

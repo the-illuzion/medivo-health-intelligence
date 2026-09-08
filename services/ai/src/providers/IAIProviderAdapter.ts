@@ -1,5 +1,6 @@
 export interface AIProviderResult {
   overallScore: number;
+  grade?: string;
   metrics: {
     hydration: number;
     texture: number;
@@ -9,8 +10,11 @@ export interface AIProviderResult {
     rednessScore?: number;
     poreClarity?: number;
     photoprotection?: string;
+    acneScore?: number;
+    oilinessLevel?: string;
   };
   recommendations: string[];
+  riskLevel?: 'LOW' | 'MODERATE' | 'HIGH';
   providerName: string;
 }
 

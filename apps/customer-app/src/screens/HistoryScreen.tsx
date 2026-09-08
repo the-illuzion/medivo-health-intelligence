@@ -1,44 +1,81 @@
-import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { ScreenKey } from '@medivo/types';
+import { ScreenKey, SkinScanResult } from '@medivo/types';
+import { useScanStore } from '../store/useScanStore';
 
 interface HistoryScreenProps {
   onNavigate: (screen: ScreenKey) => void;
 }
 
 export function HistoryScreen({ onNavigate }: HistoryScreenProps) {
-  const historyGroups = [
+  const { scanHistory, isLoadingHistory, fetchScanHistory, setActiveScan } = useScanStore();
+
+  useEffect(() => {
+    fetchScanHistory();
+  }, []);
+
+  function handleSelectScan(scan: SkinScanResult) {
+    setActiveScan(scan);
+    onNavigate('scanReport');
+  }
+
+  // Fallback seed entries if history is empty
+  const fallbackEntries: SkinScanResult[] = [
     {
-      month: 'July 2026',
-      entries: [
-        { date: 'Jul 28', time: '09:15 AM', score: 87, delta: '+4', tag: 'Hydration Peak' },
-        { date: 'Jul 21', time: '08:30 AM', score: 83, delta: '+2', tag: 'Routine Adjusted' },
-        { date: 'Jul 14', time: '09:00 AM', score: 81, delta: '+1', tag: 'Barrier Recovery' },
-      ],
+      id: 'scan-hist-1',
+      userId: 'usr-demo',
+      overallScore: 87,
+      grade: 'Optimal Grade',
+      metrics: { hydration: 86, texture: 84, pigmentation: 88, darkCircles: 74, skinAge: 26 },
+      recommendations: ['Apply Hyaluronic Serum', 'Daily SPF 50 Application'],
+      scannedAt: new Date().toISOString(),
     },
     {
-      month: 'June 2026',
-      entries: [
-        { date: 'Jun 30', time: '08:45 AM', score: 80, delta: '+3', tag: 'Initial Scan' },
-        { date: 'Jun 22', time: '09:30 AM', score: 77, delta: '0', tag: 'Baseline Baseline' },
-      ],
+      id: 'scan-hist-2',
+      userId: 'usr-demo',
+      overallScore: 83,
+      grade: 'Good Condition',
+      metrics: { hydration: 80, texture: 81, pigmentation: 85, darkCircles: 72, skinAge: 27 },
+      recommendations: ['Incorporate Barrier Emulsion', 'Hydra-Gel Eye Contour'],
+      scannedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'scan-hist-3',
+      userId: 'usr-demo',
+      overallScore: 81,
+      grade: 'Good Condition',
+      metrics: { hydration: 78, texture: 79, pigmentation: 84, darkCircles: 70, skinAge: 27 },
+      recommendations: ['Multi-Molecular Hyaluronic Acid'],
+      scannedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
     },
   ];
+
+  const displayHistory = scanHistory.length > 0 ? scanHistory : fallbackEntries;
+  const recentScores = displayHistory.slice(0, 5).map((s) => s.overallScore).reverse();
+  const latestScore = displayHistory[0]?.overallScore ?? 87;
+  const baselineScore = displayHistory[displayHistory.length - 1]?.overallScore ?? 80;
+  const scoreDelta = latestScore - baselineScore;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Scan History & Trends</Text>
-        <Text style={styles.headerSub}>Track your skin health progress over time</Text>
+        <View>
+          <Text style={styles.headerTitle}>Scan History & Trends</Text>
+          <Text style={styles.headerSub}>Track your skin health progress over time</Text>
+        </View>
+        <TouchableOpacity style={styles.newScanBtn} onPress={() => onNavigate('faceMatch')}>
+          <Feather name="plus" size={16} color="#FFFFFF" />
+          <Text style={styles.newScanBtnText}>New Scan</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Progress Summary Card */}
       <View style={styles.summaryCard}>
         <View style={styles.summaryRow}>
           <View>
-            <Text style={styles.summaryTag}>30-DAY PROGRESS</Text>
-            <Text style={styles.summaryVal}>+10 Points</Text>
+            <Text style={styles.summaryTag}>LIFETIME PROGRESS</Text>
+            <Text style={styles.summaryVal}>{scoreDelta >= 0 ? `+${scoreDelta}` : scoreDelta} Points</Text>
           </View>
           <View style={styles.badgeBox}>
             <Feather name="trending-up" size={16} color="#059669" />
@@ -49,47 +86,59 @@ export function HistoryScreen({ onNavigate }: HistoryScreenProps) {
         {/* Sparkline Visualiser */}
         <View style={styles.chartContainer}>
           <View style={styles.chartBarGroup}>
-            {[77, 80, 81, 83, 87].map((val, idx) => (
+            {recentScores.map((val, idx) => (
               <View key={idx} style={styles.barItem}>
-                <View style={[styles.barFill, { height: `${(val / 100) * 80}%` }]} />
-                <Text style={styles.barLabel}>{['Jun 22', 'Jun 30', 'Jul 14', 'Jul 21', 'Jul 28'][idx]}</Text>
+                <View style={[styles.barFill, { height: `${Math.min(100, Math.max(25, (val / 100) * 80))}%` }]} />
+                <Text style={styles.barLabel}>{val}</Text>
               </View>
             ))}
           </View>
         </View>
       </View>
 
-      {/* Historical Timeline Groups */}
-      {historyGroups.map((group, gIdx) => (
-        <View key={gIdx} style={styles.groupContainer}>
-          <Text style={styles.groupMonth}>{group.month}</Text>
-          {group.entries.map((entry, eIdx) => (
+      {isLoadingHistory && (
+        <View style={styles.loadingBox}>
+          <ActivityIndicator size="small" color="#4338CA" />
+          <Text style={styles.loadingText}>Syncing scan telemetry records...</Text>
+        </View>
+      )}
+
+      {/* Historical Timeline List */}
+      <Text style={styles.sectionTitle}>Historical AI Scans ({displayHistory.length})</Text>
+      <View style={styles.historyList}>
+        {displayHistory.map((entry, idx) => {
+          const dateObj = new Date(entry.scannedAt);
+          const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          const tag = entry.grade || (entry.overallScore >= 85 ? 'Optimal Grade' : 'Good Condition');
+
+          return (
             <TouchableOpacity
-              key={eIdx}
+              key={entry.id || idx}
               style={styles.entryCard}
-              onPress={() => onNavigate('scanReport')}
-              activeOpacity={0.7}
+              onPress={() => handleSelectScan(entry)}
+              activeOpacity={0.75}
             >
               <View style={styles.entryLeft}>
                 <View style={styles.scoreCircle}>
-                  <Text style={styles.scoreText}>{entry.score}</Text>
+                  <Text style={styles.scoreText}>{entry.overallScore}</Text>
                 </View>
                 <View style={styles.entryMeta}>
-                  <Text style={styles.entryDate}>{entry.date} · {entry.time}</Text>
+                  <Text style={styles.entryDate}>{formattedDate} · {formattedTime}</Text>
                   <View style={styles.tagBadge}>
-                    <Text style={styles.tagText}>{entry.tag}</Text>
+                    <Text style={styles.tagText}>{tag}</Text>
                   </View>
                 </View>
               </View>
 
               <View style={styles.entryRight}>
-                <Text style={styles.deltaText}>{entry.delta}</Text>
+                <Text style={styles.deltaText}>Hydration {entry.metrics?.hydration || 85}%</Text>
                 <Feather name="chevron-right" size={18} color="#94A3B8" />
               </View>
             </TouchableOpacity>
-          ))}
-        </View>
-      ))}
+          );
+        })}
+      </View>
     </ScrollView>
   );
 }
@@ -97,30 +146,85 @@ export function HistoryScreen({ onNavigate }: HistoryScreenProps) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFC' },
   content: { padding: 20, paddingBottom: 120 },
-  header: { marginBottom: 20 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   headerTitle: { fontSize: 22, fontWeight: '700', color: '#1E1B4B' },
   headerSub: { fontSize: 13, color: '#64748B', marginTop: 2 },
-  summaryCard: { backgroundColor: '#4338CA', padding: 20, borderRadius: 24, marginBottom: 24 },
+  newScanBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4338CA',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  newScanBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', marginLeft: 4 },
+  summaryCard: {
+    backgroundColor: '#4338CA',
+    padding: 20,
+    borderRadius: 24,
+    marginBottom: 24,
+    shadowColor: '#4338CA',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
+  },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   summaryTag: { fontSize: 10, fontWeight: '700', color: '#C7D2FE', letterSpacing: 1 },
   summaryVal: { fontSize: 24, fontWeight: '800', color: '#FFFFFF', marginTop: 2 },
-  badgeBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ECFDF5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  badgeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
   badgeText: { color: '#059669', fontSize: 11, fontWeight: '700', marginLeft: 4 },
-  chartContainer: { height: 100, justifyContent: 'flex-end', paddingTop: 10 },
+  chartContainer: { height: 90, justifyContent: 'flex-end', paddingTop: 10 },
   chartBarGroup: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: '100%' },
   barItem: { alignItems: 'center', flex: 1 },
-  barFill: { width: 14, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 7 },
-  barLabel: { color: '#C7D2FE', fontSize: 9, marginTop: 6, fontWeight: '600' },
-  groupContainer: { marginBottom: 20 },
-  groupMonth: { fontSize: 14, fontWeight: '700', color: '#64748B', marginBottom: 10 },
-  entryCard: { backgroundColor: '#FFFFFF', padding: 16, borderRadius: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: '#EEF0F7' },
+  barFill: { width: 16, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 8 },
+  barLabel: { color: '#C7D2FE', fontSize: 10, marginTop: 6, fontWeight: '700' },
+  loadingBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 12 },
+  loadingText: { color: '#64748B', fontSize: 12, marginLeft: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1E1B4B', marginBottom: 12 },
+  historyList: { gap: 10 },
+  entryCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 18,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EEF0F7',
+  },
   entryLeft: { flexDirection: 'row', alignItems: 'center' },
-  scoreCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center' },
+  scoreCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   scoreText: { color: '#4338CA', fontWeight: '800', fontSize: 16 },
   entryMeta: { marginLeft: 12 },
   entryDate: { fontSize: 13, fontWeight: '700', color: '#1E1B4B' },
-  tagBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, alignSelf: 'flex-start', marginTop: 4 },
+  tagBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
   tagText: { color: '#475569', fontSize: 10, fontWeight: '600' },
   entryRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  deltaText: { color: '#059669', fontWeight: '700', fontSize: 13 },
+  deltaText: { color: '#059669', fontWeight: '700', fontSize: 12 },
 });

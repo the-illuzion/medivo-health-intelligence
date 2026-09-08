@@ -67,8 +67,35 @@ export interface ReportMetric {
   note: string;
 }
 
+export interface SkinMetrics {
+  hydration: number;       // 0-100%
+  texture: number;         // 0-100
+  pigmentation: number;    // 0-100
+  darkCircles: number;     // 0-100
+  skinAge?: number;        // Estimated dermal age in years
+  rednessScore?: number;   // Dermal erythema percentage (0-100%)
+  poreClarity?: number;    // Pore clarity percentage (0-100%)
+  photoprotection?: string;// Dynamic photoprotection status
+  acneScore?: number;
+  oilinessLevel?: string;
+}
+
+export interface SkinScanResult {
+  id: string;
+  userId: string;
+  overallScore: number;
+  grade?: string;
+  metrics: SkinMetrics;
+  recommendations: string[];
+  riskLevel?: 'LOW' | 'MODERATE' | 'HIGH';
+  consentVersion?: string;
+  scannedAt: string;
+  imageS3Key?: string;
+  modelVersion?: string;
+}
+
 export interface Recommendation {
-  icon: any;
+  icon?: any;
   text: string;
 }
 
