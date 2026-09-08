@@ -133,9 +133,15 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.docker.network=medivo-network"
+      # HTTP Router (Port 80)
+      - "traefik.http.routers.medivo-bff-http.rule=Host(`api.80.225.215.96.sslip.io`) || Host(`www.api.80.225.215.96.sslip.io`) || Host(`api.medivo.duckdns.org`) || Host(`www.api.medivo.duckdns.org`) || Host(`medivo-api.duckdns.org`) || Host(`www.medivo-api.duckdns.org`) || Host(`${API_DOMAIN:-api.80.225.215.96.sslip.io}`) || ((Host(`main.80.225.215.96.sslip.io`) || Host(`www.main.80.225.215.96.sslip.io`) || Host(`main.medivo.duckdns.org`) || Host(`www.main.medivo.duckdns.org`) || Host(`medivo.duckdns.org`) || Host(`www.medivo.duckdns.org`) || Host(`80.225.215.96.sslip.io`) || Host(`www.80.225.215.96.sslip.io`) || Host(`${WEB_DOMAIN:-main.80.225.215.96.sslip.io}`)) && (PathPrefix(`/api`) || PathPrefix(`/health`)))"
+      - "traefik.http.routers.medivo-bff-http.service=medivo-bff"
+      - "traefik.http.routers.medivo-bff-http.priority=100"
+      # HTTPS Router (Port 443 with TLS)
       - "traefik.http.routers.medivo-bff.rule=Host(`api.80.225.215.96.sslip.io`) || Host(`www.api.80.225.215.96.sslip.io`) || Host(`api.medivo.duckdns.org`) || Host(`www.api.medivo.duckdns.org`) || Host(`medivo-api.duckdns.org`) || Host(`www.medivo-api.duckdns.org`) || Host(`${API_DOMAIN:-api.80.225.215.96.sslip.io}`) || ((Host(`main.80.225.215.96.sslip.io`) || Host(`www.main.80.225.215.96.sslip.io`) || Host(`main.medivo.duckdns.org`) || Host(`www.main.medivo.duckdns.org`) || Host(`medivo.duckdns.org`) || Host(`www.medivo.duckdns.org`) || Host(`80.225.215.96.sslip.io`) || Host(`www.80.225.215.96.sslip.io`) || Host(`${WEB_DOMAIN:-main.80.225.215.96.sslip.io}`)) && (PathPrefix(`/api`) || PathPrefix(`/health`)))"
       - "traefik.http.routers.medivo-bff.service=medivo-bff"
       - "traefik.http.routers.medivo-bff.priority=100"
+      - "traefik.http.routers.medivo-bff.tls=true"
       - "traefik.http.services.medivo-bff.loadbalancer.server.port=4000"
     deploy:
       resources:
@@ -166,9 +172,15 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.docker.network=medivo-network"
+      # HTTP Router (Port 80)
+      - "traefik.http.routers.medivo-app-http.rule=Host(`app.80.225.215.96.sslip.io`) || Host(`www.app.80.225.215.96.sslip.io`) || Host(`app.medivo.duckdns.org`) || Host(`www.app.medivo.duckdns.org`) || Host(`medivo-app.duckdns.org`) || Host(`www.medivo-app.duckdns.org`) || Host(`${APP_DOMAIN:-app.80.225.215.96.sslip.io}`) || PathPrefix(`/app`)"
+      - "traefik.http.routers.medivo-app-http.service=medivo-app"
+      - "traefik.http.routers.medivo-app-http.priority=85"
+      # HTTPS Router (Port 443 with TLS)
       - "traefik.http.routers.medivo-app.rule=Host(`app.80.225.215.96.sslip.io`) || Host(`www.app.80.225.215.96.sslip.io`) || Host(`app.medivo.duckdns.org`) || Host(`www.app.medivo.duckdns.org`) || Host(`medivo-app.duckdns.org`) || Host(`www.medivo-app.duckdns.org`) || Host(`${APP_DOMAIN:-app.80.225.215.96.sslip.io}`) || PathPrefix(`/app`)"
       - "traefik.http.routers.medivo-app.service=medivo-app"
       - "traefik.http.routers.medivo-app.priority=85"
+      - "traefik.http.routers.medivo-app.tls=true"
       - "traefik.http.services.medivo-app.loadbalancer.server.port=8081"
     deploy:
       resources:
@@ -204,9 +216,15 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.docker.network=medivo-network"
+      # HTTP Router (Port 80)
+      - "traefik.http.routers.medivo-doctor-http.rule=Host(`doctor.80.225.215.96.sslip.io`) || Host(`www.doctor.80.225.215.96.sslip.io`) || Host(`doctor.medivo.duckdns.org`) || Host(`www.doctor.medivo.duckdns.org`) || Host(`medivo-doctor.duckdns.org`) || Host(`www.medivo-doctor.duckdns.org`) || Host(`${DOCTOR_DOMAIN:-doctor.80.225.215.96.sslip.io}`) || PathPrefix(`/doctor-portal`)"
+      - "traefik.http.routers.medivo-doctor-http.service=medivo-doctor"
+      - "traefik.http.routers.medivo-doctor-http.priority=80"
+      # HTTPS Router (Port 443 with TLS)
       - "traefik.http.routers.medivo-doctor.rule=Host(`doctor.80.225.215.96.sslip.io`) || Host(`www.doctor.80.225.215.96.sslip.io`) || Host(`doctor.medivo.duckdns.org`) || Host(`www.doctor.medivo.duckdns.org`) || Host(`medivo-doctor.duckdns.org`) || Host(`www.medivo-doctor.duckdns.org`) || Host(`${DOCTOR_DOMAIN:-doctor.80.225.215.96.sslip.io}`) || PathPrefix(`/doctor-portal`)"
       - "traefik.http.routers.medivo-doctor.service=medivo-doctor"
       - "traefik.http.routers.medivo-doctor.priority=80"
+      - "traefik.http.routers.medivo-doctor.tls=true"
       - "traefik.http.services.medivo-doctor.loadbalancer.server.port=3001"
     deploy:
       resources:
@@ -242,9 +260,15 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.docker.network=medivo-network"
+      # HTTP Router (Port 80)
+      - "traefik.http.routers.medivo-admin-http.rule=Host(`admin.80.225.215.96.sslip.io`) || Host(`www.admin.80.225.215.96.sslip.io`) || Host(`admin.medivo.duckdns.org`) || Host(`www.admin.medivo.duckdns.org`) || Host(`medivo-admin.duckdns.org`) || Host(`www.medivo-admin.duckdns.org`) || Host(`${ADMIN_DOMAIN:-admin.80.225.215.96.sslip.io}`) || PathPrefix(`/admin-panel`)"
+      - "traefik.http.routers.medivo-admin-http.service=medivo-admin"
+      - "traefik.http.routers.medivo-admin-http.priority=80"
+      # HTTPS Router (Port 443 with TLS)
       - "traefik.http.routers.medivo-admin.rule=Host(`admin.80.225.215.96.sslip.io`) || Host(`www.admin.80.225.215.96.sslip.io`) || Host(`admin.medivo.duckdns.org`) || Host(`www.admin.medivo.duckdns.org`) || Host(`medivo-admin.duckdns.org`) || Host(`www.medivo-admin.duckdns.org`) || Host(`${ADMIN_DOMAIN:-admin.80.225.215.96.sslip.io}`) || PathPrefix(`/admin-panel`)"
       - "traefik.http.routers.medivo-admin.service=medivo-admin"
       - "traefik.http.routers.medivo-admin.priority=80"
+      - "traefik.http.routers.medivo-admin.tls=true"
       - "traefik.http.services.medivo-admin.loadbalancer.server.port=3002"
     deploy:
       resources:
@@ -283,9 +307,15 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.docker.network=medivo-network"
+      # HTTP Router (Port 80)
+      - "traefik.http.routers.medivo-web-http.rule=Host(`main.80.225.215.96.sslip.io`) || Host(`www.main.80.225.215.96.sslip.io`) || Host(`main.medivo.duckdns.org`) || Host(`www.main.medivo.duckdns.org`) || Host(`medivo.duckdns.org`) || Host(`www.medivo.duckdns.org`) || Host(`80.225.215.96.sslip.io`) || Host(`www.80.225.215.96.sslip.io`) || Host(`${WEB_DOMAIN:-main.80.225.215.96.sslip.io}`) || HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.medivo-web-http.service=medivo-web"
+      - "traefik.http.routers.medivo-web-http.priority=10"
+      # HTTPS Router (Port 443 with TLS)
       - "traefik.http.routers.medivo-web.rule=Host(`main.80.225.215.96.sslip.io`) || Host(`www.main.80.225.215.96.sslip.io`) || Host(`main.medivo.duckdns.org`) || Host(`www.main.medivo.duckdns.org`) || Host(`medivo.duckdns.org`) || Host(`www.medivo.duckdns.org`) || Host(`80.225.215.96.sslip.io`) || Host(`www.80.225.215.96.sslip.io`) || Host(`${WEB_DOMAIN:-main.80.225.215.96.sslip.io}`) || HostRegexp(`{host:.+}`)"
       - "traefik.http.routers.medivo-web.service=medivo-web"
       - "traefik.http.routers.medivo-web.priority=10"
+      - "traefik.http.routers.medivo-web.tls=true"
       - "traefik.http.services.medivo-web.loadbalancer.server.port=3000"
     deploy:
       resources:
