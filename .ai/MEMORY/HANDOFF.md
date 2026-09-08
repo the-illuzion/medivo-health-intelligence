@@ -26,7 +26,7 @@
    - Comprehensive unit test suite with 100% pass rate (`packages/utils/src/__tests__/logger.test.ts`).
 3. **Third-Party Integrations & Process Crash Resilience**:
    - Integrated `trackedFetch` into `PerfectCorpAdapter.ts` and `ShenAIAdapter.ts` in `services/ai`.
-   - Integrated `trackedFetch` into `apps/customer-bff/src/controllers/scan.controller.ts` with correlation ID propagation (`reqId`).
+   - Integrated `trackedFetch` into `apps/customer-bff/src/controllers/scan.controller.ts` with correlation ID propagation (`reqId`) and expanded timeout from 4000ms to 12000ms.
    - Added global `uncaughtException`, `unhandledRejection`, and graceful shutdown handlers to `customer-bff` and `service-ai` servers.
 
 3. **Distributed Request Tracing & HTTP Access Logging (`apps/customer-bff`, `services/ai`)**:

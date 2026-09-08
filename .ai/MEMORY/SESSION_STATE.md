@@ -27,7 +27,7 @@
   - Comprehensive unit test suite with 100% pass rate (`packages/utils/src/__tests__/logger.test.ts`).
 - [x] **Third-Party API Integration & Process Crash Resilience**:
   - Wired `trackedFetch` into AI vision adapters: `PerfectCorpAdapter.ts` (Perfect Corp Skin API) and `ShenAIAdapter.ts` (Shen AI Telemetry API).
-  - Wired `trackedFetch` into BFF scan controller for AI Microservice RPC calls (`scan.controller.ts`).
+  - Wired `trackedFetch` into BFF scan controller for AI Microservice RPC calls (`scan.controller.ts`) with expanded timeout from 4000ms to 12000ms to prevent premature AbortErrors during image tensor processing.
   - Attached top-level `uncaughtException`, `unhandledRejection`, and graceful shutdown (`SIGTERM`, `SIGINT`) handlers to `customer-bff` and `service-ai` server runtimes.
 - [x] **Distributed Request Tracing & HTTP Access Logging (`apps/customer-bff`, `services/ai`)**:
   - Correlation ID propagation middleware (`x-request-id`, `x-correlation-id`).

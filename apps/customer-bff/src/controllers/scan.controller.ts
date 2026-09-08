@@ -33,7 +33,7 @@ export const analyzeScan = async (req: AuthenticatedRequest, res: Response, next
     try {
       const reqId = (req as any).reqId || (req.headers['x-request-id'] as string) || `req-${Date.now()}`;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
       const aiResponse = await trackedFetch(
         `${env.AI_SERVICE_URL}/api/ai/telemetry/analyze`,
         {
