@@ -34,6 +34,22 @@ All entries must strictly adhere to the following block format. Do not use table
 
 ## History Log
 
+### 2026-09-08 - Standalone DuckDNS Subdomains & Dual HTTP/HTTPS TLS Traefik Routers
+- **Agent/Author**: Antigravity Health Intelligence & Ingress Engineering Agent
+- **Type**: Bugfix / Architecture
+- **Impact Level**: High
+- **Description**: Configured dedicated standalone DuckDNS subdomains (`medivo-app.duckdns.org`, `medivo-doctor.duckdns.org`, `medivo-admin.duckdns.org`, `medivo-api.duckdns.org`, `medivo.duckdns.org`) across `docker-compose.frontends.yml`, `docker-compose.bff.yml`, and `docker-compose.production.yml`. Implemented dual HTTP (port 80) and HTTPS (port 443 with `tls=true`) Traefik router declarations ensuring seamless SSL/TLS termination and zero 502 Bad Gateway fallback issues.
+- **Domains Affected**: Traefik Ingress, Frontend Deployment, BFF Gateway, Coolify Configuration
+- **Key Files**: `docker-compose.frontends.yml`, `docker-compose.bff.yml`, `docker-compose.production.yml`, `apps/marketing-web/app/utils/domainHelper.ts`, `packages/api-client/src/index.ts`
+
+### 2026-09-08 - AI Vision Telemetry Bulletproofing, WebRTC Scan Camera & Dynamic Scan Reports
+- **Agent/Author**: Antigravity Health Intelligence & AI Vision Engineering Agent
+- **Type**: Feature / Architecture / Security
+- **Impact Level**: High
+- **Description**: Bulletproofed the end-to-end AI skin analysis pipeline: migrated PostgreSQL `skin_schema` to store dynamic JSONB metrics, clinical grades, and HIPAA consent audit logs (Migration `003`); enhanced `service-ai` and `customer-bff` with sub-dermal telemetry extraction (Dermal Age, Erythema %, Pore Clarity %, Photoprotection index, tailored skincare formulations); built interactive HTML5 WebRTC camera stream with canvas frame capture on `apps/customer-app`; and engineered dynamic clinical scan report screen with Web Share API and CTAs.
+- **Domains Affected**: Skin Intelligence, AI Vision Engine, BFF Gateway, Database Schema, Customer App
+- **Key Files**: `services/api/src/infrastructure/db/migrations/003_skin_analysis_metrics_and_consent.sql`, `services/ai/src/adapters/SubDermalEngineAdapter.ts`, `apps/customer-bff/src/controllers/scan.controller.ts`, `apps/customer-app/src/screens/CameraScanScreen.tsx`, `apps/customer-app/src/screens/ScanReportScreen.tsx`
+
 ### 2026-09-04 - Universal DuckDNS Multi-Subdomain Routing, Dynamic App Subdomains & WWW Support
 - **Agent/Author**: Antigravity Cloud & Production Routing Agent
 - **Type**: Feature / Bugfix / Architecture
