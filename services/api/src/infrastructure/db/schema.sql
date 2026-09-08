@@ -244,8 +244,11 @@ CREATE TABLE IF NOT EXISTS analytics_schema.audit_logs (
   resource VARCHAR(200) NOT NULL,
   ip_hash VARCHAR(100),
   verification_status VARCHAR(100) DEFAULT 'CRYPTOGRAPHICALLY_VERIFIED',
+  metadata JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE analytics_schema.audit_logs ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
 
 -- ============================================================================
 -- Performance Indexes Across All Domains
@@ -256,4 +259,5 @@ CREATE INDEX IF NOT EXISTS idx_appointments_patient ON appointment_schema.appoin
 CREATE INDEX IF NOT EXISTS idx_appointments_doctor ON appointment_schema.appointments (doctor_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user ON payment_schema.orders (user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notification_schema.notifications (user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON analytics_schema.audit_logs (user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_event ON analytics_schema.audit_logs (event_type);

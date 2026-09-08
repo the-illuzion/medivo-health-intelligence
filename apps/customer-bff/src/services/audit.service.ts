@@ -59,6 +59,28 @@ class DynamicAuditService {
     return newLog;
   }
 
+  private async ensureSchema(): Promise<void> {
+    try {
+      await DatabasePool.query(`
+        CREATE TABLE IF NOT EXISTS analytics_schema.audit_logs (
+          id VARCHAR(100) PRIMARY KEY,
+          user_id VARCHAR(100),
+          event_type VARCHAR(100) NOT NULL,
+          resource VARCHAR(200) NOT NULL,
+          ip_hash VARCHAR(100),
+          verification_status VARCHAR(100) DEFAULT 'CRYPTOGRAPHICALLY_VERIFIED',
+          metadata JSONB DEFAULT '{}'::jsonb,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+        ALTER TABLE analytics_schema.audit_logs ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+        CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON analytics_schema.audit_logs (user_id);
+        CREATE INDEX IF NOT EXISTS idx_audit_logs_event ON analytics_schema.audit_logs (event_type);
+      `);
+    } catch {
+      // Ignored if DB is initializing
+    }
+  }
+
   private async persistToDatabase(log: HipaaAuditLog): Promise<void> {
     try {
       await DatabasePool.query(
@@ -77,8 +99,21 @@ class DynamicAuditService {
           new Date(),
         ]
       );
-    } catch {
-      // Avoid breaking flow if DB is temporarily unreachable
+    } catch (err: any) {
+      if (err?.message?.includes('metadata') || err?.message?.includes('does not exist')) {
+        await this.ensureSchema();
+        try {
+          await DatabasePool.query(
+            `INSERT INTO analytics_schema.audit_logs (
+                id, user_id, event_type, resource, ip_hash, verification_status, created_at
+             ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ON CONFLICT (id) DO NOTHING`,
+            [log.id, log.user, log.event, log.resource, log.ipHash, log.verification, new Date()]
+          );
+        } catch {
+          // In-memory buffer already captured
+        }
+      }
     }
   }
 
@@ -102,7 +137,26 @@ class DynamicAuditService {
         }));
       }
     } catch {
-      // Fallback to in-memory logs
+      try {
+        const fallbackRes = await DatabasePool.query(
+          `SELECT id, user_id, event_type, resource, ip_hash, verification_status, created_at
+           FROM analytics_schema.audit_logs
+           ORDER BY created_at DESC LIMIT 100`
+        );
+        if (fallbackRes.rows.length > 0) {
+          return fallbackRes.rows.map((r) => ({
+            id: r.id,
+            timestamp: new Date(r.created_at).toISOString().replace('T', ' ').substring(0, 19),
+            event: r.event_type,
+            user: r.user_id,
+            resource: r.resource,
+            ipHash: r.ip_hash,
+            verification: r.verification_status,
+          }));
+        }
+      } catch {
+        // Fallback to in-memory logs
+      }
     }
     return this.inMemoryLogs;
   }

@@ -278,12 +278,24 @@ export class DatabasePool {
         const sql = fs.readFileSync(sqlPath, 'utf-8');
         await DatabasePool.query(sql);
         console.log('  ✓ PostgreSQL 13 Domain Schemas Initialized from schema.sql.');
-        return true;
+      } else {
+        // 2. Otherwise execute embedded baseline DDL
+        await DatabasePool.query(BASELINE_SCHEMAS_SQL);
+        console.log('  ✓ PostgreSQL 13 Domain Schemas Initialized from embedded DDL.');
       }
 
-      // 2. Otherwise execute embedded baseline DDL
-      await DatabasePool.query(BASELINE_SCHEMAS_SQL);
-      console.log('  ✓ PostgreSQL 13 Domain Schemas Initialized from embedded DDL.');
+      // 3. Always apply idempotent self-healing schema migrations
+      await DatabasePool.query(`
+        ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS grade VARCHAR(100);
+        ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS metrics JSONB DEFAULT '{}'::jsonb;
+        ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS recommendations JSONB DEFAULT '[]'::jsonb;
+        ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS consent_version VARCHAR(50) DEFAULT 'v1.0';
+        ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS risk_level VARCHAR(50) DEFAULT 'LOW';
+        ALTER TABLE analytics_schema.audit_logs ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+        CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON analytics_schema.audit_logs (user_id);
+        CREATE INDEX IF NOT EXISTS idx_audit_logs_event ON analytics_schema.audit_logs (event_type);
+      `);
+
       return true;
     } catch (err: any) {
       console.warn('[DatabasePool Schema Init Warning]:', err.message);
