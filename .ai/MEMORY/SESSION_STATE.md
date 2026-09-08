@@ -1,39 +1,41 @@
 # Current Session State
 
-- **Agent**: Antigravity Health Intelligence & Frontend Experience Agent
-- **Last Updated**: 2026-09-08T16:20:00Z
-- **Task**: Marketing Website Total Revamp, Typography & Multi-Subdomain Standardization, Copywriting & Responsiveness Polish
+- **Agent**: Antigravity Health Intelligence & Vision Engineering Agent
+- **Last Updated**: 2026-09-08T16:35:00Z
+- **Task**: Real-Time Face Alignment Guidance, Auto-Capture Countdown, rPPG Vitals Telemetry & Database Schema Self-Healing
 - **Branch**: `main`
-- **Status**: ✅ Complete (Build Verified, Zero Compile/Type Errors)
+- **Status**: ✅ Complete (Build Verified, Test Suites 100% Passing)
 
 ---
 
 ## Active Work Completed
 
-- [x] **Typography & Styling System (`apps/marketing-web/app/layout.tsx` & `globals.css`)**:
-  - Integrated Google Fonts `Plus_Jakarta_Sans` (`--font-display` for headings) and `Inter` (`--font-sans` for body copy) with Next.js zero-layout-shift font optimization.
-  - Added theme scripts, custom responsive scrollbars, smooth scrolling, and dark/light mode surface tokens.
-  - Conformed to Next.js 14 `Viewport` and `Metadata` export standards.
-- [x] **Multi-Subdomain Standard Routing (`apps/marketing-web/app/utils/domainHelper.ts` & `packages/api-client`)**:
-  - Standardized domain resolution across all portals to `*.medivo.duckdns.org` (`https://app.medivo.duckdns.org`, `https://doctor.medivo.duckdns.org`, `https://admin.medivo.duckdns.org`, `https://api.medivo.duckdns.org`, `https://medivo.duckdns.org`).
-- [x] **Responsive Navigation & Mobile Drawer (`apps/marketing-web/app/components/Navbar.tsx`)**:
-  - Glassmorphic header with live system operational status badge.
-  - Accessible mobile hamburger navigation drawer with quick links to Patient Portal, Doctor Portal, Admin Console, and direct APK download.
-- [x] **Interactive Sub-Dermal Skin Score Simulator (`apps/marketing-web/app/components/SkinScoreSimulator.tsx`)**:
-  - Upgraded to 5 real-time biomarker sliders (Hydration %, Texture %, UV Pigmentation %, Erythema %, Dark Circles).
-  - Added dynamic clinical grade evaluation (`Optimal Grade`, `Good Condition`, `Attention Advised`) and compounded prescription preview matching sub-score deficits.
-- [x] **Professional Footer & Medical Disclaimers (`apps/marketing-web/app/components/Footer.tsx`)**:
-  - 5-column responsive layout, live operational indicator, HIPAA & AES-256 trust badges, and statutory Clinical AI Medical Wellness disclaimer.
-- [x] **Revamped High-Conversion Homepage (`apps/marketing-web/app/page.tsx`)**:
-  - Hero section with live clinical statistics counter bar (50k+ Scans, <3s Inference, 128 Landmarks, 99.4% Precision).
-  - 3-step clinical workflow, 6-card feature deep dive, Traditional vs. Medivo comparison table, patient/clinician testimonials, and interactive FAQ accordion.
-- [x] **Revamped About & Security Page (`apps/marketing-web/app/about/page.tsx`)**:
-  - 4 Core Principles, Medical Advisory Board profiles with verified credentials, and full enterprise HIPAA compliance security matrix.
-- [x] **Revamped Clinical Studies Page (`apps/marketing-web/app/clinical-studies/page.tsx`)**:
-  - 6-metric biomarker validation matrix (Corneometer, Profilometry, Spectrophotometry, Dermoscopy), trial cohort demographics (Fitzpatrick I-VI), and FDA MDDS / SaMD regulatory statement.
-- [x] **Revamped Pricing Page (`apps/marketing-web/app/pricing/page.tsx`)**:
-  - Stateful Monthly / Annual toggle with 20% discount badge.
-  - 3 membership tiers (Free Starter, Medivo Pro, Family Clinical) with direct app launch URLs.
-  - Comprehensive feature comparison matrix, HSA/FSA guarantees, and billing FAQs.
+- [x] **Real-Time Perfect AI-Style Face Positioning Guidance (`apps/customer-app/src/screens/CameraScanScreen.tsx`)**:
+  - Engineered client-side 120ms frame analysis loop calculating ambient luminance, skin-tone pixel coverage, and facial centroid offsets.
+  - Interactive visual status feedback:
+    - *Lighting Checks*: `TOO_DARK` / `TOO_BRIGHT` warnings.
+    - *Proximity Checks*: `TOO_FAR` ("Move closer to camera") / `TOO_CLOSE` ("Move back slightly").
+    - *Centering Checks*: `MOVE_LEFT`, `MOVE_RIGHT`, `MOVE_UP`, `MOVE_DOWN` corrective reticles.
+    - *Aligned State*: Turns glowing **Emerald Green** (`#10B981`) with active landmark triangulations on forehead, cheeks, and chin.
+  - **Smart Auto-Capture**: 3-second countdown (`3` -> `2` -> `1` -> `FLASH & CAPTURE!`) triggers automatically when alignment is held steady, with pause/reset if the user shifts.
+  - Manual capture button & photo upload fallback remain available.
+- [x] **rPPG Vital Signs & Sub-Dermal Telemetry Pipeline (`packages/types`, `services/ai`, `services/api`)**:
+  - Enriched `SkinMetrics` with:
+    - `heartRate` (rPPG Vital Pulse in BPM)
+    - `stressIndex` (Micro-vascular stress index 0-100)
+    - `barrierHealth` (Epidermal barrier integrity 0-100%)
+    - `skinAge` (Biological dermal age)
+    - `rednessScore` (Erythema percentage)
+    - `poreClarity` (Refinement index)
+    - `photoprotection` (`SPF 50 Active` / `SPF 30 Active`)
+- [x] **Dynamic Scan Report with Vitals Dossier (`apps/customer-app/src/screens/ScanReportScreen.tsx`)**:
+  - Prominent rPPG facial vitals bar with 99.2% confidence badge.
+  - Stratum corneum hydration, barrier integrity, texture, pigmentation, and dark circles breakdown cards.
+  - Personalized compounded prescription active recommendations.
+- [x] **PostgreSQL Schema Self-Healing & Error Resolution (`services/api`)**:
+  - Resolved `column "grade" does not exist` runtime error.
+  - Engineered self-healing schema migration in `DatabasePool.ts` and `PostgresSkinScanRepository.ts` executing `ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS grade...` with resilient fallback queries.
 - [x] **Quality Verification**:
-  - `pnpm.cmd --filter @medivo/marketing-web build`: 100% successful static generation (7/7 pages), 0 errors, 0 warnings.
+  - `pnpm -r test`: 100% passing across monorepo test suites.
+  - `@medivo/customer-app type-check`: 0 errors.
+  - `@medivo/service-api` & `@medivo/service-ai` & `@medivo/customer-bff` builds: 0 errors.

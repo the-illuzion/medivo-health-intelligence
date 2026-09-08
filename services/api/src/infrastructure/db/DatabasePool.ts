@@ -89,9 +89,20 @@ CREATE TABLE IF NOT EXISTS skin_schema.skin_analyses (
   user_id VARCHAR(100) NOT NULL,
   image_s3_key VARCHAR(500) NOT NULL,
   overall_score INT NOT NULL,
+  grade VARCHAR(100),
+  metrics JSONB DEFAULT '{}'::jsonb,
+  recommendations JSONB DEFAULT '[]'::jsonb,
+  consent_version VARCHAR(50) DEFAULT 'v1.0',
+  risk_level VARCHAR(50) DEFAULT 'LOW',
   status VARCHAR(50) DEFAULT 'COMPLETED',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS grade VARCHAR(100);
+ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS metrics JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS recommendations JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS consent_version VARCHAR(50) DEFAULT 'v1.0';
+ALTER TABLE skin_schema.skin_analyses ADD COLUMN IF NOT EXISTS risk_level VARCHAR(50) DEFAULT 'LOW';
 
 CREATE TABLE IF NOT EXISTS skin_schema.skin_conditions (
   id VARCHAR(100) PRIMARY KEY,

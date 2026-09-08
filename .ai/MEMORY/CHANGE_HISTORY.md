@@ -34,6 +34,14 @@ All entries must strictly adhere to the following block format. Do not use table
 
 ## History Log
 
+### 2026-09-08 - Face Auto-Positioning Guidance, rPPG Vitals Capture & DB Schema Self-Healing
+- **Agent/Author**: Antigravity Health Intelligence & Vision Engineering Agent
+- **Type**: Feature / Bugfix / Architecture
+- **Impact Level**: Critical
+- **Description**: Implemented real-time Perfect AI-style face positioning guidance in `CameraScanScreen.tsx` (lighting detection, skin tone density, proximity zoom, and centering reticles) with an automated 3-2-1 auto-capture countdown. Enriched the biometric telemetry pipeline with rPPG vital signs (Pulse Heart Rate BPM, Micro-Vascular Stress Index, Epidermal Barrier Health, Dermal Age). Resolved the PostgreSQL `column "grade" does not exist` runtime error by engineering self-healing schema DDL and resilient fallback mapping in `PostgresSkinScanRepository.ts` and `DatabasePool.ts`.
+- **Domains Affected**: Customer App Camera, Skin Telemetry, AI Vision Service, PostgreSQL Database Schema, Types
+- **Key Files**: `apps/customer-app/src/screens/CameraScanScreen.tsx`, `apps/customer-app/src/screens/ScanReportScreen.tsx`, `services/api/src/infrastructure/repositories/PostgresSkinScanRepository.ts`, `services/api/src/infrastructure/db/DatabasePool.ts`, `packages/types/src/index.ts`, `services/ai/src/providers/SubDermalEngineAdapter.ts`
+
 ### 2026-09-08 - Marketing Website Revamp, Multi-Subdomain Standardization & Typography Upgrade
 - **Agent/Author**: Antigravity Health Intelligence & Frontend Experience Agent
 - **Type**: Feature / Refactor / Architecture

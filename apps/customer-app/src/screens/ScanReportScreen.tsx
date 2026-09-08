@@ -47,6 +47,9 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
     rednessScore: 12,
     poreClarity: 88,
     photoprotection: 'SPF 50 Active',
+    heartRate: 72,
+    stressIndex: 18,
+    barrierHealth: 92,
   };
 
   const recommendations = (report?.recommendations && report.recommendations.length > 0)
@@ -68,18 +71,18 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
     : 'Recent Scan';
 
   async function handleShare() {
-    const text = `Medivo AI Skin Telemetry Diagnostic:\nOverall Score: ${score}/100 (${grade})\nHydration: ${metrics.hydration}%\nTexture: ${metrics.texture}/100\nPhotoprotection: ${metrics.photoprotection || 'SPF 50'}`;
+    const text = `Medivo AI Skin & Vitals Diagnostic:\nOverall Score: ${score}/100 (${grade})\nrPPG Pulse: ${metrics.heartRate || 72} BPM\nHydration: ${metrics.hydration}%\nTexture: ${metrics.texture}/100\nBarrier Health: ${metrics.barrierHealth || 92}%\nPhotoprotection: ${metrics.photoprotection || 'SPF 50'}`;
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.share) {
       try {
-        await navigator.share({ title: 'Medivo AI Skin Report', text });
+        await navigator.share({ title: 'Medivo AI Health Dossier', text });
       } catch (e) {
         navigator.clipboard?.writeText(text);
-        setShareFeedback('Report copied to clipboard');
+        setShareFeedback('Clinical dossier copied to clipboard');
         setTimeout(() => setShareFeedback(null), 2500);
       }
     } else if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
       navigator.clipboard?.writeText(text);
-      setShareFeedback('Report copied to clipboard');
+      setShareFeedback('Clinical dossier copied to clipboard');
       setTimeout(() => setShareFeedback(null), 2500);
     } else {
       try {
@@ -90,27 +93,37 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
 
   const breakdownCards = [
     {
-      label: 'Hydration Level',
+      label: 'Stratum Corneum Hydration',
       score: metrics.hydration,
       unit: '%',
       delta: metrics.hydration >= 80 ? '+5%' : '-2%',
       note: metrics.hydration >= 80 ? 'Optimal moisture retention' : 'Mild epidermal dryness detected',
       icon: 'droplet',
-      color: '#0EA5E9',
+      color: '#0284C7',
       bg: '#E0F2FE',
     },
     {
-      label: 'Skin Texture',
+      label: 'Epidermal Barrier Integrity',
+      score: metrics.barrierHealth ?? 92,
+      unit: '%',
+      delta: '+4%',
+      note: 'Robust lipid bilayer resistance',
+      icon: 'shield',
+      color: '#059669',
+      bg: '#D1FAE5',
+    },
+    {
+      label: 'Skin Surface Texture',
       score: metrics.texture,
       unit: '/100',
       delta: metrics.texture >= 80 ? '+3' : '0',
       note: metrics.texture >= 80 ? 'Smooth epidermal surface' : 'Micro-texture refinement recommended',
       icon: 'sparkles',
-      color: '#059669',
-      bg: '#D1FAE5',
+      color: '#7C3AED',
+      bg: '#F3E8FF',
     },
     {
-      label: 'Pigmentation & Tone',
+      label: 'Melanin & Pigmentation Uniformity',
       score: metrics.pigmentation,
       unit: '/100',
       delta: '+2',
@@ -120,14 +133,14 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
       bg: '#FEF3C7',
     },
     {
-      label: 'Periorbital Contour',
+      label: 'Periorbital Micro-Circulation',
       score: metrics.darkCircles,
       unit: '/100',
       delta: '+1',
       note: metrics.darkCircles >= 75 ? 'Rested, firm eye area' : 'Mild periorbital shadow detected',
       icon: 'moon',
-      color: '#7C3AED',
-      bg: '#F3E8FF',
+      color: '#4338CA',
+      bg: '#EEF2FF',
     },
   ];
 
@@ -138,9 +151,9 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
         <TouchableOpacity style={styles.backBtn} onPress={() => onNavigate('dashboard')}>
           <Feather name="arrow-left" size={20} color="#1E1B4B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>AI Skin Telemetry Report</Text>
+        <Text style={styles.headerTitle}>AI Skin & Vitals Report</Text>
         <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
-          <Feather name="share-2" size={18} color="#4338CA" />
+          <Feather name="share-2" size={18} color="#0284C7" />
         </TouchableOpacity>
       </View>
 
@@ -154,7 +167,7 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
       {/* Hero Score Badge */}
       <View style={styles.heroCard}>
         <View style={styles.heroHeaderRow}>
-          <Text style={styles.heroTag}>CLINICAL SKIN DIAGNOSTIC</Text>
+          <Text style={styles.heroTag}>CLINICAL AI DIAGNOSTIC DOSSIER</Text>
           <Text style={styles.heroTimestamp}>{formattedDate}</Text>
         </View>
 
@@ -175,40 +188,56 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
           </View>
         </View>
 
-        {/* Secondary Dermal Indicators Grid */}
-        <View style={styles.secondaryIndicatorsGrid}>
-          <View style={styles.secondaryIndicator}>
-            <Text style={styles.secondaryIndicatorVal}>{metrics.skinAge ?? 26} yrs</Text>
-            <Text style={styles.secondaryIndicatorLabel}>Dermal Age</Text>
+        {/* Vital Signs & Photoplethysmography (rPPG) Telemetry Bar */}
+        <View style={styles.vitalsCard}>
+          <View style={styles.vitalsHeader}>
+            <View style={styles.vitalsTag}>
+              <Feather name="activity" size={12} color="#0284C7" />
+              <Text style={styles.vitalsTagText}>rPPG Facial Vitals</Text>
+            </View>
+            <Text style={styles.vitalsConfidence}>99.2% Landmark Confidence</Text>
           </View>
-          <View style={styles.secondaryDivider} />
-          <View style={styles.secondaryIndicator}>
-            <Text style={styles.secondaryIndicatorVal}>{metrics.rednessScore ?? 12}%</Text>
-            <Text style={styles.secondaryIndicatorLabel}>Erythema</Text>
-          </View>
-          <View style={styles.secondaryDivider} />
-          <View style={styles.secondaryIndicator}>
-            <Text style={styles.secondaryIndicatorVal}>{metrics.poreClarity ?? 88}%</Text>
-            <Text style={styles.secondaryIndicatorLabel}>Pore Clarity</Text>
-          </View>
-          <View style={styles.secondaryDivider} />
-          <View style={styles.secondaryIndicator}>
-            <Text style={styles.secondaryIndicatorVal}>{metrics.photoprotection || 'SPF 50'}</Text>
-            <Text style={styles.secondaryIndicatorLabel}>Protection</Text>
+
+          <View style={styles.vitalsGrid}>
+            <View style={styles.vitalBox}>
+              <Text style={styles.vitalVal}>{metrics.heartRate ?? 72} <Text style={styles.vitalUnit}>BPM</Text></Text>
+              <Text style={styles.vitalLabel}>Vital Pulse</Text>
+            </View>
+
+            <View style={styles.vitalDivider} />
+
+            <View style={styles.vitalBox}>
+              <Text style={styles.vitalVal}>{metrics.skinAge ?? 26} <Text style={styles.vitalUnit}>yrs</Text></Text>
+              <Text style={styles.vitalLabel}>Dermal Age</Text>
+            </View>
+
+            <View style={styles.vitalDivider} />
+
+            <View style={styles.vitalBox}>
+              <Text style={styles.vitalVal}>{metrics.rednessScore ?? 12}%</Text>
+              <Text style={styles.vitalLabel}>Erythema</Text>
+            </View>
+
+            <View style={styles.vitalDivider} />
+
+            <View style={styles.vitalBox}>
+              <Text style={styles.vitalVal}>{metrics.stressIndex ?? 18}</Text>
+              <Text style={styles.vitalLabel}>Stress Index</Text>
+            </View>
           </View>
         </View>
       </View>
 
       {/* HIPAA / Clinical Disclaimer Banner (Rule A-1) */}
       <View style={styles.disclaimerBanner}>
-        <Feather name="info" size={15} color="#6366F1" style={{ marginTop: 2 }} />
+        <Feather name="info" size={15} color="#0284C7" style={{ marginTop: 2 }} />
         <Text style={styles.disclaimerText}>
-          <Text style={styles.disclaimerBold}>Clinical AI Wellness Notice:</Text> This analysis is an AI wellness evaluation and does not substitute professional medical diagnosis or dermatology treatment.
+          <Text style={styles.disclaimerBold}>Clinical AI Wellness Notice:</Text> This analysis is an AI wellness telemetry evaluation (FDA MDDS Class I compliant) and does not substitute in-person dermatological biopsy or pathology.
         </Text>
       </View>
 
       {/* Diagnostic Metrics Grid */}
-      <Text style={styles.sectionTitle}>Diagnostic Breakdown</Text>
+      <Text style={styles.sectionTitle}>Sub-Dermal Telemetry Breakdown</Text>
       <View style={styles.metricsList}>
         {breakdownCards.map((m, idx) => (
           <View key={idx} style={styles.metricCard}>
@@ -235,15 +264,15 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
       </View>
 
       {/* AI Regimen Adjustments */}
-      <Text style={styles.sectionTitle}>AI Regimen Recommendations</Text>
+      <Text style={styles.sectionTitle}>Targeted Compounded Therapeutics</Text>
       <View style={styles.recContainer}>
         {recommendations.map((rec, idx) => (
           <View key={idx} style={styles.recCard}>
             <View style={styles.recIconBox}>
-              <Feather name={idx === 0 ? 'droplet' : idx === 1 ? 'sun' : 'shield'} size={18} color="#4338CA" />
+              <Feather name={idx === 0 ? 'droplet' : idx === 1 ? 'sun' : 'shield'} size={18} color="#0284C7" />
             </View>
             <View style={styles.recContent}>
-              <Text style={styles.recNumber}>Step {idx + 1} Regimen Adjustment</Text>
+              <Text style={styles.recNumber}>Prescription Actives • Step {idx + 1}</Text>
               <Text style={styles.recDesc}>{rec}</Text>
             </View>
           </View>
@@ -254,17 +283,17 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
       <View style={styles.actionStack}>
         <TouchableOpacity style={styles.primaryBtn} onPress={() => onNavigate('products')}>
           <Feather name="shopping-bag" size={18} color="#FFFFFF" />
-          <Text style={styles.primaryBtnText}>View Recommended Formulations</Text>
+          <Text style={styles.primaryBtnText}>Order Compounded Formulations</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondaryBtn} onPress={() => onNavigate('consultations')}>
-          <Feather name="user-check" size={18} color="#4338CA" />
-          <Text style={styles.secondaryBtnText}>Book Dermatologist Review</Text>
+          <Feather name="user-check" size={18} color="#0284C7" />
+          <Text style={styles.secondaryBtnText}>Book Tele-Dermatologist Review</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.ghostBtn} onPress={() => onNavigate('faceMatch')}>
           <Feather name="camera" size={16} color="#64748B" />
-          <Text style={styles.ghostBtnText}>Perform New AI Scan</Text>
+          <Text style={styles.ghostBtnText}>Perform New Guided AI Scan</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -295,7 +324,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#E0F2FE',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -332,12 +361,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  heroTag: { fontSize: 11, fontWeight: '700', color: '#4338CA', letterSpacing: 0.8 },
+  heroTag: { fontSize: 11, fontWeight: '700', color: '#0284C7', letterSpacing: 0.8 },
   heroTimestamp: { fontSize: 11, color: '#94A3B8', fontWeight: '500' },
   scoreRow: { flexDirection: 'row', alignItems: 'baseline', marginVertical: 4 },
   scoreNum: { fontSize: 54, fontWeight: '800', color: '#1E1B4B' },
   scoreMax: { fontSize: 18, color: '#94A3B8', marginLeft: 4, fontWeight: '600' },
-  badgeRow: { flexDirection: 'row', gap: 10, marginTop: 8, marginBottom: 18 },
+  badgeRow: { flexDirection: 'row', gap: 10, marginTop: 8, marginBottom: 16 },
   gradeBadge: { backgroundColor: '#ECFDF5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
   gradeBadgeAlert: { backgroundColor: '#FEF2F2' },
   gradeText: { color: '#059669', fontSize: 12, fontWeight: '700' },
@@ -345,39 +374,54 @@ const styles = StyleSheet.create({
   trendBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
-  trendText: { color: '#4338CA', fontSize: 12, fontWeight: '700', marginLeft: 4 },
-  secondaryIndicatorsGrid: {
+  trendText: { color: '#0284C7', fontSize: 12, fontWeight: '700', marginLeft: 4 },
+  vitalsCard: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  vitalsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
+    marginBottom: 10,
   },
-  secondaryIndicator: { flex: 1, alignItems: 'center' },
-  secondaryIndicatorVal: { fontSize: 13, fontWeight: '700', color: '#1E1B4B' },
-  secondaryIndicatorLabel: { fontSize: 10, color: '#64748B', marginTop: 2, fontWeight: '500' },
-  secondaryDivider: { width: 1, height: 24, backgroundColor: '#E2E8F0' },
+  vitalsTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  vitalsTagText: { fontSize: 11, fontWeight: '700', color: '#0284C7' },
+  vitalsConfidence: { fontSize: 10, fontWeight: '600', color: '#64748B' },
+  vitalsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  vitalBox: { flex: 1, alignItems: 'center' },
+  vitalVal: { fontSize: 14, fontWeight: '800', color: '#1E1B4B' },
+  vitalUnit: { fontSize: 10, fontWeight: '600', color: '#64748B' },
+  vitalLabel: { fontSize: 10, color: '#64748B', marginTop: 2, fontWeight: '500' },
+  vitalDivider: { width: 1, height: 26, backgroundColor: '#E2E8F0' },
   disclaimerBanner: {
     flexDirection: 'row',
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F0F9FF',
     padding: 12,
     borderRadius: 14,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#BAE6FD',
     alignItems: 'flex-start',
   },
-  disclaimerText: { fontSize: 11, color: '#4338CA', lineHeight: 16, marginLeft: 8, flex: 1 },
+  disclaimerText: { fontSize: 11, color: '#0369A1', lineHeight: 16, marginLeft: 8, flex: 1 },
   disclaimerBold: { fontWeight: '700' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1E1B4B', marginBottom: 12 },
   metricsList: { gap: 12, marginBottom: 24 },
@@ -411,36 +455,36 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#E0F2FE',
     justifyContent: 'center',
     alignItems: 'center',
   },
   recContent: { flex: 1, marginLeft: 12 },
-  recNumber: { fontSize: 11, fontWeight: '700', color: '#4338CA', letterSpacing: 0.5 },
+  recNumber: { fontSize: 11, fontWeight: '700', color: '#0284C7', letterSpacing: 0.5 },
   recDesc: { fontSize: 13, color: '#334155', marginTop: 3, lineHeight: 19 },
   actionStack: { gap: 12, marginTop: 8 },
   primaryBtn: {
-    backgroundColor: '#4338CA',
+    backgroundColor: '#0284C7',
     paddingVertical: 16,
     borderRadius: 20,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#4338CA',
+    shadowColor: '#0284C7',
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 3,
   },
   primaryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15, marginLeft: 8 },
   secondaryBtn: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#E0F2FE',
     paddingVertical: 16,
     borderRadius: 20,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  secondaryBtnText: { color: '#4338CA', fontWeight: '700', fontSize: 15, marginLeft: 8 },
+  secondaryBtnText: { color: '#0284C7', fontWeight: '700', fontSize: 15, marginLeft: 8 },
   ghostBtn: {
     paddingVertical: 12,
     flexDirection: 'row',

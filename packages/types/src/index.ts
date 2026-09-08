@@ -76,6 +76,9 @@ export interface SkinMetrics {
   rednessScore?: number;   // Dermal erythema percentage (0-100%)
   poreClarity?: number;    // Pore clarity percentage (0-100%)
   photoprotection?: string;// Dynamic photoprotection status
+  heartRate?: number;      // rPPG Vital Heart Rate (BPM)
+  stressIndex?: number;    // Micro-vascular stress index (0-100)
+  barrierHealth?: number;  // Epidermal barrier integrity (0-100%)
   acneScore?: number;
   oilinessLevel?: string;
 }

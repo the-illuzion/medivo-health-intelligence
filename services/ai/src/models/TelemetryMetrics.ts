@@ -8,6 +8,9 @@ export interface TelemetryMetrics {
   rednessScore?: number;
   poreClarity?: number;
   photoprotection?: string;
+  heartRate?: number;
+  stressIndex?: number;
+  barrierHealth?: number;
   acneScore?: number;
   oilinessLevel?: string;
 }
