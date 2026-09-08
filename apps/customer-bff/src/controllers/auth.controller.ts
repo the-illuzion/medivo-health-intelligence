@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PostgresAuthRepository, JwtTokenService, AuthenticateUserUseCase, User } from '@medivo/service-api';
+import { PostgresAuthRepository, JwtTokenService, AuthenticateUserUseCase, User, PasswordService } from '@medivo/service-api';
 import { auditService } from '../services/audit.service.js';
 import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 import { createLogger } from '@medivo/utils';
@@ -41,11 +41,12 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
   try {
     const { name, email, password, skinType } = req.body;
     const id = `usr-${Date.now()}`;
+    const passwordHash = await PasswordService.hash(password);
     const newUser = new User({
       id,
       name,
       email,
-      passwordHash: password,
+      passwordHash,
       skinType: skinType || 'Combination',
       hipaaConsent: true,
       createdAt: new Date(),

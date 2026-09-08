@@ -1,11 +1,14 @@
 import { DatabasePool } from '../DatabasePool.js';
+import { PasswordService } from '../../security/PasswordService.js';
 
 export async function seedUsers(): Promise<void> {
+  const defaultPasswordHash = PasswordService.hashSync('password123');
+
   const users = [
-    { id: 'usr-101', email: 'sarah.j@example.com', name: 'Sarah Jenkins', password_hash: 'hashed_pw_123', skin_type: 'Combination' },
-    { id: 'usr-102', email: 'alex.m@example.com', name: 'Alex Morgan', password_hash: 'hashed_pw_456', skin_type: 'Sensitive' },
-    { id: 'usr-doc-1', email: 'dr.thorne@medivo.com', name: 'Dr. Aris Thorne, MD', password_hash: 'hashed_pw_doc1', skin_type: 'Normal' },
-    { id: 'usr-doc-2', email: 'dr.rostova@medivo.com', name: 'Dr. Elena Rostova, MD', password_hash: 'hashed_pw_doc2', skin_type: 'Normal' },
+    { id: 'usr-101', email: 'sarah.j@example.com', name: 'Sarah Jenkins', password_hash: defaultPasswordHash, skin_type: 'Combination' },
+    { id: 'usr-102', email: 'alex.m@example.com', name: 'Alex Morgan', password_hash: defaultPasswordHash, skin_type: 'Sensitive' },
+    { id: 'usr-doc-1', email: 'dr.thorne@medivo.com', name: 'Dr. Aris Thorne, MD', password_hash: defaultPasswordHash, skin_type: 'Normal' },
+    { id: 'usr-doc-2', email: 'dr.rostova@medivo.com', name: 'Dr. Elena Rostova, MD', password_hash: defaultPasswordHash, skin_type: 'Normal' },
   ];
 
   for (const user of users) {

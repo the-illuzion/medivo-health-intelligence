@@ -24,6 +24,7 @@ export * from './infrastructure/repositories/PostgresAuthRepository.js';
 export * from './infrastructure/repositories/PostgresSkinScanRepository.js';
 export * from './infrastructure/ai/SimulatedAIInferenceService.js';
 export * from './infrastructure/security/JwtTokenService.js';
+export * from './infrastructure/security/PasswordService.js';
 
 // Application Use Cases
 export * from './application/auth/AuthenticateUserUseCase.js';

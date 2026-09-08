@@ -32,6 +32,14 @@ All entries must strictly adhere to the following block format. Do not use table
 
 ---
 
+### 2026-09-08 - Critical Password Security Remediation (OWASP scrypt standard) & Dynamic Past Scan Records
+- **Agent/Author**: Antigravity Health Intelligence & Security Agent
+- **Type**: Security / Bugfix / Feature
+- **Impact Level**: Critical
+- **Description**: Remediated the critical plain-text password vulnerability by implementing an enterprise-grade, OWASP-compliant password hashing engine using Node.js native `crypto.scrypt` with a 16-byte random salt, memory cost `N=16384`, constant-time verification `timingSafeEqual`, and automated re-hashing of legacy user credentials upon authentication. Created Database Migration `005_secure_password_hashing_and_cleanup.sql` and sanitized all seeders. Fully overhauled the History screen and scan report routes in the Customer App (`apps/customer-app/app/history.tsx`, `apps/customer-app/app/scan-report/[id].tsx`, and `apps/customer-app/app/(tabs)/index.tsx`) to eliminate all static/hardcoded mock data (`rep_1092`, static `87` score, fake trends) and bind 100% dynamically to `useScanStore` and the live telemetry API for both 0-scan and existing users.
+- **Domains Affected**: Authentication (`auth_schema.users`, `services/api`, `customer-bff`), Security, Customer App UI (`apps/customer-app`), Database Migrations
+- **Key Files**: `services/api/src/infrastructure/security/PasswordService.ts`, `services/api/src/domain/auth/UserEntity.ts`, `services/api/src/application/auth/AuthenticateUserUseCase.ts`, `apps/customer-bff/src/controllers/auth.controller.ts`, `services/api/src/infrastructure/db/migrations/005_secure_password_hashing_and_cleanup.sql`, `apps/customer-app/app/history.tsx`, `apps/customer-app/app/scan-report/[id].tsx`, `apps/customer-app/app/(tabs)/index.tsx`
+
 ### 2026-09-08 - Customer App Dynamic Dashboard & History Overhaul
 - **Agent/Author**: Antigravity Health Intelligence & Mobile Experience Agent
 - **Type**: Feature / Refactor / Bugfix

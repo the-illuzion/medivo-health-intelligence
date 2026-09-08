@@ -1,3 +1,5 @@
+import { PasswordService } from '../../infrastructure/security/PasswordService.js';
+
 export interface UserProps {
   id: string;
   name: string;
@@ -19,15 +21,22 @@ export class User {
   get hipaaConsent(): boolean { return this.props.hipaaConsent; }
   get createdAt(): Date { return this.props.createdAt; }
 
-  public verifyPassword(inputPassword: string): boolean {
+  public async verifyPassword(inputPassword: string): Promise<boolean> {
     if (!inputPassword) return false;
-    // Check against stored password hash or standard seed credential
-    return (
-      inputPassword === this.props.passwordHash ||
-      this.props.passwordHash === `hashed_pw_${inputPassword}` ||
-      (this.props.email === 'sarah.j@example.com' && inputPassword === 'password123') ||
-      inputPassword === 'password123'
-    );
+    return PasswordService.verify(inputPassword, this.props.passwordHash);
+  }
+
+  public verifyPasswordSync(inputPassword: string): boolean {
+    if (!inputPassword) return false;
+    return PasswordService.verifySync(inputPassword, this.props.passwordHash);
+  }
+
+  public needsPasswordRehash(): boolean {
+    return PasswordService.needsRehash(this.props.passwordHash);
+  }
+
+  public setPasswordHash(newHash: string): void {
+    this.props.passwordHash = newHash;
   }
 
   toDTO() {

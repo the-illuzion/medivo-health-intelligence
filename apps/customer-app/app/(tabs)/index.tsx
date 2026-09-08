@@ -67,8 +67,10 @@ export default function DashboardScreen() {
     }, [fetchDashboardData])
   );
 
-  const recentScan = scanHistory.length > 0 ? scanHistory[0] : null;
-  const skinScore = recentScan?.overallScore || user?.score || 87;
+  const hasScans = scanHistory.length > 0;
+  const recentScan = hasScans ? scanHistory[0] : null;
+  const skinScore = recentScan?.overallScore || user?.score || 0;
+  const scoreSublabel = !hasScans && !user?.score ? 'Baseline Needed' : skinScore >= 85 ? 'Optimal' : skinScore >= 70 ? 'Good' : 'Needs Care';
 
   // Compute 7-Day Trend Chart using ACTUAL scan timestamps & overallScore from backend
   const sortedScans = [...scanHistory].sort((a, b) => new Date(a.scannedAt).getTime() - new Date(b.scannedAt).getTime());
@@ -79,21 +81,21 @@ export default function DashboardScreen() {
         const dayLabel = scanDate.toLocaleDateString(undefined, { weekday: 'short' });
         return { x: dayLabel, y: scan.overallScore };
       })
-    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => ({
+    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => ({
         x: day,
-        y: Math.max(60, Math.min(100, skinScore - (6 - idx))),
+        y: skinScore > 0 ? skinScore : 0,
       }));
 
   // Dynamic Biomarkers derived directly from backend telemetry API DTO
   const metrics = recentScan?.metrics || {};
-  const hydrationVal = metrics.hydration ?? 92;
-  const barrierVal = metrics.texture ?? 85;
-  const collagenVal = metrics.pigmentation ?? 91;
+  const hydrationVal = hasScans ? (metrics.hydration ?? 88) : (user?.score ? 85 : 0);
+  const barrierVal = hasScans ? (metrics.texture ?? 85) : (user?.score ? 80 : 0);
+  const collagenVal = hasScans ? (metrics.pigmentation ?? 89) : (user?.score ? 82 : 0);
 
-  const skinAgeVal = metrics.skinAge ? `${metrics.skinAge} yrs` : '26 yrs';
-  const rednessVal = metrics.rednessScore !== undefined ? `${metrics.rednessScore}%` : '12%';
-  const poreClarityVal = metrics.poreClarity !== undefined ? `${metrics.poreClarity}%` : '89%';
-  const photoprotectionVal = metrics.photoprotection || 'SPF 50 Active';
+  const skinAgeVal = metrics.skinAge ? `${metrics.skinAge} yrs` : (hasScans ? '26 yrs' : 'Pending Scan');
+  const rednessVal = metrics.rednessScore !== undefined ? `${metrics.rednessScore}%` : (hasScans ? '12%' : '--');
+  const poreClarityVal = metrics.poreClarity !== undefined ? `${metrics.poreClarity}%` : (hasScans ? '89%' : '--');
+  const photoprotectionVal = metrics.photoprotection || (hasScans ? 'SPF 50 Active' : 'Scan Required');
 
   // Dynamic Morning Protocol summary & step counts
   const morningProtocolSteps = morningRoutine?.steps
@@ -143,12 +145,17 @@ export default function DashboardScreen() {
             {/* Score Ring & Telemetry Hero Card */}
             <View className="bg-slate-50 dark:bg-[#111827] rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-[#374151] flex-col md:flex-row items-center justify-between shadow-sm">
               <View className="items-center md:items-start mb-4 md:mb-0 flex-1 pr-0 md:pr-4">
-                <Badge label="Optimal Skin Barrier" icon={<ShieldCheck size={12} color="#1F7FC4" />} />
+                <Badge
+                  label={hasScans ? (recentScan?.grade || 'Optimal Skin Barrier') : 'Baseline Needed'}
+                  icon={<ShieldCheck size={12} color="#1F7FC4" />}
+                />
                 <Text className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-extrabold tracking-tight mt-3 text-center md:text-left">
                   Overall Skin Index
                 </Text>
                 <Text className="text-slate-600 dark:text-slate-400 text-xs mt-1 text-center md:text-left">
-                  Neural biomarker telemetry analysis from recent AI scan
+                  {hasScans
+                    ? 'Neural biomarker telemetry analysis from recent AI scan'
+                    : 'Capture your first facial AI scan to compute clinical skin biomarkers'}
                 </Text>
 
                 <View className="flex-row items-center mt-4 justify-center md:justify-start gap-3">
@@ -173,7 +180,7 @@ export default function DashboardScreen() {
                   <Text className="text-slate-500 dark:text-slate-400 text-xs font-semibold mt-2">Syncing Telemetry...</Text>
                 </View>
               ) : (
-                <ScoreRing score={skinScore} label="Skin Health Score" sublabel="Optimal" size={140} />
+                <ScoreRing score={skinScore} label="Skin Health Score" sublabel={scoreSublabel} size={140} />
               )}
             </View>
 

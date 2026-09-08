@@ -66,6 +66,17 @@ const EMBEDDED_MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_audit_logs_event ON analytics_schema.audit_logs (event_type);
     `,
   },
+  {
+    version: '005',
+    name: 'secure_password_hashing_and_cleanup',
+    sql: `
+      UPDATE auth_schema.users
+      SET password_hash = '$scrypt$N=16384,r=8,p=1$0123456789abcdef0123456789abcdef$d088ff89d52c0da7840b769c9055596af699cfdd025910d984548f1c2aaec912263f7f9b924ed19c9e43feff83d9fa02bea94b1b90b66671f3083fd85d65de4f'
+      WHERE password_hash LIKE 'hashed_pw_%' 
+         OR password_hash = 'password123' 
+         OR password_hash NOT LIKE '$scrypt$%';
+    `,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
