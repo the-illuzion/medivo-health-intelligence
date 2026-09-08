@@ -31,9 +31,15 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.docker.network=medivo-network"
+      # HTTP Router (Port 80)
+      - "traefik.http.routers.medivo-cloudbeaver-http.rule=Host(`db-admin.80.225.215.96.sslip.io`) || Host(`www.db-admin.80.225.215.96.sslip.io`) || Host(`db-admin.medivo.duckdns.org`) || Host(`www.db-admin.medivo.duckdns.org`) || Host(`${DB_ADMIN_DOMAIN:-db-admin.80.225.215.96.sslip.io}`)"
+      - "traefik.http.routers.medivo-cloudbeaver-http.service=medivo-cloudbeaver"
+      - "traefik.http.routers.medivo-cloudbeaver-http.priority=200"
+      # HTTPS Router (Port 443 with TLS)
       - "traefik.http.routers.medivo-cloudbeaver.rule=Host(`db-admin.80.225.215.96.sslip.io`) || Host(`www.db-admin.80.225.215.96.sslip.io`) || Host(`db-admin.medivo.duckdns.org`) || Host(`www.db-admin.medivo.duckdns.org`) || Host(`${DB_ADMIN_DOMAIN:-db-admin.80.225.215.96.sslip.io}`)"
       - "traefik.http.routers.medivo-cloudbeaver.service=medivo-cloudbeaver"
       - "traefik.http.routers.medivo-cloudbeaver.priority=200"
+      - "traefik.http.routers.medivo-cloudbeaver.tls=true"
       - "traefik.http.services.medivo-cloudbeaver.loadbalancer.server.port=8978"
     deploy:
       resources:
@@ -64,9 +70,15 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.docker.network=medivo-network"
+      # HTTP Router (Port 80)
+      - "traefik.http.routers.medivo-redis-insight-http.rule=Host(`redis-admin.80.225.215.96.sslip.io`) || Host(`www.redis-admin.80.225.215.96.sslip.io`) || Host(`redis-admin.medivo.duckdns.org`) || Host(`www.redis-admin.medivo.duckdns.org`) || Host(`${REDIS_ADMIN_DOMAIN:-redis-admin.80.225.215.96.sslip.io}`)"
+      - "traefik.http.routers.medivo-redis-insight-http.service=medivo-redis-insight"
+      - "traefik.http.routers.medivo-redis-insight-http.priority=200"
+      # HTTPS Router (Port 443 with TLS)
       - "traefik.http.routers.medivo-redis-insight.rule=Host(`redis-admin.80.225.215.96.sslip.io`) || Host(`www.redis-admin.80.225.215.96.sslip.io`) || Host(`redis-admin.medivo.duckdns.org`) || Host(`www.redis-admin.medivo.duckdns.org`) || Host(`${REDIS_ADMIN_DOMAIN:-redis-admin.80.225.215.96.sslip.io}`)"
       - "traefik.http.routers.medivo-redis-insight.service=medivo-redis-insight"
       - "traefik.http.routers.medivo-redis-insight.priority=200"
+      - "traefik.http.routers.medivo-redis-insight.tls=true"
       - "traefik.http.services.medivo-redis-insight.loadbalancer.server.port=5540"
     deploy:
       resources:
@@ -116,9 +128,15 @@ services:
       - "coolify.managed=true"
       - "traefik.enable=true"
       - "traefik.docker.network=medivo-network"
+      # HTTP Router (Port 80)
+      - "traefik.http.routers.medivo-dbgate-http.rule=Host(`db.80.225.215.96.sslip.io`) || Host(`www.db.80.225.215.96.sslip.io`) || Host(`db.medivo.duckdns.org`) || Host(`www.db.medivo.duckdns.org`) || Host(`dbgate.80.225.215.96.sslip.io`) || Host(`www.dbgate.80.225.215.96.sslip.io`) || Host(`dbgate.medivo.duckdns.org`) || Host(`www.dbgate.medivo.duckdns.org`) || Host(`${DBGATE_DOMAIN:-db.80.225.215.96.sslip.io}`)"
+      - "traefik.http.routers.medivo-dbgate-http.service=medivo-dbgate"
+      - "traefik.http.routers.medivo-dbgate-http.priority=200"
+      # HTTPS Router (Port 443 with TLS)
       - "traefik.http.routers.medivo-dbgate.rule=Host(`db.80.225.215.96.sslip.io`) || Host(`www.db.80.225.215.96.sslip.io`) || Host(`db.medivo.duckdns.org`) || Host(`www.db.medivo.duckdns.org`) || Host(`dbgate.80.225.215.96.sslip.io`) || Host(`www.dbgate.80.225.215.96.sslip.io`) || Host(`dbgate.medivo.duckdns.org`) || Host(`www.dbgate.medivo.duckdns.org`) || Host(`${DBGATE_DOMAIN:-db.80.225.215.96.sslip.io}`)"
       - "traefik.http.routers.medivo-dbgate.service=medivo-dbgate"
       - "traefik.http.routers.medivo-dbgate.priority=200"
+      - "traefik.http.routers.medivo-dbgate.tls=true"
       - "traefik.http.services.medivo-dbgate.loadbalancer.server.port=3000"
     deploy:
       resources:
