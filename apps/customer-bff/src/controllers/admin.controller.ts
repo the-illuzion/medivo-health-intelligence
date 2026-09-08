@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { auditService } from '../services/audit.service.js';
 
-export const getHipaaAuditLogs = (_req: Request, res: Response, next: NextFunction) => {
+export const getHipaaAuditLogs = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const logs = auditService.getLogs();
+    const logs = await auditService.getLogs();
     res.json({ success: true, data: logs });
   } catch (err) {
     next(err);

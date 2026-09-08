@@ -4,19 +4,26 @@ import { env } from './config/env.js';
 import mobileBffRouter from './routes/index.js';
 import adminBffRouter from './routes/admin-bff.routes.js';
 import doctorBffRouter from './routes/doctor-bff.routes.js';
+import { requestTracing } from './middleware/requestTracing.js';
+import { httpLogger } from './middleware/httpLogger.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { DatabasePool } from '@medivo/service-api';
+import { createLogger } from '@medivo/utils';
 
 const app = express();
 const PORT = env.PORT || 4000;
+const serverLogger = createLogger('customer-bff');
 
 // Auto-initialize PostgreSQL 13 domain schemas on startup
 DatabasePool.initializeSchemas().catch((err) => {
-  console.warn('[Database Auto-Init]:', err.message);
+  serverLogger.warn('[Database Auto-Init]:', { error: err.message });
 });
 
+// Middleware Stack
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+app.use(requestTracing);
+app.use(httpLogger);
 
 // Internal Docker Container Healthcheck
 app.get('/health', (_req: Request, res: Response) => {
@@ -40,8 +47,11 @@ app.use('/api/v1', mobileBffRouter);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`🚀 Medivo BFF Gateway running on http://localhost:${PORT}`);
-  console.log(`   ├─ Mobile BFF: http://localhost:${PORT}/api/mobile-bff (Health: /api/mobile-bff/health)`);
-  console.log(`   ├─ Admin BFF:  http://localhost:${PORT}/api/admin-bff  (Health: /api/admin-bff/health)`);
-  console.log(`   └─ Doctor BFF: http://localhost:${PORT}/api/doctor-bff (Health: /api/doctor-bff/health)`);
+  serverLogger.info(`🚀 Medivo BFF Gateway running on http://localhost:${PORT}`, {
+    port: PORT,
+    environment: env.NODE_ENV,
+    mobileBff: `/api/mobile-bff`,
+    adminBff: `/api/admin-bff`,
+    doctorBff: `/api/doctor-bff`,
+  });
 });

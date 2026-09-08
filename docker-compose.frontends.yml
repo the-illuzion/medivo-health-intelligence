@@ -41,6 +41,11 @@ services:
       - "traefik.http.routers.medivo-app.priority=85"
       - "traefik.http.routers.medivo-app.tls=true"
       - "traefik.http.services.medivo-app.loadbalancer.server.port=8081"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:
@@ -85,6 +90,11 @@ services:
       - "traefik.http.routers.medivo-doctor.priority=80"
       - "traefik.http.routers.medivo-doctor.tls=true"
       - "traefik.http.services.medivo-doctor.loadbalancer.server.port=3001"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:
@@ -129,6 +139,11 @@ services:
       - "traefik.http.routers.medivo-admin.priority=80"
       - "traefik.http.routers.medivo-admin.tls=true"
       - "traefik.http.services.medivo-admin.loadbalancer.server.port=3002"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:
@@ -176,6 +191,11 @@ services:
       - "traefik.http.routers.medivo-web.priority=10"
       - "traefik.http.routers.medivo-web.tls=true"
       - "traefik.http.services.medivo-web.loadbalancer.server.port=3000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:

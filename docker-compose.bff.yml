@@ -52,6 +52,13 @@ services:
       - "traefik.http.routers.medivo-bff.priority=100"
       - "traefik.http.routers.medivo-bff.tls=true"
       - "traefik.http.services.medivo-bff.loadbalancer.server.port=4000"
+    volumes:
+      - ./logs/bff:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:

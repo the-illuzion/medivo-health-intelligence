@@ -32,6 +32,13 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    volumes:
+      - ./logs/ai:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:
@@ -62,6 +69,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:
@@ -91,6 +103,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:
@@ -120,6 +137,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:
@@ -150,6 +172,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
     deploy:
       resources:
         limits:

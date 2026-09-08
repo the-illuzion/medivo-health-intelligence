@@ -26,3 +26,5 @@ export function calculateSparklinePoints(data: number[], width: number = 44, hei
     })
     .join(' ');
 }
+
+export * from './logger.js';

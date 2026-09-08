@@ -2,36 +2,43 @@
 
 ## Last Session Details
 
-- **Agent**: Antigravity Health Intelligence & AI Vision Engineering Agent
-- **Completed**: 2026-09-08T14:47:00Z
+- **Agent**: Antigravity Platform Reliability & Logging Architecture Agent
+- **Completed**: 2026-09-08T17:00:00Z
 - **Branch**: `main`
 
 ## Summary of Work Completed
 
-1. **AI Scan & Telemetry Persistence**:
-   - Updated `skin_schema.skin_analyses` schema with `grade`, `metrics JSONB`, `recommendations JSONB`, `consent_version`, and `risk_level`.
-   - Added migration `003_skin_analysis_metrics_and_consent.sql`.
-   - Refactored `PostgresSkinScanRepository` and `InMemorySkinScanRepository` to store and query full dynamic JSONB payloads.
-2. **Intelligent Sub-Dermal AI Telemetry Engine**:
-   - `SubDermalEngineAdapter` and `SimulatedAIInferenceService` calculate dynamic Dermal Age, Erythema / Redness %, Pore Clarity %, Photoprotection, and personalized clinical recommendations.
-   - Enforced HIPAA Rule H-2 (consent verification) across all scan controllers.
-3. **BFF Gateway RPC Integration**:
-   - `apps/customer-bff/src/controllers/scan.controller.ts` calls `service-ai` microservice with local domain use-case fallback, audit event encryption, and push notification delivery.
-4. **Zustand Scan Store (`useScanStore.ts`)**:
-   - Complete scan state lifecycle, local caching, and seamless history retrieval.
-5. **Interactive Camera Scan UI (`CameraScanScreen.tsx`)**:
-   - Live HTML5 WebRTC streaming with canvas snapshot extraction on web.
-   - Device gallery upload fallback.
-   - 4-phase animated HUD scanning stages.
-6. **Dynamic Scan Report Screen (`ScanReportScreen.tsx`)**:
-   - Live clinical grade, score hero badge, secondary telemetry indicators, progress breakdown, dynamic recommendations, HIPAA disclaimer, and Web Share API.
-7. **Cross-Screen Integration**:
-   - Connected `DashboardScreen`, `HistoryScreen`, and `AICoachScreen` to dynamic scan and chat APIs.
-8. **Verification & Testing**:
-   - Full TypeScript compilation (0 errors).
-   - 100% passing Vitest test suites across `services/api` and `services/ai`.
+1. **Universal Structured Logger (`packages/utils/src/logger.ts`)**:
+   - Universal `Logger` supporting `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `AUDIT`.
+   - Automatic recursive PII/PHI redaction (`password`, `token`, `authorization`, `creditCard`, `cvv`, `ssn`).
+   - Base64 biometric image stream protection (replaces large image payloads with `[BASE64_IMAGE_STREAM <size>KB]`).
+   - Dual console output: Colored human-readable output in local development, JSON in production (`NODE_ENV === 'production'`).
+   - Automatic persistent rotating file sinks (`combined.log`, `error.log`, `audit.log`) with 10MB size-based rotation.
+   - Comprehensive unit test suite with 100% pass rate (`packages/utils/src/__tests__/logger.test.ts`).
+2. **Distributed Request Tracing & HTTP Access Logging (`apps/customer-bff`, `services/ai`)**:
+   - Correlation ID propagation middleware (`x-request-id`, `x-correlation-id`).
+   - HTTP access logger recording method, path, response status, duration (ms), IP hash, and authenticated user ID.
+   - Centralized error handler capturing 4xx client errors and 5xx server exceptions with stack traces.
+3. **Database Audit Trail & Query Performance Telemetry (`services/api`, `apps/customer-bff`)**:
+   - Asynchronous audit log persistence to PostgreSQL `analytics_schema.audit_logs` (`id`, `user_id`, `event_type`, `resource`, `ip_hash`, `verification_status`, `metadata`, `created_at`).
+   - Slow query telemetry warning in `DatabasePool.ts` when execution exceeds 1000ms.
+   - In-memory circular buffer fallback for resilient logging during transient database disconnections.
+4. **Docker Container Log Management Across All Compose Files**:
+   - Standardized Docker `json-file` logging driver with `max-size: "20m"` and `max-file: "5"` across all 7 compose stacks:
+     - `docker-compose.bff.yml`
+     - `docker-compose.microservices.yml`
+     - `docker-compose.frontends.yml`
+     - `docker-compose.infrastructure.yml`
+     - `docker-compose.management.yml`
+     - `docker-compose.production.yml`
+     - `docker-compose.yml`
+   - Added host log directory volume mounts (`./logs/bff:/app/logs`, `./logs/ai:/app/logs`) for persistent audit trails.
+5. **Verification & Testing**:
+   - Full TypeScript compilation (0 errors) across all packages and services.
+   - 100% passing Vitest test suites across `@medivo/utils` and `@medivo/service-api`.
 
 ## Next Steps for Future Agents
 
-- The AI Scan to Report pipeline is fully functional and bulletproofed across database, microservices, BFF, and frontend UI.
-- Next priority domains: Doctor Portal consultation workflows and Appointments / Video call real-time synchronization.
+- The 5-tier logging framework is fully active and operational across Docker containers, file sinks, PostgreSQL tables, HTTP middleware, and application runtime.
+- Next priority domains: Doctor Portal consultation workflows, Telehealth real-time synchronization, and Appointments scheduling engine.
+

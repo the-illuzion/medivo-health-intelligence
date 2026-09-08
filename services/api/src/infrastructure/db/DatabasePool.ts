@@ -197,14 +197,19 @@ CREATE TABLE IF NOT EXISTS analytics_schema.audit_logs (
   resource VARCHAR(200) NOT NULL,
   ip_hash VARCHAR(100),
   verification_status VARCHAR(100) DEFAULT 'CRYPTOGRAPHICALLY_VERIFIED',
+  metadata JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE analytics_schema.audit_logs ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
 
 CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_schema.users (email);
 CREATE INDEX IF NOT EXISTS idx_skin_analyses_user ON skin_schema.skin_analyses (user_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_patient ON appointment_schema.appointments (patient_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_doctor ON appointment_schema.appointments (doctor_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user ON payment_schema.orders (user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON analytics_schema.audit_logs (user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_event ON analytics_schema.audit_logs (event_type);
 `;
 
 export class DatabasePool {
@@ -232,7 +237,19 @@ export class DatabasePool {
 
   public static async query(text: string, params?: any[]): Promise<pg.QueryResult> {
     const pool = DatabasePool.getPool();
-    return pool.query(text, params);
+    const start = Date.now();
+    try {
+      const res = await pool.query(text, params);
+      const duration = Date.now() - start;
+      if (duration > 1000) {
+        console.warn(`[DatabasePool] ⚠️ Slow Query Alert (${duration}ms): ${text.replace(/\s+/g, ' ').substring(0, 100)}...`);
+      }
+      return res;
+    } catch (err: any) {
+      const duration = Date.now() - start;
+      console.warn(`[DatabasePool Error (${duration}ms)]: ${err.message} | Query: ${text.replace(/\s+/g, ' ').substring(0, 100)}`);
+      throw err;
+    }
   }
 
   public static async ensureDatabaseExists(): Promise<void> {
