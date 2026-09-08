@@ -35,6 +35,12 @@
     - `docker-compose.production.yml`
     - `docker-compose.yml`
   - Added host log directory volume mounts (`./logs/bff:/app/logs`, `./logs/ai:/app/logs`) for persistent audit trails.
+- [x] **Automated Tracked Database Migrations on Every Deployment (`services/api`)**:
+  - Engineered automated migration runner with `public.schema_migrations` tracking table (`version`, `name`, `applied_at`).
+  - Embedded migrations (`001`, `002`, `003`, `004`) with disk-based `.sql` overlay support.
+  - Automatically invoked on every server startup and container boot in `DatabasePool.initializeSchemas()`.
+  - Added Migration `004_audit_logs_metadata_and_indexes.sql` to permanently resolve any schema drift.
+  - Unit tested with 100% passing tests in `services/api/src/infrastructure/__tests__/MigrationRunner.test.ts`.
 - [x] **Verification & Test Execution**:
   - `pnpm -r test`: 100% passing across monorepo test suites.
   - Workspace build verification: `@medivo/utils`, `@medivo/customer-bff`, `@medivo/service-ai`, and `@medivo/service-api` compile with 0 errors.

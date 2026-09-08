@@ -34,6 +34,14 @@ All entries must strictly adhere to the following block format. Do not use table
 
 ## History Log
 
+### 2026-09-08 - Automated Tracked Database Migrations System & Schema Self-Healing
+- **Agent/Author**: Antigravity Database Engineering & Reliability Agent
+- **Type**: Architecture / Feature
+- **Impact Level**: High
+- **Description**: Upgraded database lifecycle management to automatically execute tracked migrations on every deployment and container startup. Created `public.schema_migrations` tracking table (`version`, `name`, `applied_at`) to idempotently execute pending migrations in sequence. Embedded migrations `001` through `004` directly into the TypeScript runtime for 100% reliability in pruned production Docker containers, alongside disk-based `.sql` file detection. Added migration `004_audit_logs_metadata_and_indexes.sql` to permanently manage audit log schema evolution.
+- **Domains Affected**: PostgreSQL Database Layer, Migration Runner, BFF Startup Lifecycle
+- **Key Files**: `services/api/src/infrastructure/db/migrations/runner.ts`, `services/api/src/infrastructure/db/DatabasePool.ts`, `services/api/src/infrastructure/db/migrations/004_audit_logs_metadata_and_indexes.sql`, `services/api/src/infrastructure/__tests__/MigrationRunner.test.ts`
+
 ### 2026-09-08 - Comprehensive Multi-Tier Logging System Architecture & Observability Hardening
 - **Agent/Author**: Antigravity Platform Reliability & Logging Architecture Agent
 - **Type**: Architecture / Security / Feature
