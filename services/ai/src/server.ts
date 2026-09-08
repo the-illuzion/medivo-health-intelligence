@@ -24,8 +24,14 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
+// Mount AI Routes across standard BFF & microservice RPC paths
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/ai/telemetry', aiRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/v1/ai/telemetry', aiRoutes);
+
 app.use(errorHandler);
+
 
 // Global Uncaught Exception & Promise Rejection Handlers
 process.on('uncaughtException', (error: Error) => {

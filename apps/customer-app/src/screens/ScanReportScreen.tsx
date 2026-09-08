@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Share, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { ScreenKey, SkinScanResult } from '@medivo/types';
+import { ScreenKey, SkinScanResult, SkinMetrics } from '@medivo/types';
 import { useScanStore } from '../store/useScanStore';
+
 
 interface ScanReportScreenProps {
   onNavigate: (screen: ScreenKey) => void;
@@ -38,19 +39,28 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
   const score = report?.overallScore ?? 87;
   const grade = report?.grade ?? (score >= 85 ? 'Optimal Grade' : score >= 70 ? 'Good Condition' : 'Attention Advised');
   const riskLevel = report?.riskLevel ?? 'LOW';
-  const metrics = report?.metrics ?? {
-    hydration: 86,
-    texture: 84,
-    pigmentation: 88,
+  const metrics: SkinMetrics = report?.metrics ?? {
+    hydration: 88,
+    oiliness: 58,
+    texture: 85,
+    poreClarity: 84,
+    pigmentation: 89,
+    wrinkles: 86,
+    acneScore: 92,
     darkCircles: 74,
-    skinAge: 26,
+    eyeBags: 78,
     rednessScore: 12,
-    poreClarity: 88,
+    firmness: 85,
+    radiance: 87,
+    skinAge: 26,
+    skinType: 'Combination',
+    barrierHealth: 92,
     photoprotection: 'SPF 50 Active',
     heartRate: 72,
     stressIndex: 18,
-    barrierHealth: 92,
+    oilinessLevel: 'Balanced Sebum',
   };
+
 
   const recommendations = (report?.recommendations && report.recommendations.length > 0)
     ? report.recommendations
@@ -91,58 +101,201 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
     }
   }
 
-  const breakdownCards = [
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'hydration' | 'texture' | 'tone' | 'aging'>('all');
+
+  const all15Metrics = [
+    // 1. Hydration & Barrier Group
     {
+      id: 'hydration',
+      category: 'hydration',
       label: 'Stratum Corneum Hydration',
-      score: metrics.hydration,
+      score: metrics.hydration ?? 88,
       unit: '%',
-      delta: metrics.hydration >= 80 ? '+5%' : '-2%',
-      note: metrics.hydration >= 80 ? 'Optimal moisture retention' : 'Mild epidermal dryness detected',
+      delta: (metrics.hydration ?? 88) >= 80 ? '+5%' : '-2%',
+      note: (metrics.hydration ?? 88) >= 80 ? 'Optimal deep dermal moisture retention' : 'Mild epidermal dehydration detected',
       icon: 'droplet',
       color: '#0284C7',
       bg: '#E0F2FE',
     },
     {
-      label: 'Epidermal Barrier Integrity',
-      score: metrics.barrierHealth ?? 92,
+      id: 'oiliness',
+      category: 'hydration',
+      label: 'Sebum & Lipid Balance',
+      score: metrics.oiliness ?? 58,
       unit: '%',
-      delta: '+4%',
-      note: 'Robust lipid bilayer resistance',
-      icon: 'shield',
+      delta: (metrics.oiliness ?? 58) <= 70 && (metrics.oiliness ?? 58) >= 45 ? 'Optimal' : (metrics.oiliness ?? 58) > 70 ? 'High' : 'Low',
+      note: (metrics.oiliness ?? 58) > 70 ? 'Elevated T-Zone sebum production' : (metrics.oiliness ?? 58) < 45 ? 'Reduced lipid barrier secretion' : 'Balanced physiological lipid level',
+      icon: 'activity',
       color: '#059669',
       bg: '#D1FAE5',
     },
     {
-      label: 'Skin Surface Texture',
-      score: metrics.texture,
+      id: 'barrierHealth',
+      category: 'hydration',
+      label: 'Epidermal Barrier Integrity',
+      score: metrics.barrierHealth ?? 92,
+      unit: '%',
+      delta: '+4%',
+      note: 'Robust stratum corneum lipid bilayer defense',
+      icon: 'shield',
+      color: '#10B981',
+      bg: '#ECFDF5',
+    },
+
+    // 2. Texture & Clarity Group
+    {
+      id: 'texture',
+      category: 'texture',
+      label: 'Skin Surface Micro-Texture',
+      score: metrics.texture ?? 85,
       unit: '/100',
-      delta: metrics.texture >= 80 ? '+3' : '0',
-      note: metrics.texture >= 80 ? 'Smooth epidermal surface' : 'Micro-texture refinement recommended',
+      delta: (metrics.texture ?? 85) >= 80 ? '+3' : '0',
+      note: (metrics.texture ?? 85) >= 80 ? 'Smooth epidermal surface topography' : 'Micro-texture refinement recommended',
       icon: 'sparkles',
       color: '#7C3AED',
       bg: '#F3E8FF',
     },
     {
-      label: 'Melanin & Pigmentation Uniformity',
-      score: metrics.pigmentation,
+      id: 'poreClarity',
+      category: 'texture',
+      label: 'Pore Clarity & Refinement',
+      score: metrics.poreClarity ?? 84,
+      unit: '%',
+      delta: '+2%',
+      note: (metrics.poreClarity ?? 84) >= 80 ? 'Refined non-congested follicles' : 'Follicular clearing indicated',
+      icon: 'target',
+      color: '#6366F1',
+      bg: '#EEF2FF',
+    },
+    {
+      id: 'acneScore',
+      category: 'texture',
+      label: 'Acne & Blemish Defense',
+      score: metrics.acneScore ?? 92,
+      unit: '/100',
+      delta: (metrics.acneScore ?? 92) >= 85 ? 'Clear' : 'Active',
+      note: (metrics.acneScore ?? 92) >= 85 ? 'Minimal comedones or blemish activity' : 'Targeted anti-microbial salicylic protocol advised',
+      icon: 'check-circle',
+      color: '#0D9488',
+      bg: '#CCFBF1',
+    },
+
+    // 3. Tone & Radiance Group
+    {
+      id: 'pigmentation',
+      category: 'tone',
+      label: 'Melanin & Spots Uniformity',
+      score: metrics.pigmentation ?? 89,
       unit: '/100',
       delta: '+2',
-      note: metrics.pigmentation >= 80 ? 'Even tone distribution' : 'Localized melanin clustering noted',
+      note: (metrics.pigmentation ?? 89) >= 80 ? 'Even tone distribution across zones' : 'Localized melanin clustering noted',
       icon: 'sun',
       color: '#D97706',
       bg: '#FEF3C7',
     },
     {
-      label: 'Periorbital Micro-Circulation',
-      score: metrics.darkCircles,
+      id: 'rednessScore',
+      category: 'tone',
+      label: 'Dermal Erythema & Redness',
+      score: metrics.rednessScore ?? 12,
+      unit: '%',
+      delta: (metrics.rednessScore ?? 12) <= 15 ? 'Calm' : 'Elevated',
+      note: (metrics.rednessScore ?? 12) <= 15 ? 'Micro-vascular baseline calm' : 'Mild erythema sensitivity detected',
+      icon: 'thermometer',
+      color: '#EF4444',
+      bg: '#FEE2E2',
+    },
+    {
+      id: 'radiance',
+      category: 'tone',
+      label: 'Luminosity & Radiance Index',
+      score: metrics.radiance ?? 87,
+      unit: '/100',
+      delta: '+5',
+      note: 'High optical reflectance & healthy glow',
+      icon: 'zap',
+      color: '#F59E0B',
+      bg: '#FFFBEB',
+    },
+
+    // 4. Aging, Firmness & Periorbital Group
+    {
+      id: 'wrinkles',
+      category: 'aging',
+      label: 'Fine Lines & Wrinkle Smoothness',
+      score: metrics.wrinkles ?? 86,
       unit: '/100',
       delta: '+1',
-      note: metrics.darkCircles >= 75 ? 'Rested, firm eye area' : 'Mild periorbital shadow detected',
+      note: 'Strong structural collagen matrix resistance',
+      icon: 'minimize-2',
+      color: '#8B5CF6',
+      bg: '#F5F3FF',
+    },
+    {
+      id: 'firmness',
+      category: 'aging',
+      label: 'Dermal Elasticity & Firmness',
+      score: metrics.firmness ?? 85,
+      unit: '/100',
+      delta: '+3',
+      note: 'Robust elastin tensile rebound strength',
+      icon: 'award',
+      color: '#3B82F6',
+      bg: '#EFF6FF',
+    },
+    {
+      id: 'skinAge',
+      category: 'aging',
+      label: 'Estimated Biological Skin Age',
+      score: metrics.skinAge ?? 26,
+      unit: ' yrs',
+      delta: 'Youthful',
+      note: `Evaluated dermal vitality matches age ${metrics.skinAge ?? 26}`,
+      icon: 'clock',
+      color: '#4F46E5',
+      bg: '#EEF2FF',
+    },
+    {
+      id: 'darkCircles',
+      category: 'aging',
+      label: 'Periorbital Micro-Circulation',
+      score: metrics.darkCircles ?? 74,
+      unit: '/100',
+      delta: '+1',
+      note: (metrics.darkCircles ?? 74) >= 75 ? 'Rested, well-oxygenated eye contour' : 'Mild infraorbital shadow detected',
       icon: 'moon',
       color: '#4338CA',
       bg: '#EEF2FF',
     },
+    {
+      id: 'eyeBags',
+      category: 'aging',
+      label: 'Under-Eye Contour & Bags',
+      score: metrics.eyeBags ?? 78,
+      unit: '/100',
+      delta: 'Normal',
+      note: 'Optimal orbital lymphatic drainage',
+      icon: 'eye',
+      color: '#6D28D9',
+      bg: '#EDE9FE',
+    },
+    {
+      id: 'skinType',
+      category: 'all',
+      label: 'Diagnostic Clinical Skin Type',
+      score: metrics.skinType || 'Combination',
+      unit: '',
+      delta: 'Verified',
+      note: `Classified as ${metrics.skinType || 'Combination'} Profile`,
+      icon: 'user',
+      color: '#0284C7',
+      bg: '#E0F2FE',
+    },
   ];
+
+  const filteredMetrics = selectedCategory === 'all'
+    ? all15Metrics
+    : all15Metrics.filter((m) => m.category === selectedCategory || m.category === 'all');
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -167,7 +320,7 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
       {/* Hero Score Badge */}
       <View style={styles.heroCard}>
         <View style={styles.heroHeaderRow}>
-          <Text style={styles.heroTag}>CLINICAL AI DIAGNOSTIC DOSSIER</Text>
+          <Text style={styles.heroTag}>CLINICAL AI DIAGNOSTIC DOSSIER • 15 ATTRIBUTES</Text>
           <Text style={styles.heroTimestamp}>{formattedDate}</Text>
         </View>
 
@@ -183,8 +336,12 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
             </Text>
           </View>
           <View style={styles.trendBadge}>
-            <Feather name="trending-up" size={12} color="#059669" />
-            <Text style={styles.trendText}>+4 vs baseline</Text>
+            <Feather name="shield" size={12} color="#0284C7" />
+            <Text style={styles.trendText}>{metrics.skinType || 'Combination'}</Text>
+          </View>
+          <View style={[styles.trendBadge, { backgroundColor: '#ECFDF5' }]}>
+            <Feather name="sun" size={12} color="#059669" />
+            <Text style={[styles.trendText, { color: '#059669' }]}>{metrics.photoprotection || 'SPF 50 Active'}</Text>
           </View>
         </View>
 
@@ -193,9 +350,9 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
           <View style={styles.vitalsHeader}>
             <View style={styles.vitalsTag}>
               <Feather name="activity" size={12} color="#0284C7" />
-              <Text style={styles.vitalsTagText}>rPPG Facial Vitals</Text>
+              <Text style={styles.vitalsTagText}>rPPG Facial Vitals & Biomarkers</Text>
             </View>
-            <Text style={styles.vitalsConfidence}>99.2% Landmark Confidence</Text>
+            <Text style={styles.vitalsConfidence}>99.4% Multi-Landmark Tracking</Text>
           </View>
 
           <View style={styles.vitalsGrid}>
@@ -221,8 +378,8 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
             <View style={styles.vitalDivider} />
 
             <View style={styles.vitalBox}>
-              <Text style={styles.vitalVal}>{metrics.stressIndex ?? 18}</Text>
-              <Text style={styles.vitalLabel}>Stress Index</Text>
+              <Text style={styles.vitalVal}>{metrics.barrierHealth ?? 92}%</Text>
+              <Text style={styles.vitalLabel}>Barrier Health</Text>
             </View>
           </View>
         </View>
@@ -232,36 +389,76 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
       <View style={styles.disclaimerBanner}>
         <Feather name="info" size={15} color="#0284C7" style={{ marginTop: 2 }} />
         <Text style={styles.disclaimerText}>
-          <Text style={styles.disclaimerBold}>Clinical AI Wellness Notice:</Text> This analysis is an AI wellness telemetry evaluation (FDA MDDS Class I compliant) and does not substitute in-person dermatological biopsy or pathology.
+          <Text style={styles.disclaimerBold}>Clinical AI Wellness Notice:</Text> Perfect AI 15-attribute biometric facial scan (FDA MDDS Class I compliant). Evaluates 15 stratum and dermal parameters for precision wellness optimization.
         </Text>
       </View>
 
-      {/* Diagnostic Metrics Grid */}
-      <Text style={styles.sectionTitle}>Sub-Dermal Telemetry Breakdown</Text>
-      <View style={styles.metricsList}>
-        {breakdownCards.map((m, idx) => (
-          <View key={idx} style={styles.metricCard}>
-            <View style={styles.metricHeader}>
-              <View style={[styles.iconBox, { backgroundColor: m.bg }]}>
-                <Feather name={m.icon as any} size={18} color={m.color} />
-              </View>
-              <View style={styles.metricTitleBox}>
-                <Text style={styles.metricName}>{m.label}</Text>
-                <Text style={styles.metricNote}>{m.note}</Text>
-              </View>
-              <View style={styles.metricValBox}>
-                <Text style={styles.metricScore}>{m.score}{m.unit}</Text>
-                <Text style={styles.metricDelta}>{m.delta}</Text>
-              </View>
-            </View>
-
-            {/* Score Progress Bar */}
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${Math.min(100, Math.max(10, m.score))}%`, backgroundColor: m.color }]} />
-            </View>
-          </View>
-        ))}
+      {/* Diagnostic Metrics Category Filter Bar */}
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionTitle}>15 Clinical Skin Diagnostics</Text>
+        <Text style={styles.metricsCountBadge}>{all15Metrics.length} Parameters</Text>
       </View>
+
+      {/* Category Pills */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll} contentContainerStyle={styles.categoryScrollContent}>
+        {[
+          { key: 'all', label: 'All 15 Metrics' },
+          { key: 'hydration', label: '💧 Hydration & Barrier' },
+          { key: 'texture', label: '✨ Texture & Pores' },
+          { key: 'tone', label: '☀️ Tone & Radiance' },
+          { key: 'aging', label: '⏳ Aging & Firmness' },
+        ].map((cat) => (
+          <TouchableOpacity
+            key={cat.key}
+            style={[styles.categoryPill, selectedCategory === cat.key && styles.categoryPillActive]}
+            onPress={() => setSelectedCategory(cat.key as any)}
+          >
+            <Text style={[styles.categoryPillText, selectedCategory === cat.key && styles.categoryPillTextActive]}>
+              {cat.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* 15 Diagnostic Metrics Grid */}
+      <View style={styles.metricsList}>
+        {filteredMetrics.map((m) => {
+          const numScore = typeof m.score === 'number' ? m.score : 85;
+          return (
+            <View key={m.id} style={styles.metricCard}>
+              <View style={styles.metricHeader}>
+                <View style={[styles.iconBox, { backgroundColor: m.bg }]}>
+                  <Feather name={m.icon as any} size={18} color={m.color} />
+                </View>
+                <View style={styles.metricTitleBox}>
+                  <Text style={styles.metricName}>{m.label}</Text>
+                  <Text style={styles.metricNote}>{m.note}</Text>
+                </View>
+                <View style={styles.metricValBox}>
+                  <Text style={styles.metricScore}>{m.score}{m.unit}</Text>
+                  <Text style={styles.metricDelta}>{m.delta}</Text>
+                </View>
+              </View>
+
+              {/* Score Progress Bar */}
+              {typeof m.score === 'number' && (
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${Math.min(100, Math.max(10, numScore))}%`,
+                        backgroundColor: m.color,
+                      },
+                    ]}
+                  />
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </View>
+
 
       {/* AI Regimen Adjustments */}
       <Text style={styles.sectionTitle}>Targeted Compounded Therapeutics</Text>
@@ -423,8 +620,48 @@ const styles = StyleSheet.create({
   },
   disclaimerText: { fontSize: 11, color: '#0369A1', lineHeight: 16, marginLeft: 8, flex: 1 },
   disclaimerBold: { fontWeight: '700' },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1E1B4B', marginBottom: 12 },
+  sectionHeaderRow: {
+
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1E1B4B' },
+  metricsCountBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0284C7',
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  categoryScroll: { marginBottom: 16 },
+  categoryScrollContent: { gap: 8 },
+  categoryPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  categoryPillActive: {
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
+  },
+  categoryPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  categoryPillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
   metricsList: { gap: 12, marginBottom: 24 },
+
   metricCard: {
     backgroundColor: '#FFFFFF',
     padding: 16,

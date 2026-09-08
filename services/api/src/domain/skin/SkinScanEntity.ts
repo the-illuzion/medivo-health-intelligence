@@ -1,16 +1,25 @@
 export interface SkinMetrics {
-  hydration: number;       // 0-100%
-  texture: number;         // 0-100
-  pigmentation: number;    // 0-100
-  darkCircles: number;     // 0-100
-  skinAge?: number;        // Estimated dermal age in years
-  rednessScore?: number;   // Dermal erythema percentage (0-100%)
-  poreClarity?: number;    // Pore clarity percentage (0-100%)
-  photoprotection?: string;// Dynamic photoprotection status
-  heartRate?: number;      // rPPG Vital Heart Rate (BPM)
-  stressIndex?: number;    // Micro-vascular stress index (0-100)
-  barrierHealth?: number;  // Epidermal barrier integrity (0-100%)
-  acneScore?: number;
+  // 15 Core Clinical Skin Attributes
+  hydration: number;         // 1. Stratum Corneum Hydration (0-100%)
+  oiliness: number;          // 2. Oiliness / Sebum Balance (0-100%)
+  texture: number;           // 3. Epidermal Micro-Texture & Smoothness (0-100)
+  poreClarity: number;       // 4. Pore Clarity & Refinement (0-100%)
+  pigmentation: number;      // 5. Melanin & Dark Spots Uniformity (0-100)
+  wrinkles: number;          // 6. Fine Lines & Wrinkle Smoothness (0-100)
+  acneScore: number;         // 7. Acne & Blemish Clarity (0-100)
+  darkCircles: number;       // 8. Periorbital Dark Circles (0-100)
+  eyeBags: number;           // 9. Under-Eye Bags & Puffiness (0-100)
+  rednessScore: number;      // 10. Dermal Erythema & Redness (0-100%)
+  firmness: number;          // 11. Dermal Elasticity & Firmness (0-100)
+  radiance: number;          // 12. Radiance & Luminosity Index (0-100)
+  skinAge: number;           // 13. Estimated Biological Skin Age (Years)
+  skinType: string;          // 14. Skin Type ('Combination' | 'Oily' | 'Dry' | 'Normal' | 'Sensitive')
+  barrierHealth: number;     // 15. Epidermal Barrier Integrity (0-100%)
+
+  // Photoprotection & Vital Telemetry
+  photoprotection?: string;
+  heartRate?: number;
+  stressIndex?: number;
   oilinessLevel?: string;
 }
 
@@ -47,14 +56,25 @@ export class SkinScan {
 
   toDTO() {
     const hydration = this.props.metrics.hydration ?? 85;
+    const oiliness = this.props.metrics.oiliness ?? 60;
     const texture = this.props.metrics.texture ?? 82;
-    const pigmentation = this.props.metrics.pigmentation ?? 88;
-    const darkCircles = this.props.metrics.darkCircles ?? 74;
-
-    const skinAge = this.props.metrics.skinAge ?? 26;
-    const rednessScore = this.props.metrics.rednessScore ?? Math.round(100 - pigmentation);
     const poreClarity = this.props.metrics.poreClarity ?? texture;
+    const pigmentation = this.props.metrics.pigmentation ?? 88;
+    const wrinkles = this.props.metrics.wrinkles ?? 86;
+    const acneScore = this.props.metrics.acneScore ?? 92;
+    const darkCircles = this.props.metrics.darkCircles ?? 74;
+    const eyeBags = this.props.metrics.eyeBags ?? 78;
+    const rednessScore = this.props.metrics.rednessScore ?? Math.round(100 - pigmentation);
+    const firmness = this.props.metrics.firmness ?? 85;
+    const radiance = this.props.metrics.radiance ?? 86;
+    const skinAge = this.props.metrics.skinAge ?? 26;
+    const skinType = this.props.metrics.skinType ?? (oiliness > 70 ? 'Oily' : oiliness < 45 ? 'Dry' : 'Combination');
+    const barrierHealth = this.props.metrics.barrierHealth ?? Math.min(98, Math.max(60, Math.round(hydration * 0.6 + (100 - rednessScore) * 0.4)));
+
     const photoprotection = this.props.metrics.photoprotection ?? (darkCircles > 50 ? 'SPF 50 Active' : 'SPF 30 Active');
+    const heartRate = this.props.metrics.heartRate ?? Math.min(84, Math.max(64, 72 + ((hydration + texture) % 9) - 4));
+    const stressIndex = this.props.metrics.stressIndex ?? Math.min(50, Math.max(12, Math.round(rednessScore * 0.8 + (100 - hydration) * 0.3)));
+    const oilinessLevel = this.props.metrics.oilinessLevel ?? (oiliness > 70 ? 'High Sebum Production' : oiliness < 45 ? 'Low Lipids / Dry' : 'Balanced Sebum');
 
     return {
       id: this.props.id,
@@ -63,18 +83,24 @@ export class SkinScan {
       grade: this.grade,
       metrics: {
         hydration,
+        oiliness,
         texture,
-        pigmentation,
-        darkCircles,
-        skinAge,
-        rednessScore,
         poreClarity,
+        pigmentation,
+        wrinkles,
+        acneScore,
+        darkCircles,
+        eyeBags,
+        rednessScore,
+        firmness,
+        radiance,
+        skinAge,
+        skinType,
+        barrierHealth,
         photoprotection,
-        heartRate: this.props.metrics.heartRate ?? Math.min(84, Math.max(64, 72 + ((hydration + texture) % 9) - 4)),
-        stressIndex: this.props.metrics.stressIndex ?? Math.min(50, Math.max(12, Math.round(rednessScore * 0.8 + (100 - hydration) * 0.3))),
-        barrierHealth: this.props.metrics.barrierHealth ?? Math.min(98, Math.max(60, Math.round(hydration * 0.6 + (100 - rednessScore) * 0.4))),
-        acneScore: this.props.metrics.acneScore,
-        oilinessLevel: this.props.metrics.oilinessLevel,
+        heartRate,
+        stressIndex,
+        oilinessLevel,
       },
       recommendations: this.props.recommendations,
       riskLevel: this.riskLevel,
@@ -83,3 +109,4 @@ export class SkinScan {
     };
   }
 }
+

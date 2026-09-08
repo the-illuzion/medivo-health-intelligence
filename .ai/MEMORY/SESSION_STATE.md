@@ -10,6 +10,13 @@
 
 ## Active Work Completed
 
+- [x] **AI Telemetry Route Fix & Full 15 Perfect AI Clinical Attributes**:
+  - Fixed 404 route error (`POST /api/ai/telemetry/analyze -> 404`) by configuring multi-path route mounts (`/api/ai/telemetry`, `/api/ai`, `/api/v1/ai`, `/api/v1/ai/telemetry`) in `services/ai/src/server.ts` and `ai.routes.ts`.
+  - Expanded `SkinMetrics` in `@medivo/types` to support all 15 clinical skin attributes:
+    1. Stratum Corneum Hydration, 2. Sebum & Lipid Balance, 3. Surface Micro-Texture, 4. Pore Clarity & Visibility, 5. Melanin Uniformity & Spots, 6. Fine Lines & Wrinkles, 7. Acne & Blemish Defense, 8. Periorbital Dark Circles, 9. Under-Eye Bags & Contour, 10. Dermal Erythema & Redness, 11. Dermal Elasticity & Firmness, 12. Luminosity & Radiance, 13. Estimated Biological Skin Age, 14. Clinical Skin Type, and 15. Epidermal Barrier Integrity / Photoprotection.
+  - Updated AI adapters: `PerfectCorpAdapter.ts`, `ShenAIAdapter.ts`, and `SubDermalEngineAdapter.ts`.
+  - Updated database entity (`SkinScanEntity.ts`), repository mapping (`PostgresSkinScanRepository.ts`), and simulated inference service (`SimulatedAIInferenceService.ts`).
+  - Updated frontend `ScanReportScreen.tsx` with interactive category filter pills (`All (15)`, `Hydration & Barrier`, `Texture & Pores`, `Tone & Radiance`, `Aging & Firmness`), detailed metrics cards, score progress bars, and clinical status badges.
 - [x] **Universal Structured Logger & Tracked HTTP Client (`packages/utils/src/logger.ts`)**:
   - Implemented multi-level logging (`DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `AUDIT`).
   - Automated recursive HIPAA/GDPR PII/PHI redaction (`password`, `token`, `authorization`, `creditCard`, `cvv`, `ssn`).

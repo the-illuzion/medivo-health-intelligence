@@ -68,19 +68,28 @@ export interface ReportMetric {
 }
 
 export interface SkinMetrics {
-  hydration: number;       // 0-100%
-  texture: number;         // 0-100
-  pigmentation: number;    // 0-100
-  darkCircles: number;     // 0-100
-  skinAge?: number;        // Estimated dermal age in years
-  rednessScore?: number;   // Dermal erythema percentage (0-100%)
-  poreClarity?: number;    // Pore clarity percentage (0-100%)
-  photoprotection?: string;// Dynamic photoprotection status
-  heartRate?: number;      // rPPG Vital Heart Rate (BPM)
-  stressIndex?: number;    // Micro-vascular stress index (0-100)
-  barrierHealth?: number;  // Epidermal barrier integrity (0-100%)
-  acneScore?: number;
-  oilinessLevel?: string;
+  // 15 Core Clinical Skin Attributes from Perfect AI Vision
+  hydration: number;         // 1. Stratum Corneum Hydration (0-100%)
+  oiliness: number;          // 2. Oiliness / Sebum Balance (0-100%)
+  texture: number;           // 3. Epidermal Micro-Texture & Smoothness (0-100)
+  poreClarity: number;       // 4. Pore Clarity & Refinement (0-100%)
+  pigmentation: number;      // 5. Melanin & Dark Spots Uniformity (0-100)
+  wrinkles: number;          // 6. Fine Lines & Wrinkle Smoothness (0-100)
+  acneScore: number;         // 7. Acne & Blemish Clarity (0-100)
+  darkCircles: number;       // 8. Periorbital Dark Circles (0-100)
+  eyeBags: number;           // 9. Under-Eye Bags & Puffiness (0-100)
+  rednessScore: number;      // 10. Dermal Erythema & Redness (0-100%)
+  firmness: number;          // 11. Dermal Elasticity & Firmness (0-100)
+  radiance: number;          // 12. Radiance & Luminosity Index (0-100)
+  skinAge: number;           // 13. Estimated Biological Skin Age (Years)
+  skinType: string;          // 14. Skin Type ('Combination' | 'Oily' | 'Dry' | 'Normal' | 'Sensitive')
+  barrierHealth: number;     // 15. Epidermal Barrier Integrity (0-100%)
+
+  // Photoprotection & Vital Telemetry
+  photoprotection?: string;  // Dynamic photoprotection status (e.g. 'SPF 50 Active')
+  heartRate?: number;        // rPPG Vital Heart Rate (BPM)
+  stressIndex?: number;      // Micro-vascular stress index (0-100)
+  oilinessLevel?: string;    // Qualitative oiliness descriptor
 }
 
 export interface SkinScanResult {

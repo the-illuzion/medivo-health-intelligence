@@ -32,9 +32,16 @@ All entries must strictly adhere to the following block format. Do not use table
 
 ---
 
-## History Log
+### 2026-09-08 - Fixed AI Telemetry 404 Route Mismatch & Expanded Full 15 Perfect AI Skin Attributes
+- **Agent/Author**: Antigravity AI Engineering & Frontend Diagnostics Agent
+- **Type**: Bugfix / Feature / Architecture
+- **Impact Level**: High
+- **Description**: Resolved the `HTTP POST /api/ai/telemetry/analyze -> 404` error by mounting multi-path route aliases (`/api/ai/telemetry`, `/api/ai`, `/api/v1/ai`, `/api/v1/ai/telemetry`) in `services/ai/src/server.ts` and `ai.routes.ts`. Implemented end-to-end support for all 15 clinical skin attributes from Perfect AI Skin Analysis: 1. Stratum Corneum Hydration, 2. Sebum & Lipid Balance (Oiliness), 3. Surface Micro-Texture, 4. Pore Clarity & Visibility, 5. Melanin & Dark Spots Uniformity, 6. Fine Lines & Wrinkle Smoothness, 7. Acne & Blemish Defense, 8. Periorbital Dark Circles, 9. Under-Eye Contour & Bags, 10. Dermal Erythema & Redness, 11. Dermal Elasticity & Firmness, 12. Luminosity & Radiance Index, 13. Estimated Biological Skin Age, 14. Diagnostic Clinical Skin Type, and 15. Epidermal Barrier Integrity / Photoprotection. Updated TypeScript interfaces (`SkinMetrics`), database entity & repository JSONB persistence, AI provider adapters (`PerfectCorpAdapter`, `ShenAIAdapter`, `SubDermalEngineAdapter`), and rich categorized UI in `ScanReportScreen.tsx` with interactive category filtering.
+- **Domains Affected**: AI Vision Service (`services/ai`), BFF RPC Gateway (`apps/customer-bff`), Shared Types (`packages/types`), Database Layer (`services/api`), Mobile & Web App (`apps/customer-app`)
+- **Key Files**: `services/ai/src/server.ts`, `services/ai/src/routes/ai.routes.ts`, `services/ai/src/providers/PerfectCorpAdapter.ts`, `packages/types/src/index.ts`, `services/api/src/domain/skin/SkinScanEntity.ts`, `services/api/src/infrastructure/repositories/PostgresSkinScanRepository.ts`, `apps/customer-app/src/screens/ScanReportScreen.tsx`
 
 ### 2026-09-08 - Third-Party API Egress Telemetry & Process Crash Hardening
+
 - **Agent/Author**: Antigravity Observability & Third-Party Integration Agent
 - **Type**: Feature / Security / Architecture
 - **Impact Level**: High

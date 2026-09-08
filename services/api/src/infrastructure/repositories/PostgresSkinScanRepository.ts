@@ -13,16 +13,24 @@ export class PostgresSkinScanRepository implements ISkinScanRepository {
       grade: 'Optimal Grade',
       metrics: {
         hydration: 92,
+        oiliness: 58,
         texture: 89,
-        pigmentation: 88,
-        darkCircles: 72,
-        skinAge: 26,
-        rednessScore: 12,
         poreClarity: 89,
+        pigmentation: 88,
+        wrinkles: 88,
+        acneScore: 94,
+        darkCircles: 72,
+        eyeBags: 80,
+        rednessScore: 12,
+        firmness: 86,
+        radiance: 88,
+        skinAge: 26,
+        skinType: 'Combination',
+        barrierHealth: 92,
         photoprotection: 'SPF 50 Active',
         heartRate: 72,
         stressIndex: 18,
-        barrierHealth: 92,
+        oilinessLevel: 'Balanced Sebum',
       },
       recommendations: [
         'Incorporate Hyaluronic Serum twice daily after cleansing',
@@ -128,16 +136,25 @@ export class PostgresSkinScanRepository implements ISkinScanRepository {
 
     // Dynamic metrics generation if database had legacy schema without JSONB metrics column
     const hydration = parsedMetrics.hydration ?? Math.min(96, Math.max(65, overallScore + 2));
+    const oiliness = parsedMetrics.oiliness ?? 60;
     const texture = parsedMetrics.texture ?? Math.min(94, Math.max(68, overallScore - 1));
-    const pigmentation = parsedMetrics.pigmentation ?? Math.min(96, Math.max(65, overallScore + 3));
-    const darkCircles = parsedMetrics.darkCircles ?? Math.min(92, Math.max(58, overallScore - 6));
-    const skinAge = parsedMetrics.skinAge ?? 26;
-    const rednessScore = parsedMetrics.rednessScore ?? Math.min(45, Math.max(8, Math.round(100 - pigmentation)));
     const poreClarity = parsedMetrics.poreClarity ?? Math.min(98, Math.max(65, texture));
+    const pigmentation = parsedMetrics.pigmentation ?? Math.min(96, Math.max(65, overallScore + 3));
+    const wrinkles = parsedMetrics.wrinkles ?? 86;
+    const acneScore = parsedMetrics.acneScore ?? 92;
+    const darkCircles = parsedMetrics.darkCircles ?? Math.min(92, Math.max(58, overallScore - 6));
+    const eyeBags = parsedMetrics.eyeBags ?? 78;
+    const rednessScore = parsedMetrics.rednessScore ?? Math.min(45, Math.max(8, Math.round(100 - pigmentation)));
+    const firmness = parsedMetrics.firmness ?? 85;
+    const radiance = parsedMetrics.radiance ?? 86;
+    const skinAge = parsedMetrics.skinAge ?? 26;
+    const skinType = parsedMetrics.skinType ?? (oiliness > 70 ? 'Oily' : oiliness < 45 ? 'Dry' : 'Combination');
+    const barrierHealth = parsedMetrics.barrierHealth ?? Math.min(98, Math.max(60, Math.round(hydration * 0.6 + (100 - rednessScore) * 0.4)));
+
     const photoprotection = parsedMetrics.photoprotection ?? (darkCircles > 65 ? 'SPF 50 Active' : 'SPF 30 Active');
     const heartRate = parsedMetrics.heartRate ?? 72;
     const stressIndex = parsedMetrics.stressIndex ?? 18;
-    const barrierHealth = parsedMetrics.barrierHealth ?? 92;
+    const oilinessLevel = parsedMetrics.oilinessLevel ?? (oiliness > 70 ? 'High Sebum Production' : oiliness < 45 ? 'Low Lipids / Dry' : 'Balanced Sebum');
 
     if (!parsedRecommendations || parsedRecommendations.length === 0) {
       parsedRecommendations = [
@@ -157,18 +174,24 @@ export class PostgresSkinScanRepository implements ISkinScanRepository {
       grade,
       metrics: {
         hydration,
+        oiliness,
         texture,
-        pigmentation,
-        darkCircles,
-        skinAge,
-        rednessScore,
         poreClarity,
+        pigmentation,
+        wrinkles,
+        acneScore,
+        darkCircles,
+        eyeBags,
+        rednessScore,
+        firmness,
+        radiance,
+        skinAge,
+        skinType,
+        barrierHealth,
         photoprotection,
         heartRate,
         stressIndex,
-        barrierHealth,
-        acneScore: parsedMetrics.acneScore,
-        oilinessLevel: parsedMetrics.oilinessLevel,
+        oilinessLevel,
       },
       recommendations: parsedRecommendations,
       riskLevel,
@@ -238,16 +261,24 @@ export class PostgresSkinScanRepository implements ISkinScanRepository {
         grade: 'Optimal Grade',
         metrics: {
           hydration: 86,
+          oiliness: 58,
           texture: 84,
-          pigmentation: 88,
-          darkCircles: 74,
-          skinAge: 26,
-          rednessScore: 12,
           poreClarity: 88,
+          pigmentation: 88,
+          wrinkles: 86,
+          acneScore: 92,
+          darkCircles: 74,
+          eyeBags: 78,
+          rednessScore: 12,
+          firmness: 85,
+          radiance: 86,
+          skinAge: 26,
+          skinType: 'Combination',
+          barrierHealth: 92,
           photoprotection: 'SPF 50 Active',
           heartRate: 72,
           stressIndex: 18,
-          barrierHealth: 92,
+          oilinessLevel: 'Balanced Sebum',
         },
         recommendations: [
           'Incorporate Hyaluronic Serum twice daily after cleansing',
