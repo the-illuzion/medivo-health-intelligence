@@ -227,7 +227,7 @@ export function Card({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [s.card, presentation, style, pressed && s.pressed]}
+      style={[s.card, presentation, style]}
     >
       {children}
     </Pressable>
@@ -257,11 +257,11 @@ export function Action({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={[
         s.button,
         secondary && s.secondary,
         style,
-        (pressed || disabled) && s.pressed,
+        disabled && s.pressed,
       ]}
     >
       {typeof children === 'string' ? (
