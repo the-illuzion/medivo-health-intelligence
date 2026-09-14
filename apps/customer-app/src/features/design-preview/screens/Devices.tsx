@@ -101,6 +101,7 @@ export default function Devices() {
   const isIos = Platform.OS === 'ios';
   const isConnected = Boolean(connection);
   const primaryDisabled = !isIos || isLoading || isSyncing || isResetting;
+  const resetDisabled = isLoading || isSyncing || isResetting;
 
   const loadConnection = useCallback(async () => {
     if (!user?.id) {
@@ -171,15 +172,33 @@ export default function Devices() {
     }
 
     setIsResetting(true);
+    let serverResetError: string | null = null;
+
     try {
-      await healthApi.disconnectAppleHealth();
+      // Always clear the on-device HealthKit cursor first so the user can restart a fresh sync
+      // even if the local BFF has not yet been rebuilt with the disconnect endpoint.
       await appleHealthService.resetSyncState(user.id);
       setConnection(null);
       setLoadError(null);
 
+      try {
+        await healthApi.disconnectAppleHealth();
+      } catch (error) {
+        serverResetError =
+          error instanceof Error ? error.message : 'The Medivo server connection could not be reset.';
+      }
+
+      if (serverResetError) {
+        Alert.alert(
+          'Apple Health reset on this iPhone',
+          `The local HealthKit sync cursor was cleared, but the Medivo server connection could not be disconnected yet: ${serverResetError}\n\nAfter the BFF is updated, run Disconnect Apple Health again. To make iOS ask for permissions again, revoke Medivo Health access in the Apple Health app before reconnecting.`,
+        );
+        return;
+      }
+
       Alert.alert(
-        'Medivo Apple Health reset',
-        'Medivo connection state and sync history were reset. To make iOS ask for Health permissions again, open the Apple Health app, open your profile, find Apps / Apps and Services, choose Medivo Health, and turn off its Health permissions. Then return here and tap Connect Apple Health.',
+        isConnected ? 'Apple Health disconnected' : 'Medivo Apple Health reset',
+        'Medivo connection state and the on-device sync cursor were reset. To make iOS ask for Health permissions again, open the Apple Health app, open your profile, find Apps / Apps and Services, choose Medivo Health, and turn off its Health permissions. Then return here and tap Connect Apple Health.',
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to reset Apple Health.';
@@ -191,11 +210,15 @@ export default function Devices() {
 
   const handleReset = () => {
     Alert.alert(
-      'Reset Apple Health?',
-      'This disconnects Apple Health in Medivo and clears Medivo’s incremental sync state. Existing health samples are kept. Apple controls Health permissions separately, so you can revoke those in the Health app before reconnecting.',
+      isConnected ? 'Disconnect Apple Health?' : 'Reset Apple Health?',
+      'This disconnects Apple Health in Medivo and clears Medivo’s incremental sync cursor. Existing health samples are kept. Apple controls Health permissions separately, so you can revoke those in the Health app before reconnecting.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Reset', style: 'destructive', onPress: () => void performReset() },
+        {
+          text: isConnected ? 'Disconnect' : 'Reset',
+          style: 'destructive',
+          onPress: () => void performReset(),
+        },
       ],
     );
   };
@@ -299,27 +322,32 @@ export default function Devices() {
           accessibilityState={{ disabled: primaryDisabled }}
           disabled={primaryDisabled}
           onPress={() => void handleConnectOrSync()}
-          style={({ pressed }) => [
-            {
-              marginTop: 12,
-              minHeight: 52,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: c.blue,
-              backgroundColor: primaryDisabled ? '#8dbbff' : c.blue,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingHorizontal: 16,
-            },
-            pressed && { opacity: 0.8 },
-          ]}
+          style={{ marginTop: 12, width: '100%' }}
         >
-          {isSyncing ? (
-            <ActivityIndicator color={c.white} />
-          ) : (
-            <Copy size={14} bold color={c.white}>
-              {isConnected ? 'Sync Now' : 'Connect Apple Health'}
-            </Copy>
+          {({ pressed }) => (
+            <View
+              pointerEvents="none"
+              style={{
+                width: '100%',
+                minHeight: 52,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: c.blue,
+                backgroundColor: primaryDisabled ? '#8dbbff' : c.blue,
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingHorizontal: 16,
+                opacity: pressed ? 0.8 : 1,
+              }}
+            >
+              {isSyncing ? (
+                <ActivityIndicator color={c.white} />
+              ) : (
+                <Copy size={14} bold color={c.white}>
+                  {isConnected ? 'Sync Now' : 'Connect Apple Health'}
+                </Copy>
+              )}
+            </View>
           )}
         </Pressable>
 
@@ -327,35 +355,40 @@ export default function Devices() {
           <>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Reset Apple Health connection"
-              accessibilityState={{ disabled: isLoading || isSyncing || isResetting }}
-              disabled={isLoading || isSyncing || isResetting}
+              accessibilityLabel={isConnected ? 'Disconnect Apple Health' : 'Reset Apple Health sync'}
+              accessibilityState={{ disabled: resetDisabled }}
+              disabled={resetDisabled}
               onPress={handleReset}
-              style={({ pressed }) => [
-                {
-                  marginTop: 9,
-                  minHeight: 44,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: c.red,
-                  backgroundColor: c.white,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingHorizontal: 16,
-                },
-                (pressed || isLoading || isSyncing || isResetting) && { opacity: 0.65 },
-              ]}
+              style={{ marginTop: 9, width: '100%' }}
             >
-              {isResetting ? (
-                <ActivityIndicator color={c.red} />
-              ) : (
-                <Copy size={13} bold color={c.red}>
-                  Reset Apple Health
-                </Copy>
+              {({ pressed }) => (
+                <View
+                  pointerEvents="none"
+                  style={{
+                    width: '100%',
+                    minHeight: 46,
+                    borderRadius: 12,
+                    borderWidth: 1.5,
+                    borderColor: c.red,
+                    backgroundColor: c.redSoft,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: 16,
+                    opacity: pressed || resetDisabled ? 0.65 : 1,
+                  }}
+                >
+                  {isResetting ? (
+                    <ActivityIndicator color={c.red} />
+                  ) : (
+                    <Copy size={13} bold color={c.red}>
+                      {isConnected ? 'Disconnect Apple Health' : 'Reset Apple Health Sync'}
+                    </Copy>
+                  )}
+                </View>
               )}
             </Pressable>
             <Copy size={9} color={c.muted} style={{ marginTop: 7, textAlign: 'center' }}>
-              Reset clears Medivo’s connection and sync cursor. Apple Health permissions are managed by iOS.
+              Disconnect clears Medivo’s connection and sync cursor. Apple Health permissions are managed by iOS.
             </Copy>
           </>
         ) : (
