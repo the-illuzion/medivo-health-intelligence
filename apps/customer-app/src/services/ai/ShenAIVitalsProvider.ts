@@ -6,7 +6,7 @@ export interface ShenAIConfig {
 }
 
 export class ShenAIVitalsProvider implements VitalsAnalysisProvider {
-  public name = 'Shen AI Vitals API';
+  public name = 'Medivo rPPG Telemetry Engine';
   private apiKey: string;
   private baseUrl: string;
 

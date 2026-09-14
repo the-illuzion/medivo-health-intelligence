@@ -24,18 +24,14 @@ import {
   Heading,
   Icon,
   IconButton,
-  Ring,
   Tile,
   s,
 } from './UI';
 import { ScanPortrait } from './Illustrations';
 import { useSheetStore } from '../../../store/useSheetStore';
 import { useHealthProfileStore } from '../../../store/useHealthProfileStore';
-import { useVitalsStore } from '../../../store/useVitalsStore';
+import { useVitalsStore, HealthInsight } from '../../../store/useVitalsStore';
 import { useDevicesStore } from '../../../store/useDevicesStore';
-import { useScanStore } from '../../../store/useScanStore';
-import { useCareStore } from '../../../store/useCareStore';
-import { apiClient } from '@medivo/api-client';
 import { detailContent } from '../data/details';
 import { colors as c, tones, designRoutes } from '../tokens';
 
@@ -172,7 +168,7 @@ function InsightsContent() {
         icon="bulb"
       />
       <Carousel label="Health insights">
-        {insights.map((item) => (
+        {insights.map((item: HealthInsight) => (
           <View
             key={item.tag}
             style={[st.insight, { backgroundColor: tones[item.tone].background }]}
@@ -278,7 +274,7 @@ function AlertContent() {
             <Heading size={13} style={st.alertTitle}>
               What to do now
             </Heading>
-            {alert.actionItems.map((text) => (
+            {alert.actionItems.map((text: string) => (
               <View
                 style={[s.row, { alignItems: 'flex-start', gap: 5, marginBottom: 8 }]}
                 key={text}
@@ -308,226 +304,46 @@ function AlertContent() {
 function ScanContent() {
   const { closeSheet } = useSheetStore();
   const router = useRouter();
-  const { addManualReading, fetchVitals, fetchInsights } = useVitalsStore();
-  const { fetchScanHistory, setActiveScan } = useScanStore();
-  const { fetchCarePlan } = useCareStore();
   const [consent, setConsent] = useState(false);
-  const [step, setStep] = useState(0);
-  const [scanResult, setScanResult] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleStartScan = async () => {
+  const handleStartScan = () => {
     if (!consent) return;
-    setStep(1);
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiClient.scans.analyze('sample-optical-frame', true, 'v1.0');
-      if (res) {
-        setScanResult(res);
-        setActiveScan(res);
-        if (res.metrics?.heartRate) {
-          await addManualReading({ metricType: 'Heart Rate', valueString: `${res.metrics.heartRate}` });
-        }
-      }
-    } catch (err: any) {
-      console.warn('[ScanContent] Scan analysis error:', err?.message);
-      setError(err?.message || 'Failed to complete optical telemetry analysis.');
-    } finally {
-      setLoading(false);
-      setStep(2);
-    }
-  };
-
-  const handleFinish = async () => {
     closeSheet();
-    await Promise.allSettled([
-      fetchVitals(),
-      fetchInsights(),
-      fetchScanHistory(),
-      fetchCarePlan(),
-    ]);
+    router.push(designRoutes.scan);
   };
-
-  const m = scanResult?.metrics || {};
-  const score = typeof scanResult?.overallScore === 'number' ? scanResult.overallScore : null;
-  const grade = scanResult?.grade || (score && score >= 85 ? 'Optimal Grade' : score && score >= 70 ? 'Good Condition' : 'Attention Advised');
-  const provider = scanResult?.modelVersion || 'Perfect AI (Skin) + Shen.ai (rPPG Vitals)';
-
-  const biomarkerList = [
-    { label: 'Hydration', val: `${m.hydration ?? 88}%`, tone: 'blue' as const, icon: 'drop' },
-    { label: 'Barrier Health', val: `${m.barrierHealth ?? 92}%`, tone: 'green' as const, icon: 'shield' },
-    { label: 'Micro-Texture', val: `${m.texture ?? 85}/100`, tone: 'purple' as const, icon: 'zap' },
-    { label: 'Pore Clarity', val: `${m.poreClarity ?? 84}%`, tone: 'blue' as const, icon: 'bulb' },
-    { label: 'Melanin Balance', val: `${m.pigmentation ?? 89}/100`, tone: 'orange' as const, icon: 'bulb' },
-    { label: 'Erythema', val: `${m.rednessScore ?? 12}%`, tone: 'red' as const, icon: 'heart' },
-    { label: 'Radiance & Glow', val: `${m.radiance ?? 87}/100`, tone: 'orange' as const, icon: 'zap' },
-    { label: 'Elasticity & Firmness', val: `${m.firmness ?? 85}/100`, tone: 'purple' as const, icon: 'shield' },
-    { label: 'Biological Skin Age', val: `${m.skinAge ?? 26} yrs`, tone: 'blue' as const, icon: 'moon' },
-    { label: 'Dark Circles', val: `${m.darkCircles ?? 74}/100`, tone: 'purple' as const, icon: 'moon' },
-    { label: 'Under-Eye Bags', val: `${m.eyeBags ?? 78}/100`, tone: 'purple' as const, icon: 'moon' },
-    { label: 'Acne Defense', val: `${m.acneScore ?? 92}/100`, tone: 'green' as const, icon: 'done' },
-    { label: 'Diagnostic Skin Type', val: `${m.skinType || 'Combination'}`, tone: 'blue' as const, icon: 'file' },
-    { label: 'Photoprotection', val: `${m.photoprotection || 'SPF 50 Active'}`, tone: 'green' as const, icon: 'shield' },
-  ];
 
   return (
     <>
       <SheetHeading
-        title={
-          step === 0
-            ? 'Ready for your scan?'
-            : step === 1
-              ? 'Extracting AI Telemetry…'
-              : 'AI Telemetry Scan Complete'
-        }
-        subtitle={
-          step === 2
-            ? `Extracted via ${provider}`
-            : 'Multi-modal facial biomarker & rPPG vital sign inference.'
-        }
+        title="Ready for your scan?"
+        subtitle="Multi-modal facial biomarker & rPPG vital sign inference."
         icon="camera"
       />
 
-      {step < 2 ? (
-        <ScanPortrait />
-      ) : (
-        <View style={{ gap: 12 }}>
-          {/* Main Hero Score Card */}
-          <Card style={[s.center, { backgroundColor: c.greenSoft, paddingVertical: 18 }]}>
-            <Ring value={score} size={64} />
-            <Heading size={22} style={{ color: c.green, marginTop: 10 }}>
-              {grade}
-            </Heading>
-            <View style={[s.row, { gap: 6, marginTop: 4 }]}>
-              <Chip tone="green">Score: {score}/100</Chip>
-              <Chip tone="blue">{m.skinType || 'Combination'}</Chip>
-              <Chip tone="purple">{m.photoprotection || 'SPF 50 Active'}</Chip>
-            </View>
-          </Card>
+      <ScanPortrait />
 
-          {/* Real-Time Optical Vitals Bar (Shen.ai + Perfect Corp) */}
-          <Card style={{ padding: 12, backgroundColor: '#f8fafc' }}>
-            <Copy bold size={11} color={c.navy} style={{ marginBottom: 8, letterSpacing: 0.5 }}>
-              rPPG FACIAL VITALS & BIOMARKERS (SHEN.AI + PERFECT AI)
-            </Copy>
-            <View style={[s.row, { justifyContent: 'space-between', paddingVertical: 4 }]}>
-              <View style={[s.center, { flex: 1 }]}>
-                <Copy bold size={15} color={c.navy}>{m.heartRate ?? 72} <Copy size={10} color={c.muted}>BPM</Copy></Copy>
-                <Copy size={9} color={c.muted}>Vital Pulse</Copy>
-              </View>
-              <View style={{ width: 1, height: 28, backgroundColor: '#e2e8f0' }} />
-              <View style={[s.center, { flex: 1 }]}>
-                <Copy bold size={15} color={c.navy}>{m.stressIndex ?? 18}<Copy size={10} color={c.muted}>/100</Copy></Copy>
-                <Copy size={9} color={c.muted}>Stress Index</Copy>
-              </View>
-              <View style={{ width: 1, height: 28, backgroundColor: '#e2e8f0' }} />
-              <View style={[s.center, { flex: 1 }]}>
-                <Copy bold size={15} color={c.navy}>{m.barrierHealth ?? 92}<Copy size={10} color={c.muted}>%</Copy></Copy>
-                <Copy size={9} color={c.muted}>Barrier Health</Copy>
-              </View>
-              <View style={{ width: 1, height: 28, backgroundColor: '#e2e8f0' }} />
-              <View style={[s.center, { flex: 1 }]}>
-                <Copy bold size={15} color={c.navy}>{m.skinAge ?? 26} <Copy size={10} color={c.muted}>yrs</Copy></Copy>
-                <Copy size={9} color={c.muted}>Dermal Age</Copy>
-              </View>
-            </View>
-          </Card>
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityLabel="Agree to start scan"
+        accessibilityState={{ checked: consent }}
+        aria-checked={consent}
+        onPress={() => setConsent((v) => !v)}
+        style={[s.row, { marginTop: 15 }]}
+      >
+        <Icon name={consent ? 'done' : 'shield'} color={consent ? c.green : c.muted} />
+        <Copy size={12} color={c.muted} style={s.flex}>
+          I consent to optical vital scan processing under Medivo HIPAA Privacy Standards.
+        </Copy>
+      </Pressable>
 
-          {/* 15 Clinical Diagnostics Grid */}
-          <Card style={{ padding: 12 }}>
-            <Copy bold size={11} color={c.navy} style={{ marginBottom: 8, letterSpacing: 0.5 }}>
-              15 CLINICAL SKIN & CELLULAR ATTRIBUTES (PERFECT AI)
-            </Copy>
-            <View style={[s.row, { flexWrap: 'wrap', gap: 6 }]}>
-              {biomarkerList.map((item) => (
-                <View
-                  key={item.label}
-                  style={[
-                    s.row,
-                    {
-                      width: '48.5%',
-                      backgroundColor: '#f8fafc',
-                      borderRadius: 10,
-                      padding: 8,
-                      gap: 6,
-                      borderWidth: 1,
-                      borderColor: '#edf2f7',
-                    },
-                  ]}
-                >
-                  <Tile name={item.icon} tone={item.tone} size={24} />
-                  <View style={s.flex}>
-                    <Copy size={9} color={c.muted}>
-                      {item.label}
-                    </Copy>
-                    <Copy bold size={11} color={c.navy}>
-                      {item.val}
-                    </Copy>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </Card>
-
-          {/* Targeted Clinical Recommendations */}
-          {scanResult?.recommendations && scanResult.recommendations.length > 0 && (
-            <Card style={{ padding: 12 }}>
-              <Copy bold size={11} color={c.navy} style={{ marginBottom: 6, letterSpacing: 0.5 }}>
-                TARGETED CLINICAL PROTOCOL
-              </Copy>
-              {scanResult.recommendations.map((rec: string, idx: number) => (
-                <View key={idx} style={[s.row, { alignItems: 'flex-start', gap: 6, marginVertical: 4 }]}>
-                  <View style={{ marginTop: 2 }}>
-                    <Icon name="done" color={c.green} size={14} />
-                  </View>
-                  <Copy size={11} color={c.navy} style={s.flex}>
-                    {rec}
-                  </Copy>
-                </View>
-              ))}
-            </Card>
-          )}
-        </View>
-      )}
-
-      {step === 0 && (
-        <Pressable
-          accessibilityRole="checkbox"
-          accessibilityLabel="Agree to start scan"
-          accessibilityState={{ checked: consent }}
-          aria-checked={consent}
-          onPress={() => setConsent((v) => !v)}
-          style={[s.row, { marginTop: 15 }]}
-        >
-          <Icon name={consent ? 'done' : 'shield'} color={consent ? c.green : c.muted} />
-          <Copy size={12} color={c.muted} style={s.flex}>
-            I consent to optical vital scan processing under Medivo HIPAA Privacy Standards.
-          </Copy>
-        </Pressable>
-      )}
-
-      <DemoNote text="Live biometric telemetry and skin analysis executed via third-party Perfect AI and Shen.ai SDK pipelines." />
+      <DemoNote text="Live biometric telemetry and skin analysis executed via Medivo AI optical telemetry pipelines." />
 
       <View style={{ gap: 8, marginTop: 12 }}>
-        {step === 2 && scanResult?.id && (
-          <Action
-            style={{ backgroundColor: c.blue }}
-            onPress={() => {
-              closeSheet();
-              router.push({ pathname: `/scan-report/${scanResult.id}` as any });
-            }}
-          >
-            Inspect Full Clinical Dossier
-          </Action>
-        )}
-
         <Action
-          disabled={(step === 0 && !consent) || (step === 1 && loading)}
-          onPress={() => (step === 2 ? handleFinish() : handleStartScan())}
+          disabled={!consent}
+          onPress={handleStartScan}
         >
-          {step === 0 ? 'Start scan' : step === 1 ? 'Analyzing…' : 'Done'}
+          Open Live Camera Scanner
         </Action>
       </View>
     </>

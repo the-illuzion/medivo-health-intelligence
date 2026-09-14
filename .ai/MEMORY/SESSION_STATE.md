@@ -72,12 +72,19 @@
    - **Flow 8: Health Status Wellness Carousel**: Complete (`app/health-status.tsx`, `HealthStatus.tsx` with 4-slide carousel, habit checklist, score binding, and desktop frame).
    - **Navigation & Active Menu Highlight**: Fixed `isRouteActive` helper in `tokens.ts`, `Shell.tsx`, `DesktopShell.tsx`, and `WebSidebar.tsx` to properly resolve nested routes, tab groups, and sub-pages (`/insights`, `/scan`, `/care`, `/profile`, `/metric-details`, `/devices`, etc.) so that the active tab / menu item is highlighted on mobile and desktop.
    - **New User Zero-Data Isolation & Action-Triggered Population**: Verified and updated `vitals.service.ts`, `care.service.ts`, `device.service.ts`, `health-profile.service.ts`, `useVitalsStore.ts`, `useCareStore.ts`, `useDevicesStore.ts`, and UI screens (`Home.tsx`, `Metrics.tsx`, `Care.tsx`, `Profile.tsx`, `Devices.tsx`, `UI.tsx`) so that brand new users display clean empty/unrecorded states (`Score: --`, `Vitals: --`, `Tasks: 0`, `Devices: 0`, `Records: 0`, `Medications: 0`) until an action (optical AI face scan, manual vital entry, device pairing, or medication addition) is initiated. Pre-populated demo telemetry is isolated strictly to demo account `usr-101`.
-   - **Dynamic Perfect AI & Shen.ai Third-Party SDK Telemetry Integration**: Built `UnifiedAIAdapter` orchestrating PerfectCorp (15 skin attributes) and Shen.ai (rPPG vitals) pipelines. Eliminated all hardcoded fallbacks and static period maps in `vitals.service.ts` and `Sheets.tsx`, ensuring all scores, grades, and 15 biomarkers are 100% dynamically derived and rendered in the frontend.
+   - **Live Camera Scanner & Dynamic Score Inference**:
+     - Integrated a live **WebRTC Camera Viewfinder** directly into `Scan.tsx` (`<video>` stream on web, camera adapter on native) with real-time oval face alignment guide, luminance checks (glare / low-light detection), distance heuristic, head tilt detection, 3-2-1 auto-capture countdown, and high-resolution canvas frame capture (`canvas.toDataURL('image/jpeg', 0.90)`).
+     - Replaced static placeholder buttons and mock timeouts with true camera-driven analysis: the app maintains a live camera viewfinder and only renders the 15-biomarker clinical dossier *after* an actual camera frame is captured and processed by the multi-modal AI backend.
+     - Added "Take Another Scan" button that resets the viewfinder back to live camera mode, and "Inspect Full Clinical Dossier" button navigating to `/scan-report/[id]`.
+     - Updated modal sheet `ScanContent` in `Sheets.tsx` to directly launch the live camera scanner route.
+   - **Proprietary Vendor Brand Sanitization**:
+     - Sanitized all user-facing screens, product cards, AI coach prompts, clinical disclaimers, chat handlers, and API adapter outputs to remove references to third-party vendor names ("Perfect Corp", "Perfect AI", "Shen.ai", "Shen AI").
+     - Standardized all clinical AI telemetry under unified Medivo branding: *"Medivo Multi-Modal Optical Telemetry Engine"*, *"Medivo Optical AI Vision"*, *"rPPG Facial Vitals & Biomarkers (Optical AI)"*, and *"15 Clinical Skin & Cellular Attributes (Medivo AI)"*.
 
 5. **Verification & Quality Checks**:
    - `pnpm -r type-check`: 18/18 workspace packages passed with 0 TypeScript errors.
    - `pnpm -r test`: 25/25 unit and end-to-end integration tests in `services/api` and `packages/utils` passed with 0 errors.
-   - `pnpm --filter @medivo/customer-app build:web`: Exported all 53 static routes and assets successfully.
+   - `pnpm --filter @medivo/customer-app build:web`: Exported all 53 static routes and assets successfully with 0 errors.
    - `pnpm --filter @medivo/customer-bff build`: Built successfully.
    - `pnpm --filter @medivo/service-api build`: Built successfully.
    - `pnpm --filter @medivo/api-client build`: Built successfully.

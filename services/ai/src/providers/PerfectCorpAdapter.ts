@@ -5,7 +5,7 @@ import { trackedFetch, createLogger } from '@medivo/utils';
 const adapterLogger = createLogger('perfect-corp-adapter');
 
 export class PerfectCorpAdapter implements IAIProviderAdapter {
-  public name = 'PerfectCorp';
+  public name = 'Medivo Optical AI Engine';
 
   public isConfigured(): boolean {
     return Boolean(env.PERFECT_CORP_API_KEY && env.PERFECT_CORP_SECRET_KEY);

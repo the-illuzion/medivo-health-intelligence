@@ -7,7 +7,7 @@ import { createLogger } from '@medivo/utils';
 const logger = createLogger('unified-ai-adapter');
 
 export class UnifiedAIAdapter implements IAIProviderAdapter {
-  public name = 'PerfectAI + Shen.ai Unified Engine';
+  public name = 'Medivo Multi-Modal Optical Telemetry Engine';
   private perfectCorp = new PerfectCorpAdapter();
   private shen = new ShenAIAdapter();
   private subDermal = new SubDermalEngineAdapter();
@@ -22,7 +22,7 @@ export class UnifiedAIAdapter implements IAIProviderAdapter {
 
     // 1. Both SDKs/APIs configured: Parallel Multi-Modal Execution
     if (perfectConfigured && shenConfigured) {
-      logger.info('[UnifiedAIAdapter] Executing dual PerfectCorp (Skin) + Shen.ai (rPPG Vitals) pipelines...');
+      logger.info('[UnifiedAIAdapter] Executing dual skin analysis + rPPG vitals optical telemetry pipelines...');
       const [perfectRes, shenRes] = await Promise.allSettled([
         this.perfectCorp.analyzeImage(imageBase64),
         this.shen.analyzeImage(imageBase64),
@@ -32,7 +32,7 @@ export class UnifiedAIAdapter implements IAIProviderAdapter {
       const shenData = shenRes.status === 'fulfilled' ? shenRes.value : null;
 
       if (perfectData && shenData) {
-        // Fuse Perfect AI skin metrics with Shen.ai rPPG vitals
+        // Fuse skin metrics with rPPG vitals
         const fusedMetrics = {
           ...perfectData.metrics,
           heartRate: shenData.metrics.heartRate || perfectData.metrics.heartRate,
@@ -48,7 +48,7 @@ export class UnifiedAIAdapter implements IAIProviderAdapter {
           metrics: fusedMetrics,
           recommendations: combinedRecs,
           riskLevel: perfectData.riskLevel || shenData.riskLevel || 'LOW',
-          providerName: 'PerfectCorp (Skin) + Shen.ai (Vitals)',
+          providerName: 'Medivo Multi-Modal Optical Telemetry Engine',
         };
       } else if (perfectData) {
         return perfectData;

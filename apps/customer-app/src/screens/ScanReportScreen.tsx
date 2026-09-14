@@ -403,7 +403,7 @@ export function ScanReportScreen({ onNavigate, scanId }: ScanReportScreenProps) 
       <View style={styles.disclaimerBanner}>
         <Feather name="info" size={15} color="#0284C7" style={{ marginTop: 2 }} />
         <Text style={styles.disclaimerText}>
-          <Text style={styles.disclaimerBold}>Clinical AI Wellness Notice:</Text> Perfect AI 15-attribute biometric facial scan (FDA MDDS Class I compliant). Evaluates 15 stratum and dermal parameters for precision wellness optimization.
+          <Text style={styles.disclaimerBold}>Clinical AI Wellness Notice:</Text> Medivo 15-attribute biometric facial optical scan (FDA MDDS Class I compliant). Evaluates 15 stratum and dermal parameters for precision wellness optimization.
         </Text>
       </View>
 

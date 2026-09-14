@@ -68,7 +68,7 @@ export interface ReportMetric {
 }
 
 export interface SkinMetrics {
-  // 15 Core Clinical Skin Attributes from Perfect AI Vision
+  // 15 Core Clinical Skin Attributes from Medivo Optical AI Vision
   hydration: number;         // 1. Stratum Corneum Hydration (0-100%)
   oiliness: number;          // 2. Oiliness / Sebum Balance (0-100%)
   texture: number;           // 3. Epidermal Micro-Texture & Smoothness (0-100)

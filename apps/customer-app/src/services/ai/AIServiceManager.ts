@@ -23,8 +23,8 @@ export class AIServiceManager {
       vitals: vitalsData,
       aiInsights: [
         'Skin hydration is optimal at 93% with low epidermal inflammation.',
-        'Shen AI telemetry indicates healthy HRV (62ms) and relaxed vascular state.',
-        'Perfect Corp neural analysis detects minor dark circle pigmentation in periorbital zone.',
+        'Medivo rPPG telemetry indicates healthy HRV (62ms) and relaxed vascular state.',
+        'Medivo neural analysis detects minor dark circle pigmentation in periorbital zone.',
       ],
       recommendations: [
         'Apply 0.5% Retinol Cream during evening repair window.',

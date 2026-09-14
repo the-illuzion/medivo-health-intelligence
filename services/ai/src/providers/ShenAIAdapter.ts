@@ -5,7 +5,7 @@ import { trackedFetch, createLogger } from '@medivo/utils';
 const adapterLogger = createLogger('shen-ai-adapter');
 
 export class ShenAIAdapter implements IAIProviderAdapter {
-  public name = 'ShenAI';
+  public name = 'Medivo rPPG Telemetry Engine';
 
   public isConfigured(): boolean {
     return Boolean(env.SHEN_API_KEY && env.SHEN_CLIENT_SECRET);
