@@ -30,14 +30,32 @@
           "cameraPermission": "Medivo Health requires camera access for real-time AI face match skin analysis."
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Medivo Health accesses your photo library only when you choose a photo for health or skin analysis.",
+          "cameraPermission": "Medivo Health requires camera access for real-time AI face match skin analysis.",
+          "microphonePermission": false
+        }
+      ],
       "expo-notifications",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Medivo uses Apple Health data you choose to share to provide your health metrics, trends, and personalized insights.",
+          "NSHealthUpdateUsageDescription": "Medivo may save health data you explicitly choose to sync with Apple Health",
+          "background": false
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.medivo.health",
+      "buildNumber": "4",
       "infoPlist": {
-        "NSCameraUsageDescription": "Medivo Health requires camera access for real-time AI face match skin analysis."
+        "NSCameraUsageDescription": "Medivo Health requires camera access for real-time AI face match skin analysis.",
+        "NSPhotoLibraryUsageDescription": "Medivo Health accesses your photo library only when you choose a photo for health or skin analysis."
       }
     },
     "android": {

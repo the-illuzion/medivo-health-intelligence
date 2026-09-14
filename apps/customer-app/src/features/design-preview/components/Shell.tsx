@@ -33,7 +33,6 @@ export function DesignFrame({ children }: { children: ReactNode }) {
   const status = pathname.includes('health-status');
   const connect = pathname.includes('connect-device');
   const desktop = useDesktop();
-
   const unreadCount = alerts.length;
 
   if (desktop) return <DesktopFrame>{children}</DesktopFrame>;
@@ -51,7 +50,7 @@ export function DesignFrame({ children }: { children: ReactNode }) {
             <View style={styles.header}>
               <View style={s.flex}>
                 <Text style={styles.logo}>medivo</Text>
-                <Copy size={8} color={c.muted}>
+                <Copy size={10} color={c.muted}>
                   Health Intelligence for a Better You
                 </Copy>
               </View>
@@ -151,14 +150,15 @@ export function Screen({ children }: { children: ReactNode }) {
 }
 
 export function useCompact() {
-  return useWindowDimensions().fontScale > 1.25;
+  const { width, fontScale } = useWindowDimensions();
+  return width < 370 || fontScale > 1.25;
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#e9eef4' },
+  safe: { flex: 1, backgroundColor: c.background },
   frame: {
     width: '100%',
-    maxWidth: 430,
+    maxWidth: 760,
     alignSelf: 'center',
     flex: 1,
     backgroundColor: c.background,
@@ -166,8 +166,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: 'white',
     paddingHorizontal: 18,
-    paddingTop: 9,
-    paddingBottom: 12,
+    paddingTop: 12,
+    paddingBottom: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -192,25 +192,25 @@ const styles = StyleSheet.create({
     borderTopColor: c.border,
     backgroundColor: 'white',
   },
-  navItem: { flex: 1, alignItems: 'center', gap: 4, minHeight: 47 },
+  navItem: { flex: 1, alignItems: 'center', gap: 6, minHeight: 54 },
   navIcon: { height: 30, justifyContent: 'center' },
   scanAction: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: c.blue,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -17,
   },
   screen: { flex: 1, backgroundColor: c.background },
-  content: { padding: 18, paddingTop: 9, paddingBottom: 24 },
+  content: { padding: 18, paddingTop: 12, paddingBottom: 26 },
   desktopContent: {
     width: '100%',
-    maxWidth: 1180,
+    maxWidth: 1080,
     alignSelf: 'center',
-    paddingHorizontal: 36,
-    paddingTop: 32,
+    paddingHorizontal: 40,
+    paddingTop: 36,
     paddingBottom: 48,
   },
 });

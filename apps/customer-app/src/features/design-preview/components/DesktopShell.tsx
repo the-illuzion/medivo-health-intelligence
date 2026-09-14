@@ -25,6 +25,7 @@ export function DesktopFrame({ children }: { children: ReactNode }) {
   const { alerts } = useVitalsStore();
   const insets = useSafeAreaInsets();
   const unreadCount = alerts.length;
+
   return (
     <View style={[st.root, { paddingTop: insets.top }]}>
       <View
@@ -67,10 +68,10 @@ export function DesktopFrame({ children }: { children: ReactNode }) {
         </View>
         <View style={st.sidebarFooter}>
           <Copy size={11} bold>
-            Medivo Health OS
+            Your health, in one place
           </Copy>
-          <Copy size={10} color={c.green}>
-            ● Active Telemetry
+          <Copy size={10} color={c.muted}>
+            Medivo Health Intelligence
           </Copy>
         </View>
       </View>
@@ -80,7 +81,10 @@ export function DesktopFrame({ children }: { children: ReactNode }) {
           accessibilityElementsHidden={!!sheet}
           importantForAccessibility={sheet ? 'no-hide-descendants' : 'auto'}
         >
-          <View style={s.flex} />
+          <View style={s.flex}>
+            <Copy size={13} bold>Health Intelligence</Copy>
+            <Copy size={10} color={c.muted}>A little more clarity, every day</Copy>
+          </View>
           <View style={st.notice}>
             <IconButton
               name="bell"
@@ -112,11 +116,11 @@ export function DesktopFrame({ children }: { children: ReactNode }) {
 const st = StyleSheet.create({
   root: { flex: 1, flexDirection: 'row', backgroundColor: '#eef3f8' },
   sidebar: {
-    width: 248,
+    width: 224,
     backgroundColor: 'white',
     borderRightWidth: 1,
     borderRightColor: c.border,
-    padding: 26,
+    padding: 22,
     paddingTop: 24,
   },
   brand: { gap: 2 },

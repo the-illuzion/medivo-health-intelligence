@@ -6,8 +6,8 @@ export const colors = {
   red: '#e75773',
   orange: '#f09727',
   purple: '#8550d6',
-  muted: '#69758a',
-  background: '#f7faff',
+  muted: '#647187',
+  background: '#f6f9fd',
   border: '#e6edf5',
   white: '#ffffff',
   blueSoft: '#edf5ff',
@@ -24,7 +24,7 @@ export const tones = {
   purple: { foreground: colors.purple, background: colors.purpleSoft },
 };
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 };
-export const radius = { small: 10, card: 14, pill: 99 };
+export const radius = { small: 10, card: 18, pill: 99 };
 export const designRoutes = {
   home: '/(tabs)',
   metrics: '/(tabs)/insights',
@@ -82,12 +82,14 @@ export function isRouteActive(name: string, pathname: string): boolean {
         normalized === '/(tabs)/profile' ||
         normalized === '/devices' ||
         normalized === '/connect-device' ||
+        normalized === '/connected-devices' ||
         normalized === '/health-status' ||
         normalized === '/edit-profile' ||
         normalized.startsWith('/profile/') ||
         normalized.startsWith('/(tabs)/profile/') ||
         normalized.startsWith('/devices/') ||
         normalized.startsWith('/connect-device/') ||
+        normalized.startsWith('/connected-devices/') ||
         normalized.startsWith('/health-status/') ||
         normalized.startsWith('/edit-profile/')
       );
@@ -95,4 +97,3 @@ export function isRouteActive(name: string, pathname: string): boolean {
       return false;
   }
 }
-

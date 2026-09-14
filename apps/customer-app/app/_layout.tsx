@@ -7,6 +7,7 @@ import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
 import { ServerDownScreen } from '../src/screens/ServerDownScreen';
 import { GestureRoot } from '../src/components/navigation/GestureRoot';
 import { SheetHost } from '../src/features/design-preview/components/Sheets';
+import { useAppleHealthAutoSync } from '../src/hooks/useAppleHealthAutoSync';
 
 import '../global.css';
 
@@ -64,6 +65,7 @@ function StackNavigator() {
 function MainAppShell() {
   const pathname = usePathname();
   const { isDark, colors } = useTheme();
+  useAppleHealthAutoSync();
 
   const isAuthRoute =
     pathname === '/splash' ||

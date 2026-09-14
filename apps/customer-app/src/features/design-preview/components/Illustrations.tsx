@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import Svg, {
   Path,
   Ellipse,
@@ -283,56 +283,26 @@ export function DeviceArt({ kind = 'watch', size = 42 }: { kind?: string; size?:
 }
 export function ScanPortrait() {
   return (
-    <View style={{ width: '100%', aspectRatio: 400 / 225 }}>
-      <Svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 400 225"
-        accessibilityRole="image"
-        accessibilityLabel="Face positioned within scan frame"
-      >
-        <Defs>
-          <LinearGradient id="scan-bg">
-            <Stop offset="0" stopColor="#e7eff8" />
-            <Stop offset=".5" stopColor="#d4dde3" />
-            <Stop offset="1" stopColor="#e8f1fc" />
-          </LinearGradient>
-        </Defs>
-        <Rect width="400" height="225" fill="url(#scan-bg)" />
-        <Path d="M116 225 L123 134 Q107 26 199 16 Q286 13 277 140 L290 225" fill="#263b46" />
-        <Path d="M96 225 Q105 175 179 169 L220 168 Q285 172 304 225" fill="#f9fafb" />
-        <Path d="M178 145 L178 177 Q200 198 220 176 L218 145" fill="#e8b18c" />
-        <Ellipse cx="198" cy="101" rx="55" ry="69" fill="#f2c4a3" />
+    <View style={art.portrait}>
+      <Image
+        source={require('../../../../assets/design/scan-portrait.png')}
+        resizeMode="cover"
+        style={[StyleSheet.absoluteFill, art.image]}
+        accessibilityLabel="Illustrative portrait showing how to position your face for a scan"
+      />
+      <Svg width="100%" height="100%" viewBox="0 0 400 267" style={StyleSheet.absoluteFill} pointerEvents="none">
         <Path
-          d="M140 86 Q127 23 190 24 Q252 5 258 82 Q221 73 207 43 Q179 80 140 86"
-          fill="#243945"
-        />
-        <Path
-          d="M162 102 Q172 93 182 102 M216 102 Q226 93 236 102"
-          stroke="#39444a"
-          fill="none"
-          strokeWidth="3"
-        />
-        <Circle cx="173" cy="102" r="3" fill="#314d50" />
-        <Circle cx="226" cy="102" r="3" fill="#314d50" />
-        <Path
-          d="M196 110 l-4 19 10 0 M182 143 Q199 153 216 142"
-          stroke="#bc816c"
-          strokeWidth="3"
-          fill="none"
-          strokeLinecap="round"
-        />
-        <Path
-          d="M134 49 h-17 q-10 0 -10 10 v18 M266 49 h17 q10 0 10 10 v18 M107 147 v18 q0 10 10 10 h17 M293 147 v18 q0 10 -10 10 h-17"
-          stroke="white"
-          strokeWidth="5"
-          strokeLinecap="round"
-          fill="none"
+          d="M142 47 h-18 q-10 0 -10 10 v18 M258 47 h18 q10 0 10 10 v18 M114 175 v18 q0 10 10 10 h18 M286 175 v18 q0 10 -10 10 h-18"
+          stroke="white" strokeWidth="4" strokeLinecap="round" fill="none"
         />
       </Svg>
     </View>
   );
 }
+const art = StyleSheet.create({
+  portrait: { width: '100%', aspectRatio: 3 / 2, overflow: 'hidden' },
+  image: { width: '100%', height: '100%' },
+});
 
 export function Avatar({ male = false, size = 36 }: { male?: boolean; size?: number }) {
   return (
