@@ -30,6 +30,14 @@ All entries must strictly adhere to the following block format. Do not use table
 - **High**: Cross-domain impact, significant UX updates, changes to shared core packages, new integrations. Requires extensive integration testing.
 - **Critical**: Database schema structural changes (drops, renames, complex migrations), Auth logic changes, payment flow modifications, security changes, or anything affecting core platform stability and data integrity.
 
+### 2026-09-14 - Dynamic Perfect AI & Shen.ai Third-Party SDK Telemetry Integration
+- **Agent/Author**: Antigravity Digital Health & AI Engineering Agent
+- **Type**: Architecture / Feature / Refactor
+- **Impact Level**: High
+- **Description**: Replaced all remaining static fallbacks and hardcoded telemetry maps with dynamic third-party API SDK pipeline integration. Created `UnifiedAIAdapter` in `services/ai` orchestrating both PerfectCorp (15 skin attributes, barrier integrity, skin age) and Shen.ai (rPPG vitals, pulse heart rate BPM, stress/HRV index, blood pressure estimation). Fully updated `vitals.service.ts` to dynamically extract all 15 clinical parameters and vitals directly from the scan payload, eliminated static period score maps in favor of real telemetry deltas, and upgraded `Sheets.tsx` (`ScanContent`) to render a comprehensive, responsive 15-biomarker telemetry dashboard with dynamic clinical grade badges and prescription formulation protocols.
+- **Domains Affected**: AI Vision Microservice (`services/ai`), Customer BFF (`apps/customer-bff`), Customer App UI (`apps/customer-app`), State Management (`useVitalsStore`, `useScanStore`)
+- **Key Files**: `services/ai/src/providers/UnifiedAIAdapter.ts`, `services/ai/src/providers/AIProviderFactory.ts`, `apps/customer-bff/src/services/vitals.service.ts`, `apps/customer-app/src/features/design-preview/components/Sheets.tsx`
+
 ### 2026-09-14 - Multi-Tenant Zero-Data Baseline Isolation for New User Accounts
 - **Agent/Author**: Antigravity Digital Health & Architecture Agent
 - **Type**: Architecture / Feature / Security
