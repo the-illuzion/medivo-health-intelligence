@@ -31,7 +31,7 @@ function formatLastSync(value: string | null | undefined): string {
 function showPermissionInstructions(): void {
   Alert.alert(
     'Check Apple Health permissions',
-    'Medivo has not received any Apple Health data yet. Open the Health app on your iPhone, tap your profile picture, open Apps and Services, select Medivo, and enable the health categories you want to share. Then return to Medivo and tap Sync Now.',
+    'Medivo has not received any Apple Health data yet. Open Health on your iPhone, tap Summary, tap your picture or initials, then under Privacy tap Apps. Select Medivo and enable the health categories you want to share. Return to Medivo and tap Sync Now.',
     [{ text: 'Got it' }],
   );
 }
@@ -67,6 +67,13 @@ export default function ConnectedDevicesScreen() {
     setIsSyncing(true);
     try {
       const wasConnected = Boolean(connection);
+
+      if (wasConnected && connection && !connection.hasImportedData) {
+        // A zero-data connection may have anchors created while read access was unavailable.
+        // Re-bootstrap so newly granted permissions can backfill the initial 30-day window.
+        await appleHealthService.resetSyncState(user.id);
+      }
+
       const result = wasConnected
         ? await appleHealthService.sync(user.id)
         : await appleHealthService.connectAndSync(user.id);
