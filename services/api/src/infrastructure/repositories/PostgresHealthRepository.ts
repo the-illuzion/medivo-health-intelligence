@@ -5,6 +5,10 @@ import type {
 } from '../../domain/health/HealthSampleEntity.js';
 import type {
   HealthConnection,
+  HealthMetricAggregation,
+  HealthMetricSummaryItem,
+  HealthSummary,
+  HealthSummaryPeriod,
   HealthSyncResult,
   IHealthRepository,
 } from '../../domain/repositories/IHealthRepository.js';
@@ -15,6 +19,17 @@ interface HealthConnectionRow {
   requested_metrics: HealthMetricType[];
   connected_at: Date;
   last_synced_at: Date | null;
+}
+
+interface HealthSummaryRow {
+  metric_type: HealthMetricType;
+  value: number | string;
+  unit: string;
+  aggregation: HealthMetricAggregation;
+  sample_count: number | string;
+  recorded_at: Date | null;
+  source_name: string | null;
+  device_name: string | null;
 }
 
 export class PostgresHealthRepository implements IHealthRepository {
@@ -178,6 +193,103 @@ export class PostgresHealthRepository implements IHealthRepository {
       requestedMetrics: row.requested_metrics ?? [],
       connectedAt: new Date(row.connected_at),
       lastSyncedAt: row.last_synced_at ? new Date(row.last_synced_at) : null,
+    };
+  }
+
+  async getSummary(
+    userId: string,
+    provider: HealthDataProvider,
+    period: HealthSummaryPeriod,
+    from: Date,
+    to: Date,
+  ): Promise<HealthSummary> {
+    const result = await DatabasePool.query(
+      `WITH filtered AS (
+         SELECT metric_type,
+                numeric_value,
+                unit,
+                start_at,
+                end_at,
+                source_name,
+                device_name
+         FROM health_schema.health_samples
+         WHERE user_id = $1
+           AND provider = $2
+           AND deleted_at IS NULL
+           AND start_at < $4
+           AND end_at >= $3
+       ),
+       latest AS (
+         SELECT DISTINCT ON (metric_type)
+                metric_type,
+                numeric_value::double precision AS value,
+                unit,
+                'latest'::text AS aggregation,
+                1::bigint AS sample_count,
+                end_at AS recorded_at,
+                source_name,
+                device_name
+         FROM filtered
+         WHERE metric_type IN ('heart_rate', 'resting_heart_rate', 'heart_rate_variability_sdnn')
+         ORDER BY metric_type, end_at DESC
+       ),
+       summed AS (
+         SELECT metric_type,
+                SUM(numeric_value)::double precision AS value,
+                MIN(unit)::text AS unit,
+                'sum'::text AS aggregation,
+                COUNT(*)::bigint AS sample_count,
+                MAX(end_at) AS recorded_at,
+                NULL::text AS source_name,
+                NULL::text AS device_name
+         FROM filtered
+         WHERE metric_type IN ('step_count', 'active_energy_burned')
+         GROUP BY metric_type
+       ),
+       sleep AS (
+         SELECT 'sleep_analysis'::text AS metric_type,
+                SUM(
+                  EXTRACT(EPOCH FROM (
+                    LEAST(end_at, $4::timestamptz) - GREATEST(start_at, $3::timestamptz)
+                  )) / 3600.0
+                )::double precision AS value,
+                'h'::text AS unit,
+                'duration'::text AS aggregation,
+                COUNT(*)::bigint AS sample_count,
+                MAX(end_at) AS recorded_at,
+                NULL::text AS source_name,
+                NULL::text AS device_name
+         FROM filtered
+         WHERE metric_type = 'sleep_analysis'
+           AND numeric_value IN (1, 3, 4, 5)
+           AND end_at > start_at
+         HAVING COUNT(*) > 0
+       )
+       SELECT * FROM latest
+       UNION ALL
+       SELECT * FROM summed
+       UNION ALL
+       SELECT * FROM sleep`,
+      [userId, provider, from, to],
+    );
+
+    const metrics = (result.rows as HealthSummaryRow[]).map<HealthMetricSummaryItem>((row) => ({
+      metricType: row.metric_type,
+      value: Number(row.value),
+      unit: row.unit,
+      aggregation: row.aggregation,
+      sampleCount: Number(row.sample_count),
+      recordedAt: row.recorded_at ? new Date(row.recorded_at) : null,
+      sourceName: row.source_name ?? undefined,
+      deviceName: row.device_name ?? undefined,
+    }));
+
+    return {
+      provider,
+      period,
+      from,
+      to,
+      metrics,
     };
   }
 }
