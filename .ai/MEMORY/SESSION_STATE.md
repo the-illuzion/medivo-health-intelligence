@@ -89,9 +89,7 @@
 
 5. **Verification & Quality Checks**:
    - `pnpm -r type-check`: 18/18 workspace packages passed with 0 TypeScript errors.
+   - `pnpm -r build`: All 18 workspace projects built successfully with 0 errors (`service-ai`, `service-auth`, `service-appointments`, `service-commerce`, `service-notifications`, `service-api`, `customer-bff`, `admin-bff`, `doctor-bff`, `customer-app`, `marketing-web`, `admin-panel`, `doctor-portal`, etc.).
    - `pnpm -r test`: 32/32 unit and end-to-end integration tests across `services/api`, `services/ai`, and `packages/utils` passed with 0 errors.
    - `pnpm --filter @medivo/customer-app build:web`: Exported all 53 static routes and assets successfully with 0 errors.
-   - `pnpm --filter @medivo/customer-bff build`: Built successfully.
-   - `pnpm --filter @medivo/service-api build`: Built successfully.
-   - `pnpm --filter @medivo/service-ai build`: Built successfully.
-   - `pnpm --filter @medivo/api-client build`: Built successfully.
+
