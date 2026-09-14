@@ -68,6 +68,8 @@ export function formatMetricValue(metric?: HealthMetricSummaryItem): {
         value: String(Math.round(metric.value)),
         unit: metric.unit.toLowerCase().includes('kcal') ? 'kcal' : metric.unit,
       };
+    default:
+      return { value: String(Math.round(metric.value)), unit: metric.unit };
   }
 }
 
