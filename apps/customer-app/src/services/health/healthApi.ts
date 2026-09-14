@@ -44,6 +44,7 @@ export interface HealthConnection {
   requestedMetrics: HealthMetricType[];
   connectedAt: string;
   lastSyncedAt: string | null;
+  hasImportedData: boolean;
 }
 
 export interface HealthMetricSummaryItem {
