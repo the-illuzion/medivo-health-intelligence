@@ -1,5 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Platform, Pressable, Image, ActivityIndicator, Modal } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { Screen, useDesktop } from '../components/Shell';
 import {
@@ -7,7 +16,6 @@ import {
   Card,
   Chip,
   Copy,
-  DemoNote,
   Heading,
   Icon,
   PageHeading,
@@ -17,108 +25,116 @@ import {
   Tile,
   s,
 } from '../components/UI';
-import { DeviceArt } from '../components/Illustrations';
+import { DeviceArt, ScanPortrait } from '../components/Illustrations';
 import { useSheetStore } from '../../../store/useSheetStore';
 import { useDevicesStore } from '../../../store/useDevicesStore';
-import { useHealthProfileStore } from '../../../store/useHealthProfileStore';
 import { useVitalsStore } from '../../../store/useVitalsStore';
 import { useScanStore } from '../../../store/useScanStore';
 import { useCareStore } from '../../../store/useCareStore';
-import { apiClient } from '@medivo/api-client';
+import { useHealthSummary } from '../../../hooks/useHealthSummary';
+import { formatHealthLastSync } from '../../../services/health/healthDisplay';
 import { colors as c, designRoutes } from '../tokens';
 
 type ScanPhase = 'idle' | 'capturing' | 'analyzing' | 'complete' | 'error';
 
-interface AlignmentFeedback {
+type AlignmentFeedback = {
   message: string;
   color: string;
   isAligned: boolean;
-}
+};
 
 export default function Scan() {
   const router = useRouter();
   const desktop = useDesktop();
   const { openDetail } = useSheetStore();
   const { devices, fetchDevices } = useDevicesStore();
-  const { profile, fetchProfile } = useHealthProfileStore();
   const { addManualReading, fetchVitals, fetchInsights } = useVitalsStore();
-  const { fetchScanHistory, setActiveScan } = useScanStore();
+  const {
+    performScan,
+    fetchScanHistory,
+    consentGiven,
+    setConsentGiven,
+  } = useScanStore();
   const { fetchCarePlan } = useCareStore();
+  const { connection } = useHealthSummary('day');
 
+  const [nativePermission, requestNativePermission] = useCameraPermissions();
+  const nativeCameraRef = useRef<any>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const analysisCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const isAlignedRef = useRef(false);
+  const countdownIntervalRef = useRef<any>(null);
+
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [phase, setPhase] = useState<ScanPhase>('idle');
-  const [consentGiven, setConsentGiven] = useState(true);
-  const [progressMsg, setProgressMsg] = useState('Position your face inside the oval guide');
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [webCameraPermission, setWebCameraPermission] = useState<boolean | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [shutterFlash, setShutterFlash] = useState(false);
-
   const [alignment, setAlignment] = useState<AlignmentFeedback>({
     message: 'Center your face in the oval',
     color: '#38BDF8',
     isAligned: false,
   });
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const analysisCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const countdownIntervalRef = useRef<any>(null);
-  const isAlignedRef = useRef(false);
-
   useEffect(() => {
-    fetchDevices();
-    fetchProfile();
+    void fetchDevices();
+  }, [fetchDevices]);
+
+  const stopWebCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
   }, []);
 
-  // Initialize WebRTC camera on mount (Web)
-  useEffect(() => {
-    let active = true;
-
-    async function startCamera() {
-      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode,
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-            audio: false,
-          });
-          if (active) {
-            streamRef.current = stream;
-            if (videoRef.current) {
-              videoRef.current.srcObject = stream;
-              videoRef.current.play().catch(() => {});
-            }
-            setHasCameraPermission(true);
-          }
-        } catch (err) {
-          console.warn('[CameraScan] Camera permission denied or unavailable:', err);
-          if (active) setHasCameraPermission(false);
-        }
-      }
+  const startWebCamera = useCallback(async () => {
+    if (Platform.OS !== 'web' || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      return;
     }
 
-    if (phase === 'idle') {
-      startCamera();
+    stopWebCamera();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => undefined);
+      }
+      setWebCameraPermission(true);
+    } catch {
+      setWebCameraPermission(false);
+    }
+  }, [facingMode, stopWebCamera]);
+
+  useEffect(() => {
+    if (!scannerOpen || phase !== 'idle') {
+      if (!scannerOpen) stopWebCamera();
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      void startWebCamera();
     }
 
     return () => {
-      active = false;
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
+      if (!scannerOpen) stopWebCamera();
     };
-  }, [facingMode, phase]);
+  }, [scannerOpen, phase, startWebCamera, stopWebCamera]);
 
-  // Real-time video frame face positioning analyzer
   useEffect(() => {
-    if (phase !== 'idle' || !hasCameraPermission || Platform.OS !== 'web') {
+    if (!scannerOpen || phase !== 'idle' || webCameraPermission !== true || Platform.OS !== 'web') {
       return;
     }
 
@@ -137,14 +153,11 @@ export default function Scan() {
       if (!ctx) return;
 
       ctx.drawImage(video, 0, 0, 160, 160);
-      const imgData = ctx.getImageData(0, 0, 160, 160);
-      const data = imgData.data;
-
+      const data = ctx.getImageData(0, 0, 160, 160).data;
       let totalLuminance = 0;
       let skinPixels = 0;
       let skinXSum = 0;
       let skinYSum = 0;
-
       const cx = 80;
       const cy = 80;
       const rx = 48;
@@ -156,14 +169,11 @@ export default function Scan() {
           const r = data[idx];
           const g = data[idx + 1];
           const b = data[idx + 2];
-
-          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-          totalLuminance += lum;
+          totalLuminance += 0.299 * r + 0.587 * g + 0.114 * b;
 
           const dx = (x - cx) / rx;
           const dy = (y - cy) / ry;
-          const insideOval = dx * dx + dy * dy <= 1.0;
-
+          const insideOval = dx * dx + dy * dy <= 1;
           const isSkin =
             r > 60 &&
             g > 40 &&
@@ -174,164 +184,92 @@ export default function Scan() {
             r - b > 10;
 
           if (isSkin && insideOval) {
-            skinPixels++;
+            skinPixels += 1;
             skinXSum += x;
             skinYSum += y;
           }
         }
       }
 
-      const sampleCount = (160 * 160) / 4;
-      const avgLuminance = totalLuminance / sampleCount;
-      const ovalSampleCount = (Math.PI * rx * ry) / 4;
-      const skinCoverage = skinPixels / ovalSampleCount;
-
-      let nextFeedback: AlignmentFeedback;
+      const avgLuminance = totalLuminance / ((160 * 160) / 4);
+      const skinCoverage = skinPixels / ((Math.PI * rx * ry) / 4);
+      let next: AlignmentFeedback;
 
       if (avgLuminance < 40) {
-        nextFeedback = {
-          message: 'Lighting too dark — face a light source',
-          color: '#F59E0B',
-          isAligned: false,
-        };
+        next = { message: 'Lighting too dark — face a light source', color: '#F59E0B', isAligned: false };
       } else if (avgLuminance > 230) {
-        nextFeedback = {
-          message: 'Too much glare — adjust lighting',
-          color: '#F59E0B',
-          isAligned: false,
-        };
+        next = { message: 'Too much glare — adjust lighting', color: '#F59E0B', isAligned: false };
       } else if (skinCoverage < 0.12) {
-        nextFeedback = {
-          message: 'Position your face in the oval guide',
-          color: '#38BDF8',
-          isAligned: false,
-        };
+        next = { message: 'Position your face in the oval guide', color: '#38BDF8', isAligned: false };
       } else if (skinCoverage < 0.32) {
-        nextFeedback = {
-          message: 'Move closer to the camera',
-          color: '#F59E0B',
-          isAligned: false,
-        };
+        next = { message: 'Move closer to the camera', color: '#F59E0B', isAligned: false };
       } else if (skinCoverage > 0.88) {
-        nextFeedback = {
-          message: 'Move back slightly',
-          color: '#F59E0B',
-          isAligned: false,
-        };
+        next = { message: 'Move back slightly', color: '#F59E0B', isAligned: false };
       } else {
         const centroidX = skinXSum / skinPixels / 160;
         const centroidY = skinYSum / skinPixels / 160;
-
-        if (centroidX < 0.40) {
-          nextFeedback = {
-            message: 'Shift face slightly right ➡️',
-            color: '#38BDF8',
-            isAligned: false,
-          };
-        } else if (centroidX > 0.60) {
-          nextFeedback = {
-            message: 'Shift face slightly left ⬅️',
-            color: '#38BDF8',
-            isAligned: false,
-          };
+        if (centroidX < 0.4) {
+          next = { message: 'Shift face slightly right', color: '#38BDF8', isAligned: false };
+        } else if (centroidX > 0.6) {
+          next = { message: 'Shift face slightly left', color: '#38BDF8', isAligned: false };
         } else if (centroidY < 0.38) {
-          nextFeedback = {
-            message: 'Tilt head down slightly ⬇️',
-            color: '#38BDF8',
-            isAligned: false,
-          };
+          next = { message: 'Tilt head down slightly', color: '#38BDF8', isAligned: false };
         } else if (centroidY > 0.62) {
-          nextFeedback = {
-            message: 'Tilt head up slightly ⬆️',
-            color: '#38BDF8',
-            isAligned: false,
-          };
+          next = { message: 'Tilt head up slightly', color: '#38BDF8', isAligned: false };
         } else {
-          nextFeedback = {
-            message: 'Aligned! Hold steady to capture…',
-            color: '#10B981',
-            isAligned: true,
-          };
+          next = { message: 'Aligned! Hold steady to capture…', color: '#10B981', isAligned: true };
         }
       }
 
-      setAlignment(nextFeedback);
-      isAlignedRef.current = nextFeedback.isAligned;
-    }, 120);
+      setAlignment(next);
+      isAlignedRef.current = next.isAligned;
+    }, 150);
 
     return () => clearInterval(interval);
-  }, [phase, hasCameraPermission]);
+  }, [scannerOpen, phase, webCameraPermission]);
 
-  // Handle Auto-Capture Countdown
-  useEffect(() => {
-    if (phase !== 'idle' || !consentGiven) {
-      if (countdown !== null) setCountdown(null);
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-      return;
-    }
+  const executeAnalysis = useCallback(
+    async (imageBase64: string) => {
+      setPhase('analyzing');
+      setErrorMessage(null);
+      const result = await performScan(imageBase64);
 
-    if (alignment.isAligned) {
-      if (countdown === null && !countdownIntervalRef.current) {
-        let currentCount = 3;
-        setCountdown(currentCount);
-
-        countdownIntervalRef.current = setInterval(() => {
-          if (!isAlignedRef.current) {
-            clearInterval(countdownIntervalRef.current);
-            countdownIntervalRef.current = null;
-            setCountdown(null);
-            return;
-          }
-
-          currentCount -= 1;
-          if (currentCount > 0) {
-            setCountdown(currentCount);
-          } else {
-            clearInterval(countdownIntervalRef.current);
-            countdownIntervalRef.current = null;
-            setCountdown(null);
-            triggerShutterAndCapture();
-          }
-        }, 800);
+      if (!result) {
+        setPhase('error');
+        setErrorMessage('AI telemetry scan failed. Please try again.');
+        return;
       }
-    } else {
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
-      }
-      if (countdown !== null) {
-        setCountdown(null);
-      }
-    }
 
-    return () => {
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
+      setScanResult(result);
+      const metrics = (result as any).metrics || {};
+      if (metrics.heartRate) {
+        await addManualReading({ metricType: 'Heart Rate', valueString: `${metrics.heartRate}` });
       }
-    };
-  }, [alignment.isAligned, phase, consentGiven]);
 
-  const triggerShutterAndCapture = useCallback(() => {
-    setShutterFlash(true);
-    setTimeout(() => setShutterFlash(false), 200);
-    handleCaptureLiveFrame();
-  }, [consentGiven]);
+      await Promise.allSettled([
+        fetchVitals(),
+        fetchInsights(),
+        fetchScanHistory(),
+        fetchCarePlan(),
+      ]);
+      setPhase('complete');
+    },
+    [performScan, addManualReading, fetchVitals, fetchInsights, fetchScanHistory, fetchCarePlan],
+  );
 
-  async function handleCaptureLiveFrame() {
+  const captureFrame = useCallback(async () => {
     if (!consentGiven) {
-      setErrorMessage('User consent is mandatory before processing biometric telemetry.');
+      setErrorMessage('HIPAA consent is required before performing an AI scan.');
       return;
     }
 
-    setErrorMessage(null);
     setPhase('capturing');
-    setProgressMsg('Acquiring high-resolution facial telemetry frame...');
+    setErrorMessage(null);
 
-    let imageBase64Data = '';
+    try {
+      let imageBase64 = '';
 
-    if (Platform.OS === 'web' && videoRef.current) {
-      try {
+      if (Platform.OS === 'web' && videoRef.current) {
         const video = videoRef.current;
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth || 1280;
@@ -343,707 +281,528 @@ export default function Scan() {
             ctx.scale(-1, 1);
           }
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          imageBase64Data = canvas.toDataURL('image/jpeg', 0.90);
-          setCapturedImageUri(imageBase64Data);
+          imageBase64 = canvas.toDataURL('image/jpeg', 0.9);
+          setCapturedImageUri(imageBase64);
         }
-      } catch (e) {
-        console.warn('Canvas capture error');
+      } else if (Platform.OS !== 'web' && nativeCameraRef.current) {
+        const photo = await nativeCameraRef.current.takePictureAsync({
+          quality: 0.85,
+          base64: true,
+          skipProcessing: false,
+        });
+        if (photo?.uri) setCapturedImageUri(photo.uri);
+        if (photo?.base64) imageBase64 = `data:image/jpeg;base64,${photo.base64}`;
       }
-    }
 
-    if (!imageBase64Data) {
-      imageBase64Data = `data:image/jpeg;base64,MEDIVO_SCAN_${Date.now()}`;
-    }
-
-    executeAiAnalysisPipeline(imageBase64Data);
-  }
-
-  function handleFileSelected(event: any) {
-    if (!consentGiven) {
-      setErrorMessage('User consent is mandatory before processing biometric telemetry.');
-      return;
-    }
-
-    const file = event.target?.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        setCapturedImageUri(base64);
-        setPhase('capturing');
-        executeAiAnalysisPipeline(base64);
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  async function executeAiAnalysisPipeline(imageBase64: string) {
-    setPhase('analyzing');
-    setErrorMessage(null);
-
-    setProgressMsg('Analyzing 15 optical skin attributes & rPPG vital signs…');
-
-    try {
-      const res = await apiClient.scans.analyze(imageBase64, consentGiven, 'v1.0');
-      if (res) {
-        setScanResult(res);
-        setActiveScan(res);
-        if (res.metrics?.heartRate) {
-          await addManualReading({ metricType: 'Heart Rate', valueString: `${res.metrics.heartRate}` });
-        }
-        await Promise.allSettled([
-          fetchVitals(),
-          fetchInsights(),
-          fetchScanHistory(),
-          fetchCarePlan(),
-        ]);
-        setPhase('complete');
-      } else {
-        setPhase('error');
-        setErrorMessage('Failed to receive telemetry response from AI service.');
+      if (!imageBase64) {
+        throw new Error('No camera frame could be captured.');
       }
-    } catch (err: any) {
+
+      await executeAnalysis(imageBase64);
+    } catch (error: any) {
       setPhase('error');
-      setErrorMessage(err?.message || 'AI Telemetry scan failed. Please try again.');
+      setErrorMessage(error?.message || 'Unable to capture the camera frame.');
     }
-  }
+  }, [consentGiven, executeAnalysis, facingMode]);
 
-  function handleResetScan() {
+  useEffect(() => {
+    if (!scannerOpen || phase !== 'idle' || !consentGiven || Platform.OS !== 'web') return;
+
+    if (alignment.isAligned) {
+      if (!countdownIntervalRef.current) {
+        let current = 3;
+        setCountdown(current);
+        countdownIntervalRef.current = setInterval(() => {
+          if (!isAlignedRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+            setCountdown(null);
+            return;
+          }
+          current -= 1;
+          if (current > 0) {
+            setCountdown(current);
+          } else {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+            setCountdown(null);
+            void captureFrame();
+          }
+        }, 800);
+      }
+    } else if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+      setCountdown(null);
+    }
+
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+    };
+  }, [alignment.isAligned, scannerOpen, phase, consentGiven, captureFrame]);
+
+  const openScanner = async () => {
+    setScannerOpen(true);
     setPhase('idle');
     setCapturedImageUri(null);
     setScanResult(null);
     setErrorMessage(null);
+    setAlignment({ message: 'Center your face in the oval', color: '#38BDF8', isAligned: false });
+
+    if (Platform.OS !== 'web' && !nativePermission?.granted) {
+      await requestNativePermission();
+    }
+  };
+
+  const closeScanner = () => {
+    stopWebCamera();
+    setScannerOpen(false);
     setCountdown(null);
-    setProgressMsg('Position your face inside the oval guide');
-  }
+  };
 
-  const m = scanResult?.metrics || {};
-  const score = typeof scanResult?.overallScore === 'number' ? scanResult.overallScore : null;
-  const grade = scanResult?.grade || (score && score >= 85 ? 'Optimal Grade' : score && score >= 70 ? 'Good Condition' : 'Attention Advised');
-  const recentDoc = profile.healthRecords?.[0]?.title || 'Uploaded Lab Report';
+  const resetScanner = () => {
+    setPhase('idle');
+    setCapturedImageUri(null);
+    setScanResult(null);
+    setErrorMessage(null);
+    setAlignment({ message: 'Center your face in the oval', color: '#38BDF8', isAligned: false });
+  };
 
-  const biomarkerList = [
-    { label: 'Hydration', val: `${m.hydration ?? 88}%`, tone: 'blue' as const, icon: 'drop' },
-    { label: 'Barrier Health', val: `${m.barrierHealth ?? 92}%`, tone: 'green' as const, icon: 'shield' },
-    { label: 'Micro-Texture', val: `${m.texture ?? 85}/100`, tone: 'purple' as const, icon: 'zap' },
-    { label: 'Pore Clarity', val: `${m.poreClarity ?? 84}%`, tone: 'blue' as const, icon: 'bulb' },
-    { label: 'Melanin Balance', val: `${m.pigmentation ?? 89}/100`, tone: 'orange' as const, icon: 'bulb' },
-    { label: 'Erythema', val: `${m.rednessScore ?? 12}%`, tone: 'red' as const, icon: 'heart' },
-    { label: 'Radiance & Glow', val: `${m.radiance ?? 87}/100`, tone: 'orange' as const, icon: 'zap' },
-    { label: 'Elasticity & Firmness', val: `${m.firmness ?? 85}/100`, tone: 'purple' as const, icon: 'shield' },
-    { label: 'Biological Skin Age', val: `${m.skinAge ?? 26} yrs`, tone: 'blue' as const, icon: 'moon' },
-    { label: 'Dark Circles', val: `${m.darkCircles ?? 74}/100`, tone: 'purple' as const, icon: 'moon' },
-    { label: 'Under-Eye Bags', val: `${m.eyeBags ?? 78}/100`, tone: 'purple' as const, icon: 'moon' },
-    { label: 'Acne Defense', val: `${m.acneScore ?? 92}/100`, tone: 'green' as const, icon: 'done' },
-    { label: 'Diagnostic Skin Type', val: `${m.skinType || 'Combination'}`, tone: 'blue' as const, icon: 'file' },
-    { label: 'Photoprotection', val: `${m.photoprotection || 'SPF 50 Active'}`, tone: 'green' as const, icon: 'shield' },
-  ];
+  const handleFileSelected = (event: any) => {
+    const file = event.target?.files?.[0];
+    if (!file || !consentGiven) return;
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const data = loadEvent.target?.result as string;
+      if (!data) return;
+      setCapturedImageUri(data);
+      void executeAnalysis(data);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const resultMetrics = (scanResult as any)?.metrics || {};
+  const resultScore = typeof (scanResult as any)?.overallScore === 'number' ? (scanResult as any).overallScore : null;
+  const resultGrade =
+    (scanResult as any)?.grade ||
+    (resultScore && resultScore >= 85
+      ? 'Optimal Grade'
+      : resultScore && resultScore >= 70
+        ? 'Good Condition'
+        : 'Attention Advised');
 
   return (
     <Screen>
-      <PageHeading
-        title="Start a Scan"
-        subtitle="Live optical face scan for 15 clinical skin attributes & rPPG vitals."
-      />
+      <PageHeading title="Start a Scan" subtitle="Capture a new scan or add supporting health data." />
 
-      <View style={desktop ? st.desktopHeroGrid : undefined}>
-        {/* Main Camera Viewfinder or Completed Result Card */}
-        <View style={[st.cameraSection, desktop && st.desktopScanCard]}>
-          {phase !== 'complete' ? (
-            <View style={st.viewportBox}>
-              {/* WebRTC Video Stream */}
-              {Platform.OS === 'web' && hasCameraPermission !== false && (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    position: 'absolute',
-                    transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
-                  }}
-                />
-              )}
-
-              {/* Captured Image Preview */}
-              {capturedImageUri && (
-                <Image source={{ uri: capturedImageUri }} style={st.capturedPreview} />
-              )}
-
-              {/* Flash overlay */}
-              {shutterFlash && <View style={st.shutterFlash} />}
-
-              {/* Bounding Oval Guide */}
-              <View
-                style={[
-                  st.boundingOval,
-                  alignment.isAligned && st.boundingOvalAligned,
-                  phase === 'analyzing' && st.boundingOvalAnalyzing,
-                ]}
-              >
-                {countdown !== null && (
-                  <View style={st.countdownBadge}>
-                    <Copy bold size={32} color="white">
-                      {countdown}
-                    </Copy>
-                    <Copy size={9} color="white" bold>
-                      HOLD STEADY
-                    </Copy>
-                  </View>
-                )}
-              </View>
-
-              {/* Telemetry Badge HUD */}
-              <View style={st.hudBar}>
-                <Chip tone="green">HIPAA AES-256</Chip>
-                <Chip tone="blue">rPPG Vitals Active</Chip>
-              </View>
-
-              {/* Camera Switch button */}
-              <Pressable
-                accessibilityLabel="Switch Camera"
-                style={st.switchCamBtn}
-                onPress={() => setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))}
-              >
-                <Icon name="settings" size={16} color="white" />
-              </Pressable>
-            </View>
-          ) : (
-            /* Completed Result Dossier */
-            <View style={{ gap: 12 }}>
-              <Card style={[s.center, { backgroundColor: c.greenSoft, paddingVertical: 18 }]}>
-                <Ring value={score} size={64} />
-                <Heading size={22} style={{ color: c.green, marginTop: 10 }}>
-                  {grade}
-                </Heading>
-                <View style={[s.row, { gap: 6, marginTop: 4 }]}>
-                  <Chip tone="green">Score: {score}/100</Chip>
-                  <Chip tone="blue">{m.skinType || 'Combination'}</Chip>
-                  <Chip tone="purple">{m.photoprotection || 'SPF 50 Active'}</Chip>
-                </View>
-              </Card>
-
-              {/* 4 Quick Vitals */}
-              <Card style={{ padding: 12, backgroundColor: '#f8fafc' }}>
-                <Copy bold size={11} color={c.navy} style={{ marginBottom: 8, letterSpacing: 0.5 }}>
-                  rPPG FACIAL VITALS & BIOMARKERS
-                </Copy>
-                <View style={[s.row, { justifyContent: 'space-between', paddingVertical: 4 }]}>
-                  <View style={[s.center, { flex: 1 }]}>
-                    <Copy bold size={15} color={c.navy}>{m.heartRate ?? 72} <Copy size={10} color={c.muted}>BPM</Copy></Copy>
-                    <Copy size={9} color={c.muted}>Vital Pulse</Copy>
-                  </View>
-                  <View style={{ width: 1, height: 28, backgroundColor: '#e2e8f0' }} />
-                  <View style={[s.center, { flex: 1 }]}>
-                    <Copy bold size={15} color={c.navy}>{m.stressIndex ?? 18}<Copy size={10} color={c.muted}>/100</Copy></Copy>
-                    <Copy size={9} color={c.muted}>Stress Index</Copy>
-                  </View>
-                  <View style={{ width: 1, height: 28, backgroundColor: '#e2e8f0' }} />
-                  <View style={[s.center, { flex: 1 }]}>
-                    <Copy bold size={15} color={c.navy}>{m.barrierHealth ?? 92}<Copy size={10} color={c.muted}>%</Copy></Copy>
-                    <Copy size={9} color={c.muted}>Barrier Health</Copy>
-                  </View>
-                  <View style={{ width: 1, height: 28, backgroundColor: '#e2e8f0' }} />
-                  <View style={[s.center, { flex: 1 }]}>
-                    <Copy bold size={15} color={c.navy}>{m.skinAge ?? 26} <Copy size={10} color={c.muted}>yrs</Copy></Copy>
-                    <Copy size={9} color={c.muted}>Dermal Age</Copy>
-                  </View>
-                </View>
-              </Card>
-
-              {/* 15 Attributes */}
-              <Card style={{ padding: 12 }}>
-                <Copy bold size={11} color={c.navy} style={{ marginBottom: 8, letterSpacing: 0.5 }}>
-                  15 CLINICAL SKIN & CELLULAR ATTRIBUTES
-                </Copy>
-                <View style={[s.row, { flexWrap: 'wrap', gap: 6 }]}>
-                  {biomarkerList.map((item) => (
-                    <View
-                      key={item.label}
-                      style={[
-                        s.row,
-                        {
-                          width: '48.5%',
-                          backgroundColor: '#f8fafc',
-                          borderRadius: 10,
-                          padding: 8,
-                          gap: 6,
-                          borderWidth: 1,
-                          borderColor: '#edf2f7',
-                        },
-                      ]}
-                    >
-                      <Tile name={item.icon} tone={item.tone} size={24} />
-                      <View style={s.flex}>
-                        <Copy size={9} color={c.muted}>
-                          {item.label}
-                        </Copy>
-                        <Copy bold size={11} color={c.navy}>
-                          {item.val}
-                        </Copy>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </Card>
-
-              {/* Recommendations */}
-              {scanResult?.recommendations && scanResult.recommendations.length > 0 && (
-                <Card style={{ padding: 12 }}>
-                  <Copy bold size={11} color={c.navy} style={{ marginBottom: 6, letterSpacing: 0.5 }}>
-                    TARGETED CLINICAL PROTOCOL
-                  </Copy>
-                  {scanResult.recommendations.map((rec: string, idx: number) => (
-                    <View key={idx} style={[s.row, { alignItems: 'flex-start', gap: 6, marginVertical: 4 }]}>
-                      <View style={{ marginTop: 2 }}>
-                        <Icon name="done" color={c.green} size={14} />
-                      </View>
-                      <Copy size={11} color={c.navy} style={s.flex}>
-                        {rec}
-                      </Copy>
-                    </View>
-                  ))}
-                </Card>
-              )}
-            </View>
-          )}
-
-          {/* Real-time Guidance Banner */}
-          {phase === 'idle' && (
-            <View style={[st.guidanceBanner, alignment.isAligned && st.guidanceBannerAligned]}>
-              <Icon
-                name={alignment.isAligned ? 'done' : 'camera'}
-                color={alignment.color}
-                size={16}
-              />
-              <Copy size={11} bold color={alignment.color} style={{ marginLeft: 6 }}>
-                {alignment.message}
-              </Copy>
-            </View>
-          )}
-
-          {/* Progress / Status / Error message */}
-          {phase !== 'idle' && phase !== 'complete' && (
-            <View style={[s.row, s.center, { marginVertical: 8 }]}>
-              {phase === 'analyzing' && (
-                <ActivityIndicator size="small" color={c.blue} style={{ marginRight: 8 }} />
-              )}
-              <Copy size={12} color={phase === 'error' ? c.red : c.blue} bold>
-                {phase === 'error' ? errorMessage : progressMsg}
-              </Copy>
-            </View>
-          )}
-
-          {/* Consent Checkbox */}
-          {phase === 'idle' && (
-            <Pressable
-              accessibilityRole="checkbox"
-              accessibilityLabel="Biometric consent"
-              accessibilityState={{ checked: consentGiven }}
-              onPress={() => setConsentGiven(!consentGiven)}
-              style={[s.row, { marginTop: 8 }]}
-            >
-              <Icon name={consentGiven ? 'done' : 'shield'} color={consentGiven ? c.green : c.muted} />
-              <Copy size={11} color={c.muted} style={s.flex}>
-                I consent to optical vital telemetry processing under HIPAA Privacy Rules.
-              </Copy>
-            </Pressable>
-          )}
-
-          {/* Action Buttons */}
-          <View style={{ gap: 8, marginTop: 12 }}>
-            {phase === 'idle' && (
-              <>
-                <Action
-                  disabled={!consentGiven}
-                  style={[st.scanButton, alignment.isAligned && { backgroundColor: c.green }]}
-                  onPress={triggerShutterAndCapture}
-                >
-                  <Icon name="camera" color="white" />
-                  <Copy bold size={15} color="white">
-                    {alignment.isAligned ? 'Capture Frame Now' : 'Manual Capture'}
-                  </Copy>
-                </Action>
-
-                {Platform.OS === 'web' && (
-                  <>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      ref={fileInputRef}
-                      style={{ display: 'none' }}
-                      onChange={handleFileSelected}
-                    />
-                    <Action
-                      secondary
-                      onPress={() => fileInputRef.current?.click()}
-                    >
-                      <Icon name="file" size={16} />
-                      <Copy size={13} bold color={c.navy}>
-                        Upload Photo from Device
-                      </Copy>
-                    </Action>
-                  </>
-                )}
-              </>
-            )}
-
-            {phase === 'complete' && (
-              <>
-                {scanResult?.id && (
-                  <Action
-                    style={{ backgroundColor: c.blue }}
-                    onPress={() => router.push({ pathname: `/scan-report/${scanResult.id}` as any })}
-                  >
-                    Inspect Full Clinical Dossier
-                  </Action>
-                )}
-                <Action secondary onPress={handleResetScan}>
-                  <Icon name="camera" size={16} />
-                  <Copy size={13} bold color={c.navy}>
-                    Take Another Scan
-                  </Copy>
-                </Action>
-              </>
-            )}
-
-            {phase === 'error' && (
-              <Action onPress={handleResetScan}>
-                Retry Camera Scan
-              </Action>
-            )}
-          </View>
+      <View style={[st.scan, desktop && st.desktopScan]}>
+        <ScanPortrait />
+        <View style={st.label}>
+          <Chip tone="blue" icon="camera">
+            Face Scan
+          </Chip>
         </View>
+        <Action style={st.scanButton} onPress={() => void openScanner()}>
+          <Icon name="camera" color={c.white} />
+          <Copy bold size={15} color={c.white}>
+            Begin Face Scan
+          </Copy>
+        </Action>
+        <Copy size={10} color={c.muted} style={{ textAlign: 'center', marginVertical: 8 }}>
+          Position your face in the frame
+        </Copy>
+      </View>
 
-        {/* Supporting methods */}
-        <Section
-          title="Other ways to add health data"
-          style={desktop ? st.desktopMethodsCard : undefined}
-        >
-          <View style={s.grid2}>
-            {[
-              {
-                title: 'Vitals Check',
-                sub: 'Measure key vitals',
-                icon: 'heartpulse',
-                tone: 'green' as const,
-              },
-              {
-                title: 'Upload Photo',
-                sub: 'Add lab results or notes',
-                icon: 'image',
-                tone: 'blue' as const,
-              },
-              {
-                title: 'Manual Entry',
-                sub: 'Log data manually',
-                icon: 'file',
-                tone: 'orange' as const,
-              },
-              {
-                title: 'Connect Device',
-                sub: 'Sync from your device',
-                icon: 'watch',
-                tone: 'purple' as const,
-              },
-            ].map((item) => (
-              <View key={item.title} style={s.half}>
-                <Row
-                  compact
-                  title={item.title}
-                  description={item.sub}
-                  icon={item.icon}
-                  tone={item.tone}
-                  onPress={() =>
-                    item.title === 'Connect Device'
-                      ? router.push(designRoutes.devices)
+      <Section title="Other ways to add health data">
+        <View style={s.grid2}>
+          {[
+            { title: 'Vitals Check', sub: 'Measure key vitals', icon: 'heartpulse', tone: 'green' as const },
+            { title: 'Upload Photo', sub: 'Add lab results or notes', icon: 'image', tone: 'blue' as const },
+            { title: 'Manual Entry', sub: 'Log data manually', icon: 'file', tone: 'orange' as const },
+            { title: 'Connect Device', sub: 'Sync from your device', icon: 'watch', tone: 'purple' as const },
+          ].map((item) => (
+            <View key={item.title} style={s.half}>
+              <Row
+                compact
+                title={item.title}
+                description={item.sub}
+                icon={item.icon}
+                tone={item.tone}
+                onPress={() =>
+                  item.title === 'Connect Device'
+                    ? router.push(designRoutes.devices)
+                    : item.title === 'Upload Photo' && Platform.OS === 'web'
+                      ? fileInputRef.current?.click()
                       : openDetail(item.title)
-                  }
-                />
-              </View>
-            ))}
-          </View>
-        </Section>
-      </View>
+                }
+              />
+            </View>
+          ))}
+        </View>
+      </Section>
 
-      <View style={desktop ? st.desktopLowerGrid : undefined}>
-        <Section
-          title="Recent data sources"
-          action="See all"
-          onAction={() => openDetail('Recent data sources')}
-          style={desktop ? st.desktopLowerCard : undefined}
-        >
-          <View style={s.grid3}>
-            {devices.slice(0, 2).map((device) => (
-              <Card
-                key={device.id || device.name}
-                style={[s.third, { padding: 8 }]}
-                onPress={() => router.push(designRoutes.devices)}
-              >
-                <View style={[s.row, { gap: 5 }]}>
-                  <DeviceArt kind={device.kind} size={25} />
-                  <View style={s.flex}>
-                    <Copy size={9} bold>
-                      {device.name}
-                    </Copy>
-                    <Copy size={8} color={c.muted}>
-                      Last sync: {device.sync}
-                    </Copy>
-                  </View>
-                </View>
-              </Card>
-            ))}
-            <Card
-              style={[s.third, { padding: 8 }]}
-              onPress={() => openDetail('Recent data sources')}
-            >
-              <View style={[s.row, { gap: 5 }]}>
-                <Icon name="file" color={c.red} />
-                <View style={s.flex}>
-                  <Copy size={9} bold>
-                    {recentDoc}
-                  </Copy>
-                  <Copy size={8} color={c.muted}>
-                    Recently added
-                  </Copy>
-                </View>
-              </View>
-            </Card>
-          </View>
-        </Section>
+      {Platform.OS === 'web' ? (
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileSelected}
+        />
+      ) : null}
 
-        <Section
-          title="How it works"
-          style={desktop ? st.desktopLowerCard : undefined}
-        >
-          <Card style={s.grid3}>
-            {[
-              { title: 'Capture', sub: 'Live camera scan', icon: 'camera' },
-              { title: 'Analyze', sub: 'Multi-modal AI inference', icon: 'chart' },
-              { title: 'Review', sub: '15-biomarker dossier', icon: 'file' },
-            ].map((item, i) => (
-              <View key={item.title} style={[s.third, s.center, { gap: 5 }]}>
-                <View style={s.row}>
-                  <Copy color={c.muted}>{i + 1}</Copy>
-                  <Icon name={item.icon} />
-                </View>
-                <Copy size={12} bold>
-                  {item.title}
+      <Section title="Recent data sources" action="Manage" onAction={() => router.push(designRoutes.devices)}>
+        <Card style={{ padding: 9 }} onPress={() => router.push(designRoutes.devices)}>
+          <View style={[s.row, { gap: 8 }]}>
+            <Tile name="heart" tone="red" size={30} />
+            <View style={s.flex}>
+              <Copy size={10} bold>
+                Apple Health
+              </Copy>
+              <Copy size={9} color={connection ? c.green : c.muted}>
+                ● {connection ? 'Connected' : 'Not connected'}
+              </Copy>
+              <Copy size={8} color={c.muted}>
+                Last sync: {formatHealthLastSync(connection?.lastSyncedAt)}
+              </Copy>
+            </View>
+          </View>
+        </Card>
+        {devices.slice(0, 2).map((device) => (
+          <Card
+            key={device.id || device.name}
+            style={{ padding: 9, marginTop: 8 }}
+            onPress={() => router.push(designRoutes.devices)}
+          >
+            <View style={[s.row, { gap: 8 }]}>
+              <DeviceArt kind={device.kind} size={30} />
+              <View style={s.flex}>
+                <Copy size={10} bold>
+                  {device.name}
                 </Copy>
-                <Copy size={10} color={c.muted} style={{ textAlign: 'center' }}>
-                  {item.sub}
+                <Copy size={9} color={device.enabled ? c.green : c.muted}>
+                  ● {device.enabled ? 'Connected' : 'Paused'}
+                </Copy>
+                <Copy size={8} color={c.muted}>
+                  Last sync: {device.sync}
                 </Copy>
               </View>
-            ))}
+            </View>
           </Card>
-        </Section>
-      </View>
+        ))}
+      </Section>
+
+      <Section title="How it works">
+        <Card style={s.grid3}>
+          {[
+            { title: 'Capture', sub: 'Take a quick scan', icon: 'camera' },
+            { title: 'Analyze', sub: 'Analyze your capture', icon: 'chart' },
+            { title: 'Review', sub: 'See your scan results', icon: 'file' },
+          ].map((item, index) => (
+            <View key={item.title} style={[s.third, s.center, { gap: 5 }]}>
+              <View style={s.row}>
+                <Copy color={c.muted}>{index + 1}</Copy>
+                <Icon name={item.icon} />
+              </View>
+              <Copy size={12} bold>
+                {item.title}
+              </Copy>
+              <Copy size={10} color={c.muted} style={{ textAlign: 'center' }}>
+                {item.sub}
+              </Copy>
+            </View>
+          ))}
+        </Card>
+      </Section>
 
       <View style={{ marginTop: 12 }}>
         <Row
           title="Your health data stays protected"
-          description="Encrypted, private, and never shared without your consent."
+          description="You choose what to share. Your health data stays private and protected."
           icon="shield"
           tone="green"
-          onPress={() => openDetail('Privacy & Permissions')}
+          onPress={() => router.push(designRoutes.devices)}
         />
       </View>
 
-      {/* Interactive Error Popup Dialog */}
-      <Modal
-        visible={phase === 'error' && !!errorMessage}
-        transparent
-        animationType="fade"
-        onRequestClose={handleResetScan}
-      >
-        <View style={st.modalOverlay}>
-          <View style={st.modalCard}>
-            <View style={{ alignItems: 'center', marginBottom: 12 }}>
-              <Tile name="alert" tone="red" size={44} />
-            </View>
-            <Heading size={18} style={{ textAlign: 'center', color: c.navy, marginBottom: 8 }}>
-              Biometric Scan Failed
-            </Heading>
-            <Copy size={13} color={c.navy} style={{ textAlign: 'center', lineHeight: 19, marginBottom: 16 }}>
-              {errorMessage}
-            </Copy>
-
-            <View style={st.errorTipsCard}>
-              <Copy bold size={11} color={c.navy} style={{ marginBottom: 4 }}>
-                Tips for a successful scan:
-              </Copy>
+      <Modal visible={scannerOpen} animationType="slide" presentationStyle="pageSheet" onRequestClose={closeScanner}>
+        <View style={st.modal}>
+          <View style={st.modalHeader}>
+            <View style={s.flex}>
+              <Heading size={20}>Face Scan</Heading>
               <Copy size={10} color={c.muted}>
-                • Ensure your face is evenly illuminated with natural or bright ambient light.
-              </Copy>
-              <Copy size={10} color={c.muted}>
-                • Avoid dark environments, direct glare, or strong backlighting.
-              </Copy>
-              <Copy size={10} color={c.muted}>
-                • Align your face steadily inside the oval reticle guide.
+                Optical skin attributes & rPPG vital telemetry
               </Copy>
             </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close scanner" onPress={closeScanner} style={st.closeButton}>
+              <Icon name="close" size={20} color={c.navy} />
+            </Pressable>
+          </View>
 
-            <View style={{ marginTop: 16, width: '100%' }}>
-              <Action onPress={handleResetScan}>
-                Try Again
-              </Action>
+          <View style={st.modalBody}>
+            {phase !== 'complete' ? (
+              <View style={st.viewport}>
+                {Platform.OS === 'web' ? (
+                  webCameraPermission !== false ? (
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
+                    />
+                  ) : null
+                ) : nativePermission?.granted ? (
+                  <CameraView
+                    ref={nativeCameraRef}
+                    style={StyleSheet.absoluteFill}
+                    facing={facingMode === 'user' ? 'front' : 'back'}
+                  />
+                ) : (
+                  <View style={[StyleSheet.absoluteFill, s.center]}>
+                    <Icon name="camera" size={44} color={c.muted} />
+                    <Copy size={11} color={c.muted} style={{ marginTop: 8, textAlign: 'center' }}>
+                      Camera permission is required to start a face scan.
+                    </Copy>
+                    <Action secondary style={{ marginTop: 12 }} onPress={() => void requestNativePermission()}>
+                      Allow Camera
+                    </Action>
+                  </View>
+                )}
+
+                {capturedImageUri ? <Image source={{ uri: capturedImageUri }} style={StyleSheet.absoluteFill} /> : null}
+
+                <View style={[st.oval, alignment.isAligned && st.ovalAligned]}>
+                  {countdown !== null ? (
+                    <View style={st.countdown}>
+                      <Copy size={32} bold color={c.white}>
+                        {countdown}
+                      </Copy>
+                    </View>
+                  ) : null}
+                </View>
+
+                <View style={st.hud}>
+                  <Chip tone="green">HIPAA AES-256</Chip>
+                  <Chip tone="blue">rPPG Vitals</Chip>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Switch camera"
+                  style={st.switchCamera}
+                  onPress={() => setFacingMode((value) => (value === 'user' ? 'environment' : 'user'))}
+                >
+                  <Icon name="settings" size={17} color={c.white} />
+                </Pressable>
+
+                {phase === 'analyzing' || phase === 'capturing' ? (
+                  <View style={st.processing}>
+                    <ActivityIndicator size="large" color={c.white} />
+                    <Copy bold color={c.white} style={{ marginTop: 10, textAlign: 'center' }}>
+                      {phase === 'capturing' ? 'Capturing frame…' : 'Analyzing health telemetry…'}
+                    </Copy>
+                  </View>
+                ) : null}
+              </View>
+            ) : (
+              <View style={{ gap: 12 }}>
+                <Card style={[s.center, { backgroundColor: c.greenSoft, paddingVertical: 20 }]}>
+                  <Ring value={resultScore} size={70} />
+                  <Heading size={22} style={{ color: c.green, marginTop: 10 }}>
+                    {resultGrade}
+                  </Heading>
+                  <Copy size={10} color={c.muted} style={{ marginTop: 6 }}>
+                    Scan complete. Your vitals, scan history and care plan have been refreshed.
+                  </Copy>
+                </Card>
+                <Card>
+                  <View style={s.grid3}>
+                    {[
+                      ['Heart Rate', resultMetrics.heartRate ? `${resultMetrics.heartRate} bpm` : '—'],
+                      ['Barrier Health', resultMetrics.barrierHealth ? `${resultMetrics.barrierHealth}%` : '—'],
+                      ['Skin Age', resultMetrics.skinAge ? `${resultMetrics.skinAge} yrs` : '—'],
+                    ].map(([label, value]) => (
+                      <View key={label} style={[s.third, s.center]}>
+                        <Copy size={9} color={c.muted}>
+                          {label}
+                        </Copy>
+                        <Copy bold size={14} style={s.top4}>
+                          {value}
+                        </Copy>
+                      </View>
+                    ))}
+                  </View>
+                </Card>
+              </View>
+            )}
+
+            {phase === 'idle' ? (
+              <View style={[st.guidance, alignment.isAligned && { backgroundColor: c.greenSoft }]}>
+                <Icon
+                  name={alignment.isAligned ? 'done' : 'camera'}
+                  color={Platform.OS === 'web' ? alignment.color : c.blue}
+                  size={16}
+                />
+                <Copy
+                  size={11}
+                  bold
+                  color={Platform.OS === 'web' ? alignment.color : c.blue}
+                  style={{ marginLeft: 6 }}
+                >
+                  {Platform.OS === 'web' ? alignment.message : 'Center your face in the oval, then capture'}
+                </Copy>
+              </View>
+            ) : null}
+
+            {errorMessage ? (
+              <Card style={{ marginTop: 10, backgroundColor: c.redSoft, borderColor: c.red }}>
+                <Copy size={10} color={c.red}>
+                  {errorMessage}
+                </Copy>
+              </Card>
+            ) : null}
+
+            {phase === 'idle' ? (
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: consentGiven }}
+                onPress={() => setConsentGiven(!consentGiven)}
+                style={[s.row, { marginTop: 12 }]}
+              >
+                <Icon name={consentGiven ? 'done' : 'shield'} color={consentGiven ? c.green : c.muted} />
+                <Copy size={11} color={c.muted} style={s.flex}>
+                  I consent to optical vital telemetry processing under HIPAA Privacy Rules.
+                </Copy>
+              </Pressable>
+            ) : null}
+
+            <View style={{ gap: 8, marginTop: 12 }}>
+              {phase === 'idle' ? (
+                <Action disabled={!consentGiven} onPress={() => void captureFrame()}>
+                  <Icon name="camera" color={c.white} />
+                  <Copy bold color={c.white}>
+                    Capture Frame
+                  </Copy>
+                </Action>
+              ) : null}
+              {phase === 'error' ? <Action onPress={resetScanner}>Retry Scan</Action> : null}
+              {phase === 'complete' ? (
+                <>
+                  {(scanResult as any)?.id ? (
+                    <Action onPress={() => router.push({ pathname: `/scan-report/${(scanResult as any).id}` as any })}>
+                      View Full Scan Report
+                    </Action>
+                  ) : null}
+                  <Action secondary onPress={resetScanner}>
+                    Take Another Scan
+                  </Action>
+                </>
+              ) : null}
             </View>
           </View>
         </View>
       </Modal>
-
-      <DemoNote text="Live optical vital scan and biomarker analysis with real-time biometric consent." />
     </Screen>
   );
 }
 
 const st = StyleSheet.create({
-  cameraSection: {
-    backgroundColor: '#ffffff',
+  scan: {
+    backgroundColor: '#e8f2ff',
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    padding: 14,
+    borderColor: '#d3e5fc',
     overflow: 'hidden',
   },
-  viewportBox: {
-    width: '100%',
-    height: 330,
-    borderRadius: 16,
-    backgroundColor: '#0f172a',
-    overflow: 'hidden',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  capturedPreview: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  shutterFlash: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#ffffff',
-    zIndex: 10,
-  },
-  boundingOval: {
-    width: 170,
-    height: 230,
-    borderRadius: 90,
-    borderWidth: 2,
-    borderColor: '#38bdf8',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 5,
-  },
-  boundingOvalAligned: {
-    borderColor: '#10b981',
-    borderStyle: 'solid',
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-  },
-  boundingOvalAnalyzing: {
-    borderColor: '#6366f1',
-    borderStyle: 'solid',
-  },
-  countdownBadge: {
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  hudBar: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    flexDirection: 'row',
-    gap: 6,
-    zIndex: 6,
-  },
-  switchCamBtn: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 6,
-  },
-  guidanceBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f9ff',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#bae6fd',
-  },
-  guidanceBannerAligned: {
-    backgroundColor: '#ecfdf5',
-    borderColor: '#a7f3d0',
-  },
+  desktopScan: { width: '100%', maxWidth: 560, alignSelf: 'center' },
+  label: { position: 'absolute', top: 10, right: 10 },
   scanButton: {
+    marginHorizontal: 16,
     borderRadius: 50,
     backgroundColor: '#102957',
+    marginTop: -4,
   },
-  desktopHeroGrid: {
+  modal: { flex: 1, backgroundColor: c.background },
+  modalHeader: {
+    backgroundColor: c.white,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 14,
     flexDirection: 'row',
-    gap: 16,
-    alignItems: 'flex-start',
-    marginTop: 8,
-  },
-  desktopScanCard: {
-    flex: 1.2,
-  },
-  desktopMethodsCard: {
-    flex: 1,
-    marginTop: 0,
-  },
-  desktopLowerGrid: {
-    flexDirection: 'row',
-    gap: 16,
-    alignItems: 'flex-start',
-    marginTop: 8,
-  },
-  desktopLowerCard: {
-    flex: 1,
-    marginTop: 0,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    zIndex: 999,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: c.border,
   },
-  modalCard: {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: '#ffffff',
+  closeButton: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f2f5f9',
   },
-  errorTipsCard: {
-    backgroundColor: '#f8fafc',
+  modalBody: { flex: 1, padding: 18 },
+  viewport: {
+    minHeight: 430,
+    flex: 1,
+    maxHeight: 560,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#0c162a',
+    position: 'relative',
+  },
+  oval: {
+    position: 'absolute',
+    width: '52%',
+    height: '68%',
+    borderRadius: 999,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#38BDF8',
+    alignSelf: 'center',
+    top: '16%',
+    left: '24%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ovalAligned: { borderColor: c.green, borderStyle: 'solid' },
+  countdown: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hud: { position: 'absolute', left: 12, top: 12, flexDirection: 'row', gap: 6 },
+  switchCamera: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(5,12,28,0.72)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  processing: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(7,15,32,0.72)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  guidance: {
+    marginTop: 10,
+    padding: 11,
     borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 4,
+    backgroundColor: c.blueSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
