@@ -77,23 +77,21 @@
      - Replaced static placeholder buttons and mock timeouts with true camera-driven analysis: the app maintains a live camera viewfinder and only renders the 15-biomarker clinical dossier *after* an actual camera frame is captured and processed by the multi-modal AI backend.
      - Added "Take Another Scan" button that resets the viewfinder back to live camera mode, and "Inspect Full Clinical Dossier" button navigating to `/scan-report/[id]`.
      - Updated modal sheet `ScanContent` in `Sheets.tsx` to directly launch the live camera scanner route.
-   - **Real Image Validation & Clinical Rejection Pipeline**:
-     - Implemented strict raw byte distribution, mean luminance, contrast, standard deviation, and dermal chrominance validation in `SubDermalTelemetryEngine` (`services/ai`) and `SimulatedAIInferenceService` (`services/api`).
-     - Completely prevented blank, dark, over-exposed, or non-biological frames from generating valid scores:
-       - Rejects dark/covered camera frames ($\mu < 30$ or $>85\%$ dark bytes) with `"Image is too dark or under-exposed (low luminance)"`.
-       - Rejects over-exposed frames ($\mu > 240$ or $>90\%$ whiteout) with `"Image is severely over-exposed (direct glare/whiteout detected)"`.
-       - Rejects blank/solid monochromatic frames ($\sigma < 6.5$) with `"Blank or uniform frame detected. No facial biological textures or contours were identified"`.
-     - Updated `scan.controller.ts` in Customer BFF to propagate AI service errors (HTTP 400) directly to the frontend rather than silently swallowing them and falling back to synthetic data.
-   - **Frontend Interactive Error Popup Dialog**:
-     - Added high-visibility `<Modal>` error dialog in `Scan.tsx` that triggers on any backend validation failure or network exception, displaying the specific clinical error reason, helpful lighting & alignment guidance tips, and an instant "Try Again" retry action.
-   - **Proprietary Vendor Brand Sanitization**:
-     - Sanitized all user-facing screens, product cards, AI coach prompts, clinical disclaimers, chat handlers, and API adapter outputs to remove references to third-party vendor names ("Perfect Corp", "Perfect AI", "Shen.ai", "Shen AI").
-     - Standardized all clinical AI telemetry under unified Medivo branding: *"Medivo Multi-Modal Optical Telemetry Engine"*, *"Medivo Optical AI Vision"*, *"rPPG Facial Vitals & Biomarkers (Optical AI)"*, and *"15 Clinical Skin & Cellular Attributes (Medivo AI)"*.
+   - **Advanced Multi-Region Computer Vision Optical Telemetry & Dynamic Metric Range**:
+     - Upgraded `SubDermalTelemetryEngine` (`services/ai`) and `SimulatedAIInferenceService` (`services/api`) with 4-region spatial anatomical sampling (Forehead/T-zone, Periorbital, Malar/Cheeks, Mandibular/Chin) and luminance-based micro-texture gradient calculations.
+     - Eliminated static additive offsets in favor of full dynamic physiological ranges across all 15 clinical parameters (Hydration 35-98%, Oiliness 15-95%, Texture 35-98%, Redness 4-75%, Skin Age 18-65 yrs, Heart Rate 58-105 BPM, Stress Index 5-90).
+     - Dynamically prioritized clinical recommendations based on individual patient metric deviations.
+     - Sanitized third-party provider adapters (`PerfectCorpAdapter`, `ShenAIAdapter`) to eliminate static default constants.
+   - **Customer BFF Vitals & Health Score Dynamics (`apps/customer-bff/src/services/vitals.service.ts`)**:
+     - Calculate true historical score deltas (+/- points vs previous scan) rather than static approximations.
+     - Dynamically derive all 7 vital signs from the latest optical telemetry and manual logs.
+     - Generate dynamic clinical alerts based on real physiological thresholds (Elevated Pulse >85 bpm, Stress Index >40, Erythema/Redness >30%).
 
 5. **Verification & Quality Checks**:
    - `pnpm -r type-check`: 18/18 workspace packages passed with 0 TypeScript errors.
-   - `pnpm -r test`: 25/25 unit and end-to-end integration tests in `services/api` and `packages/utils` passed with 0 errors.
+   - `pnpm -r test`: 32/32 unit and end-to-end integration tests across `services/api`, `services/ai`, and `packages/utils` passed with 0 errors.
    - `pnpm --filter @medivo/customer-app build:web`: Exported all 53 static routes and assets successfully with 0 errors.
    - `pnpm --filter @medivo/customer-bff build`: Built successfully.
    - `pnpm --filter @medivo/service-api build`: Built successfully.
+   - `pnpm --filter @medivo/service-ai build`: Built successfully.
    - `pnpm --filter @medivo/api-client build`: Built successfully.

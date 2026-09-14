@@ -30,6 +30,14 @@ All entries must strictly adhere to the following block format. Do not use table
 - **High**: Cross-domain impact, significant UX updates, changes to shared core packages, new integrations. Requires extensive integration testing.
 - **Critical**: Database schema structural changes (drops, renames, complex migrations), Auth logic changes, payment flow modifications, security changes, or anything affecting core platform stability and data integrity.
 
+### 2026-09-14 - Advanced Multi-Region Computer Vision Optical Telemetry & Dynamic Vitals Overhaul
+- **Agent/Author**: Antigravity Digital Health & AI Engineering Agent
+- **Type**: Feature / Refactor / Architecture
+- **Impact Level**: High
+- **Description**: Upgraded the optical AI telemetry engines (`SubDermalTelemetryEngine` in `services/ai` and `SimulatedAIInferenceService` in `services/api`) with spatial 4-region anatomical sampling (Forehead/T-Zone, Periorbital, Malar/Cheeks, Mandibular/Chin) and luminance-based micro-texture gradient calculations. Eliminated static additive offsets in favor of full dynamic physiological ranges across all 15 clinical parameters (Hydration 35-98%, Oiliness 15-95%, Texture 35-98%, Redness 4-75%, Skin Age 18-65 yrs, Heart Rate 58-105 BPM, Stress Index 5-90). Upgraded `vitals.service.ts` in Customer BFF to calculate true historical score deltas (+/- points vs previous scan), dynamically derive all 7 vital signs, generate contextual clinical alerts for out-of-range metrics, and construct personalized clinical recommendations ranked by individual biomarker priority.
+- **Domains Affected**: AI Vision Microservice (`services/ai`), Domain API (`services/api`), Customer BFF (`apps/customer-bff`), State Management (`useVitalsStore`)
+- **Key Files**: `services/ai/src/domain/SubDermalTelemetryEngine.ts`, `services/api/src/infrastructure/ai/SimulatedAIInferenceService.ts`, `services/ai/src/providers/SubDermalEngineAdapter.ts`, `apps/customer-bff/src/services/vitals.service.ts`, `services/ai/src/providers/PerfectCorpAdapter.ts`, `services/ai/src/providers/ShenAIAdapter.ts`
+
 ### 2026-09-14 - Real Image Validation & Interactive Error Popup Alerting
 - **Agent/Author**: Antigravity Digital Health & AI Engineering Agent
 - **Type**: Feature / Security / Bugfix

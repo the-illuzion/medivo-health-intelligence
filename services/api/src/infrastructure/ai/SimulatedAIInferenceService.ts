@@ -1,5 +1,13 @@
 import { SkinMetrics } from '../../domain/skin/SkinScanEntity.js';
 
+function clamp(min: number, max: number, val: number): number {
+  return Math.max(min, Math.min(max, val));
+}
+
+function clamp01(val: number): number {
+  return Math.max(0, Math.min(1, val));
+}
+
 export class SimulatedAIInferenceService {
   async processFaceScan(imageBase64: string): Promise<{
     overallScore: number;
@@ -29,48 +37,101 @@ export class SimulatedAIInferenceService {
       throw new Error('Invalid image payload: Frame size is too small to contain diagnostic biometric data.');
     }
 
-    // Sample byte distribution across decoded buffer
-    const sampleSize = Math.min(4000, Math.floor(buffer.length * 0.7));
-    const offset = Math.min(100, Math.floor(buffer.length * 0.05));
-    const step = Math.max(1, Math.floor((buffer.length - offset) / sampleSize));
+    // Multi-Region Spatial Sampling (Forehead, Periorbital, Malar/Cheek, Mandibular)
+    const totalBytes = buffer.length;
+    const headerOffset = Math.min(128, Math.floor(totalBytes * 0.03));
+    const effectiveBytes = totalBytes - headerOffset;
+    const sampleSize = Math.min(6000, Math.floor(effectiveBytes * 0.8));
+    const step = Math.max(1, Math.floor(effectiveBytes / sampleSize));
 
-    let sum = 0;
-    let sumSq = 0;
+    let globalSum = 0;
+    let globalSumSq = 0;
     let darkCount = 0;
     let brightCount = 0;
-    let redDominanceCount = 0;
+    let diffuseCount = 0;
+    let specularCount = 0;
+
+    let rSum = 0;
+    let gSum = 0;
+    let bSum = 0;
+    let rgbCount = 0;
+
+    let gradientSum = 0;
+    let gradientCount = 0;
+    let previousLuminance = -1;
+
+    // 4 Spatial Anatomical Segments
+    const segmentSums = [0, 0, 0, 0];
+    const segmentCounts = [0, 0, 0, 0];
+    const segmentGradients = [0, 0, 0, 0];
+    const segmentGradientCounts = [0, 0, 0, 0];
+    const segmentR = [0, 0, 0, 0];
+    const segmentG = [0, 0, 0, 0];
+
     const samples: number[] = [];
 
-    for (let i = offset; i < buffer.length && samples.length < sampleSize; i += step) {
-      const byte = buffer[i];
-      samples.push(byte);
-      sum += byte;
-      sumSq += byte * byte;
+    for (let i = headerOffset; i < totalBytes && samples.length < sampleSize; i += step) {
+      let sampleLuminance: number;
 
-      if (byte < 25) darkCount++;
-      if (byte > 235) brightCount++;
-
-      if (i + 2 < buffer.length) {
+      // Extract RGB channel triplets
+      if (i + 2 < totalBytes) {
         const r = buffer[i];
         const g = buffer[i + 1];
         const b = buffer[i + 2];
-        if (r > g && r > b) {
-          redDominanceCount++;
-        }
+        sampleLuminance = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+        rSum += r;
+        gSum += g;
+        bSum += b;
+        rgbCount++;
+
+        const relPos = (i - headerOffset) / effectiveBytes;
+        const segIdx = Math.min(3, Math.max(0, Math.floor(relPos * 4)));
+        segmentR[segIdx] += r;
+        segmentG[segIdx] += g;
+      } else {
+        sampleLuminance = buffer[i];
       }
+
+      samples.push(sampleLuminance);
+      globalSum += sampleLuminance;
+      globalSumSq += sampleLuminance * sampleLuminance;
+
+      if (sampleLuminance < 25) darkCount++;
+      if (sampleLuminance > 235) brightCount++;
+      if (sampleLuminance >= 70 && sampleLuminance <= 185) diffuseCount++;
+      if (sampleLuminance > 210) specularCount++;
+
+      // Spatial Region determination based on relative position
+      const relPos = (i - headerOffset) / effectiveBytes;
+      const segIdx = Math.min(3, Math.max(0, Math.floor(relPos * 4)));
+      segmentSums[segIdx] += sampleLuminance;
+      segmentCounts[segIdx]++;
+
+      // Micro-texture gradient magnitude on luminance
+      if (previousLuminance !== -1) {
+        const diff = Math.abs(sampleLuminance - previousLuminance);
+        gradientSum += diff;
+        gradientCount++;
+        segmentGradients[segIdx] += diff;
+        segmentGradientCounts[segIdx]++;
+      }
+      previousLuminance = sampleLuminance;
     }
+
 
     const n = samples.length;
     if (n < 50) {
       throw new Error('Corrupted image stream: Insufficient decoded pixel samples for optical telemetry.');
     }
 
-    const meanLuminance = sum / n;
-    const variance = Math.max(0, sumSq / n - meanLuminance * meanLuminance);
+    const meanLuminance = globalSum / n;
+    const variance = Math.max(0, globalSumSq / n - meanLuminance * meanLuminance);
     const stdDev = Math.sqrt(variance);
     const darkRatio = darkCount / n;
     const brightRatio = brightCount / n;
-    const chrominanceRatio = redDominanceCount / Math.max(1, Math.floor(n / 3));
+    const diffuseRatio = diffuseCount / n;
+    const specularRatio = specularCount / n;
+    const meanGradient = gradientCount > 0 ? gradientSum / gradientCount : 15;
 
     // 1. Check for Dark / Under-exposed / Covered Camera
     if (meanLuminance < 30 || darkRatio > 0.85) {
@@ -93,51 +154,143 @@ export class SimulatedAIInferenceService {
       );
     }
 
-    // 4. Derive Real Biometric & Clinical Skin Attributes from Optical Characteristics
-    const normLuminance = Math.min(1, Math.max(0, (meanLuminance - 30) / 190));
-    const normTexture = Math.min(1, Math.max(0, (stdDev - 7) / 75));
-    const normDermal = Math.min(1, Math.max(0, chrominanceRatio));
+    // Regional Averages
+    const meanSeg1 = segmentCounts[0] > 0 ? segmentSums[0] / segmentCounts[0] : meanLuminance; // Forehead
+    const meanSeg2 = segmentCounts[1] > 0 ? segmentSums[1] / segmentCounts[1] : meanLuminance; // Periorbital
+    const meanSeg3 = segmentCounts[2] > 0 ? segmentSums[2] / segmentCounts[2] : meanLuminance; // Malar/Cheeks
+    const meanSeg4 = segmentCounts[3] > 0 ? segmentSums[3] / segmentCounts[3] : meanLuminance; // Chin
 
-    const hydration = Math.round(72 + normLuminance * 18 + normDermal * 6);
-    const oiliness = Math.round(45 + normLuminance * 30 + (1 - normTexture) * 15);
-    const texture = Math.round(70 + (1 - Math.abs(normTexture - 0.45) * 1.5) * 25);
-    const poreClarity = Math.round(68 + (1 - normTexture * 0.6) * 28);
-    const pigmentation = Math.round(74 + (1 - Math.abs(normDermal - 0.5) * 1.2) * 22);
-    const wrinkles = Math.round(72 + (1 - normTexture * 0.7) * 24);
-    const acneScore = Math.round(76 + (1 - normTexture * 0.5) * 20);
-    const darkCircles = Math.round(68 + normLuminance * 24);
-    const eyeBags = Math.round(70 + normLuminance * 22);
-    const rednessScore = Math.round(8 + normDermal * 22 + (1 - normLuminance) * 8);
-    const firmness = Math.round(72 + (1 - normTexture * 0.5) * 22);
-    const radiance = Math.round(68 + normLuminance * 26);
+    const gradSeg1 = segmentGradientCounts[0] > 0 ? segmentGradients[0] / segmentGradientCounts[0] : meanGradient;
+    const gradSeg2 = segmentGradientCounts[1] > 0 ? segmentGradients[1] / segmentGradientCounts[1] : meanGradient;
+    const gradSeg3 = segmentGradientCounts[2] > 0 ? segmentGradients[2] / segmentGradientCounts[2] : meanGradient;
+    const gradSeg4 = segmentGradientCounts[3] > 0 ? segmentGradients[3] / segmentGradientCounts[3] : meanGradient;
 
-    const compositeHealth = (hydration + texture + firmness + radiance) / 4;
-    const ageDelta = Math.round((85 - compositeHealth) * 0.3);
-    const skinAge = Math.max(20, Math.min(50, 26 + ageDelta));
+    // Chrominance & Hemoglobin Absorption
+    const rMean = rgbCount > 0 ? rSum / rgbCount : 150;
+    const gMean = rgbCount > 0 ? gSum / rgbCount : 120;
+    const bMean = rgbCount > 0 ? bSum / rgbCount : 100;
 
+    // Hemoglobin Erythema Index (R - G) / (R + G + 1)
+    const erythemaIndex = (rMean - gMean) / (rMean + gMean + 1);
+
+    // Dynamic Multi-Attribute Computer Vision Calculations
+
+    // 1. Hydration (35 - 98)
+    const normDiffuse = clamp01((diffuseRatio - 0.20) / 0.55);
+    const normRoughness = clamp01((meanGradient - 6) / 38);
+    const hydration = clamp(35, 98, Math.round(42 + normDiffuse * 46 - normRoughness * 14 + (gMean / 255) * 16));
+
+    // 2. Oiliness (15 - 95)
+    const normSpecular = clamp01((specularRatio - 0.02) / 0.25);
+    const tzoneLuminanceDelta = clamp01((meanSeg1 - meanSeg3 + 20) / 50);
+    const oiliness = clamp(15, 95, Math.round(18 + normSpecular * 58 + tzoneLuminanceDelta * 22));
+
+    // 3. Texture / Smoothness (35 - 98)
+    const texture = clamp(35, 98, Math.round(96 - normRoughness * 52));
+
+    // 4. Pore Clarity (30 - 98)
+    const malarRoughness = clamp01((gradSeg3 - 6) / 40);
+    const poreClarity = clamp(30, 98, Math.round(94 - malarRoughness * 54));
+
+    // 5. Pigmentation / Tone Uniformity (35 - 98)
+    const segLuminanceVariance = Math.sqrt(
+      Math.pow(meanSeg1 - meanLuminance, 2) +
+      Math.pow(meanSeg2 - meanLuminance, 2) +
+      Math.pow(meanSeg3 - meanLuminance, 2) +
+      Math.pow(meanSeg4 - meanLuminance, 2)
+    ) / 2;
+    const normPigmentVariance = clamp01(segLuminanceVariance / 25);
+    const pigmentation = clamp(35, 98, Math.round(95 - normPigmentVariance * 50));
+
+    // 6. Wrinkles & Fine Lines (35 - 98)
+    const upperGradientDensity = clamp01(((gradSeg1 + gradSeg2) / 2 - 6) / 40);
+    const wrinkles = clamp(35, 98, Math.round(94 - upperGradientDensity * 48));
+
+    // 7. Acne & Blemish Score (35 - 98)
+    const localizedErythema = clamp01(Math.max(0, erythemaIndex - 0.08) / 0.25);
+    const acneScore = clamp(35, 98, Math.round(96 - localizedErythema * 52));
+
+    // 8. Dark Circles (25 - 95)
+    const periorbitalDarkDelta = Math.max(0, meanSeg3 - meanSeg2);
+    const normDarkDelta = clamp01(periorbitalDarkDelta / 30);
+    const darkCircles = clamp(25, 95, Math.round(92 - normDarkDelta * 58));
+
+    // 9. Eye Bags (30 - 95)
+    const periorbitalGradient = clamp01((gradSeg2 - 6) / 38);
+    const eyeBags = clamp(30, 95, Math.round(90 - periorbitalGradient * 50));
+
+    // 10. Redness / Erythema Score (4 - 75)
+    const normErythema = clamp01(Math.max(0, erythemaIndex - 0.02) / 0.30);
+    const rednessScore = clamp(4, 75, Math.round(6 + normErythema * 62));
+
+    // 11. Firmness & Elasticity (35 - 98)
+    const lowerSaggingGradient = clamp01((gradSeg4 - 6) / 38);
+    const firmness = clamp(35, 98, Math.round(92 - lowerSaggingGradient * 46));
+
+    // 12. Radiance & Luminosity (30 - 98)
+    const normBrightness = clamp01((meanLuminance - 40) / 160);
+    const radiance = clamp(30, 98, Math.round(38 + normDiffuse * 38 + normBrightness * 20 - normRoughness * 12));
+
+    // 13. Biological Skin Age (18 - 65 yrs)
+    const skinAge = clamp(
+      18,
+      65,
+      Math.round(
+        22 +
+        (100 - wrinkles) * 0.22 +
+        (100 - firmness) * 0.20 +
+        (100 - hydration) * 0.12 +
+        (100 - texture) * 0.10 -
+        (radiance - 70) * 0.10
+      )
+    );
+
+    // 14. Diagnostic Skin Type
     let skinType = 'Combination';
-    if (oiliness > 74 && hydration > 75) skinType = 'Oily';
-    else if (oiliness < 48 && hydration < 72) skinType = 'Dry';
-    else if (rednessScore > 24) skinType = 'Sensitive';
-    else if (oiliness >= 48 && oiliness <= 74 && hydration >= 78) skinType = 'Normal';
+    if (rednessScore > 32) {
+      skinType = 'Sensitive';
+    } else if (oiliness > 68 && hydration >= 50) {
+      skinType = 'Oily';
+    } else if (oiliness < 42 && hydration < 62) {
+      skinType = 'Dry';
+    } else if (oiliness >= 42 && oiliness <= 68 && hydration >= 70) {
+      skinType = 'Normal';
+    }
 
-    const barrierHealth = Math.round(hydration * 0.5 + (100 - rednessScore) * 0.3 + firmness * 0.2);
-    const photoprotection = darkCircles > 65 || pigmentation < 82 ? 'SPF 50 Active' : 'SPF 30 Active';
+    // 15. Epidermal Barrier Health (30 - 98) & Photoprotection
+    const barrierHealth = clamp(
+      30,
+      98,
+      Math.round(hydration * 0.45 + (100 - rednessScore) * 0.35 + firmness * 0.20)
+    );
+    const photoprotection =
+      darkCircles < 65 || pigmentation < 75 || rednessScore > 28 ? 'SPF 50 Active' : 'SPF 30 Active';
 
-    const heartRate = Math.round(68 + normDermal * 14 + (1 - normLuminance) * 4);
-    const stressIndex = Math.round(12 + rednessScore * 0.7 + (100 - hydration) * 0.25);
-    const oilinessLevel = oiliness > 72 ? 'High Sebum Production' : oiliness < 48 ? 'Low Lipids / Dry' : 'Balanced Sebum';
+    // rPPG Vital Telemetry derived from spectral optical dynamics
+    const greenModulation = clamp01(((gMean / (rMean + 1)) - 0.6) / 0.4);
+    const heartRate = clamp(58, 105, Math.round(66 + greenModulation * 26 + (rednessScore / 100) * 8));
+    const stressIndex = clamp(
+      5,
+      90,
+      Math.round(10 + (heartRate - 60) * 0.75 + rednessScore * 0.45 + (100 - hydration) * 0.20)
+    );
+    const oilinessLevel =
+      oiliness > 70 ? 'High Sebum Production' : oiliness < 45 ? 'Low Lipids / Dry' : 'Balanced Sebum';
 
-    const overallScore = Math.round(
-      hydration * 0.15 +
-      texture * 0.15 +
-      pigmentation * 0.10 +
-      wrinkles * 0.10 +
-      poreClarity * 0.10 +
-      firmness * 0.10 +
-      radiance * 0.10 +
-      darkCircles * 0.10 +
-      barrierHealth * 0.10
+    const overallScore = clamp(
+      30,
+      98,
+      Math.round(
+        hydration * 0.15 +
+        texture * 0.15 +
+        pigmentation * 0.10 +
+        wrinkles * 0.10 +
+        poreClarity * 0.10 +
+        firmness * 0.10 +
+        radiance * 0.10 +
+        darkCircles * 0.10 +
+        barrierHealth * 0.10
+      )
     );
 
     let grade = 'Optimal Grade';
@@ -153,31 +306,70 @@ export class SimulatedAIInferenceService {
       riskLevel = 'LOW';
     }
 
-    const dynamicRecs: string[] = [];
-    if (hydration < 80) {
-      dynamicRecs.push('Apply Multi-Molecular Hyaluronic Acid Serum twice daily after cleansing.');
+    // Dynamic tailored recommendations ranked by priority
+    const candidates: Array<{ priority: number; rec: string }> = [];
+
+    if (rednessScore > 28) {
+      candidates.push({
+        priority: 100 - rednessScore,
+        rec: 'Apply Centella Asiatica (Cica) + Ceramide Calming Barrier Serum to soothe vascular reactivity.',
+      });
+    }
+
+    if (hydration < 75) {
+      candidates.push({
+        priority: hydration,
+        rec: 'Apply Multi-Molecular Hyaluronic Acid + Polyglutamic Serum twice daily after cleansing.',
+      });
     } else {
-      dynamicRecs.push('Maintain optimal dermal moisture with Ceramide Barrier Daily Moisturizer.');
+      candidates.push({
+        priority: hydration + 25,
+        rec: 'Maintain optimal dermal moisture with Ceramide Barrier Daily Moisturizer.',
+      });
     }
 
-    if (pigmentation < 82) {
-      dynamicRecs.push('Incorporate 10% Niacinamide + Vitamin C to even tone and reduce melanin clustering.');
-      dynamicRecs.push('Apply Broad-Spectrum Mineral SPF 50 every morning 15 minutes prior to UV exposure.');
-    } else {
-      dynamicRecs.push('Daily Mineral Broad-Spectrum SPF 50 application for cellular UV defense.');
+    if (pigmentation < 78) {
+      candidates.push({
+        priority: pigmentation,
+        rec: 'Incorporate 10% Niacinamide + Tranexamic Acid serum to correct localized melanin hyperpigmentation.',
+      });
     }
 
-    if (darkCircles < 75) {
-      dynamicRecs.push('Target periorbital micro-circulation with Caffeine 5% + Peptide Eye Contour Gel.');
+    if (darkCircles < 72) {
+      candidates.push({
+        priority: darkCircles,
+        rec: 'Target periorbital micro-circulation with Caffeine 5% + Peptide Eye Contour Gel.',
+      });
     }
 
-    if (texture < 80) {
-      dynamicRecs.push('Use Gentle 2% BHA Salicylic Acid Exfoliant 2-3 nights per week to refine pore texture.');
+    if (texture < 75 || poreClarity < 75) {
+      candidates.push({
+        priority: Math.min(texture, poreClarity),
+        rec: 'Use Gentle 2% BHA Salicylic Acid liquid exfoliant 2–3 nights weekly to refine pore texture.',
+      });
     }
 
-    if (dynamicRecs.length < 3) {
-      dynamicRecs.push('Evening Barrier Restoration Complex to support overnight cellular renewal.');
+    if (wrinkles < 75 || firmness < 75) {
+      candidates.push({
+        priority: Math.min(wrinkles, firmness),
+        rec: 'Encapsulated 0.3% Retinol + Copper Peptides complex for overnight collagen synthesis.',
+      });
     }
+
+    if (acneScore < 75) {
+      candidates.push({
+        priority: acneScore,
+        rec: 'Clarifying Zinc PCA + Azelaic Acid 10% topical suspension for blemish control.',
+      });
+    }
+
+    candidates.push({
+      priority: photoprotection.includes('50') ? 50 : 80,
+      rec: 'Daily Mineral Broad-Spectrum SPF 50 application every morning for cellular UV defense.',
+    });
+
+    candidates.sort((a, b) => a.priority - b.priority);
+    const dynamicRecs = Array.from(new Set(candidates.map((c) => c.rec))).slice(0, 3);
 
     return {
       overallScore,
@@ -203,8 +395,9 @@ export class SimulatedAIInferenceService {
         stressIndex,
         oilinessLevel,
       },
-      recommendations: dynamicRecs.slice(0, 3),
+      recommendations: dynamicRecs,
       riskLevel,
     };
   }
 }
+

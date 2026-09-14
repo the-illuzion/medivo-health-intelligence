@@ -34,10 +34,11 @@
 
 ### Verification Status
 - `pnpm -r type-check`: 18/18 workspace packages passed with 0 TypeScript errors.
-- `pnpm -r test`: 25/25 unit & integration tests in `services/api` and `packages/utils` passed with 0 errors.
+- `pnpm -r test`: 32/32 unit & integration tests across `services/api`, `services/ai`, and `packages/utils` passed with 0 errors.
 - `pnpm --filter @medivo/customer-app build:web`: Exported all 53 static routes and assets successfully.
 - `pnpm --filter @medivo/customer-bff build`: Built with 0 errors.
 - `pnpm --filter @medivo/service-api build`: Built with 0 errors.
+- `pnpm --filter @medivo/service-ai build`: Built with 0 errors.
 - `pnpm --filter @medivo/api-client build`: Built with 0 errors.
 - Live API mutation and query verification: 100% passing against running Customer BFF on port 4000 (Auth, Vitals, Care, Devices, Health Profile).
 
@@ -55,3 +56,5 @@
 - **Live Camera Scanner & Dynamic Telemetry**: Integrated real-time WebRTC camera viewfinder in `Scan.tsx` with oval alignment reticle, luminance check, distance heuristic, 3-2-1 auto-capture countdown, and direct frame capture to `apiClient.scans.analyze`. The app maintains the live camera viewfinder and only renders the 15-biomarker score dossier *after* an actual camera frame is captured. Added "Take Another Scan" to reset viewfinder.
 - **Vendor Name Sanitization**: Completely removed all third-party vendor name mentions ("Perfect Corp", "Perfect AI", "Shen.ai", "Shen AI") across the frontend screens, product cards, AI coach, chat services, and backend adapters, consolidating all optical AI under Medivo clinical branding.
 - **Strict Image Validation & Error Popup Alerting**: Implemented real byte luminance, contrast, standard deviation, and dermal chrominance validation in `SubDermalTelemetryEngine` and `SimulatedAIInferenceService`. Blank, dark, or over-exposed frames are actively rejected (HTTP 400), and Customer BFF immediately returns validation errors without fallback mock data. Added an interactive Modal error popup on the frontend that displays specific clinical failure reasons with lighting and camera guidance tips.
+- **Advanced Multi-Region Optical Computer Vision & Dynamic Telemetry**: Upgraded `SubDermalTelemetryEngine` and `SimulatedAIInferenceService` with 4-region spatial anatomical sampling (Forehead, Periorbital, Malar/Cheeks, Mandibular) and luminance-based micro-texture gradient calculations. All 15 metrics dynamically respond across their full clinical ranges (Hydration 35-98%, Oiliness 15-95%, Texture 35-98%, Redness 4-75%, Skin Age 18-65, Pulse 58-105 BPM, Stress 5-90). Upgraded `vitals.service.ts` to compute true historical delta points and generate dynamic clinical alerts for out-of-range vitals.
+
