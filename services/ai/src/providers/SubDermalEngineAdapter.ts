@@ -84,9 +84,10 @@ export class SubDermalEngineAdapter implements IAIProviderAdapter {
     }
 
     candidates.push({
-      priority: rawMetrics.photoprotection.includes('50') ? 50 : 80,
+      priority: rawMetrics.photoprotection?.includes('50') ? 50 : 80,
       rec: 'Daily Mineral Broad-Spectrum SPF 50 application every morning for cellular UV defense.',
     });
+
 
     candidates.sort((a, b) => a.priority - b.priority);
     const dynamicRecs = Array.from(new Set(candidates.map((c) => c.rec))).slice(0, 3);

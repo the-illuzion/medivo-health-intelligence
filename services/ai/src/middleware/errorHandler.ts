@@ -52,6 +52,8 @@ export const errorHandler = (err: any, req: Request, res: Response, _next: NextF
   }
   const message = err.message || 'Internal AI Service Error';
 
+  const method = req.method;
+
   if (status >= 500) {
     aiLogger.error(`Unhandled AI Exception on ${method} ${path}: ${message}`, {
       reqId,
@@ -67,6 +69,7 @@ export const errorHandler = (err: any, req: Request, res: Response, _next: NextF
       statusCode: status,
     });
   }
+
 
   res.status(status).json({
     success: false,
