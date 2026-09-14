@@ -41,6 +41,7 @@ function StackNavigator() {
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="privacy-policy" />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="design" options={{ headerShown: false }} />
         <Stack.Screen name="scan-report/[id]" />
         <Stack.Screen name="coach" />
         <Stack.Screen name="history" />
@@ -72,15 +73,16 @@ function MainAppShell() {
     pathname === '/otp-verify' ||
     pathname === '/onboarding';
 
-  const showHeader = isAuthenticated && !isAuthRoute;
-  const showSidebar = Platform.OS === 'web' && width >= 1024 && isAuthenticated && !isAuthRoute;
+  const isDesignRoute = pathname === '/design' || pathname.startsWith('/design/');
+  const showHeader = isAuthenticated && !isAuthRoute && !isDesignRoute;
+  const showSidebar = Platform.OS === 'web' && width >= 1024 && isAuthenticated && !isAuthRoute && !isDesignRoute;
 
   return (
     <View
       className={`flex-1 flex-row ${isDark ? 'bg-[#090D16]' : 'bg-white'}`}
       style={{ flex: 1, height: '100%', backgroundColor: colors.background }}
     >
-      <ServerDownScreen />
+      {!isDesignRoute && <ServerDownScreen />}
       {showSidebar && <WebSidebar />}
       <View
         className="flex-1 h-full"

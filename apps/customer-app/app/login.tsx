@@ -19,7 +19,7 @@ export default function LoginScreen() {
     setErrorMessage('');
     const success = await login(email, password);
     if (success) {
-      router.replace('/(tabs)');
+      router.replace('/design');
     }
   };
 

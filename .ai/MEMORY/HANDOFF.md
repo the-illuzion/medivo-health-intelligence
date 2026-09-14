@@ -1,5 +1,16 @@
 # Agent Handoff
 
+## Latest Session: Medivo Design Preview
+
+- Added `/design` routes in `apps/customer-app` and a `src/features/design-preview` native feature.
+- Mobile/native and web below 900px retain the mobile design. Expo Web at 900px and above uses `components/DesktopShell.tsx` with desktop navigation, top bar, wider content canvas, desktop dashboard grouping, and centered dialogs.
+- Preview state is local to `PreviewProvider`; it does not call APIs, persist fixtures, request permissions, or modify existing integrations.
+- Existing Profile includes **Open new design** and preview Profile includes **Open existing app**.
+- Validation completed: Expo export for web/iOS/Android and 11 Playwright browser journeys.
+- Local Docker image rebuild may need to be rerun before port 8081 displays the final desktop shell; source verification is complete.
+
+---
+
 ## Last Session Details
 
 - **Agent**: Antigravity Health Intelligence & Security Agent
