@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   healthApi,
   type HealthConnection,
@@ -45,9 +46,11 @@ export function useHealthSummary(period: HealthSummaryPeriod = 'day') {
     }
   }, [period, userId]);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   const metrics = useMemo(() => {
     const byType = new Map<HealthMetricType, HealthMetricSummaryItem>();
