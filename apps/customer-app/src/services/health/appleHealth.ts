@@ -14,6 +14,10 @@ export const appleHealthService = {
     return;
   },
 
+  async sync(_userId: string): Promise<AppleHealthSyncResult> {
+    throw new Error('Apple Health is only available in the iOS app.');
+  },
+
   async connectAndSync(_userId: string): Promise<AppleHealthSyncResult> {
     throw new Error('Apple Health is only available in the iOS app.');
   },
