@@ -55,10 +55,14 @@
     <string>Allow $(PRODUCT_NAME) to use Face ID</string>
     <key>NSHealthShareUsageDescription</key>
     <string>Medivo uses Apple Health data you choose to share to provide your health metrics, trends, and personalized insights.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>Medivo may save health data you explicitly choose to sync with Apple Health</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSUserActivityTypes</key>
     <array>
+      <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
+      <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
     </array>
