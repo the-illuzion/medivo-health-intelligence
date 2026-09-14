@@ -1,181 +1,202 @@
-import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen, useCompact } from '../components/Shell';
 import {
   Action,
   Card,
-  Chip,
   Copy,
-  DemoNote,
-  Heading,
   Icon,
   PageHeading,
-  Ring,
   Section,
   Tile,
-  Trend,
   s,
 } from '../components/UI';
-import { usePreview } from '../PreviewContext';
-import { metrics } from '../data/mock';
 import { colors as c, designRoutes } from '../tokens';
+import { useHealthSummary } from '../../../hooks/useHealthSummary';
+import type { HealthMetricType, HealthSummaryPeriod } from '../../../services/health/healthApi';
+import {
+  HEALTH_METRIC_DISPLAY,
+  formatHealthLastSync,
+  formatMetricValue,
+  metricContextLabel,
+} from '../../../services/health/healthDisplay';
+
+const PERIODS: readonly { label: 'Day' | 'Week' | 'Month'; value: HealthSummaryPeriod }[] = [
+  { label: 'Day', value: 'day' },
+  { label: 'Week', value: 'week' },
+  { label: 'Month', value: 'month' },
+];
+
 export default function Metrics() {
-  const p = usePreview();
   const router = useRouter();
-  const large = useCompact();
-  const n = ['Day', 'Week', 'Month'].indexOf(p.period);
-  const values = [
-    ['76', '118/76', '98', '7h 24m', '8,421', '36.8', 'Low'],
-    ['74', '119/77', '98', '7h 12m', '8,320', '36.6', 'Low'],
-    ['72', '120/78', '97', '7h 02m', '7,984', '36.7', 'Moderate'],
-  ];
+  const compact = useCompact();
+  const [period, setPeriod] = useState<HealthSummaryPeriod>('day');
+  const { connection, summary, metrics, isLoading, error, refresh } = useHealthSummary(period);
+
   return (
     <Screen>
-      <PageHeading title="Key Metrics" subtitle="Track vital signs, trends, and what changed." />
+      <PageHeading
+        title="Key Metrics"
+        subtitle="Readings synced from Apple Health. Medivo only shows categories you chose to share."
+      />
+
       <View accessibilityRole="tablist" style={st.segmented}>
-        {(['Day', 'Week', 'Month'] as const).map((period) => (
+        {PERIODS.map((item) => (
           <Pressable
-            key={period}
+            key={item.value}
             accessibilityRole="tab"
-            accessibilityLabel={period}
-            accessibilityState={{ selected: period === p.period }}
-            aria-selected={period === p.period}
-            onPress={() => p.setPeriod(period)}
-            style={[st.segment, period === p.period && { backgroundColor: c.blue }]}
+            accessibilityLabel={item.label}
+            accessibilityState={{ selected: item.value === period }}
+            aria-selected={item.value === period}
+            onPress={() => setPeriod(item.value)}
+            style={[st.segment, item.value === period && { backgroundColor: c.blue }]}
           >
-            <Copy size={13} color={period === p.period ? 'white' : c.muted}>
-              {period}
+            <Copy size={13} color={item.value === period ? c.white : c.muted}>
+              {item.label}
             </Copy>
           </Pressable>
         ))}
       </View>
-      <Card style={[s.row, { marginVertical: 10 }]}>
-        <Ring value={[78, 82, 85][n]} size={45} />
+
+      <Card style={[s.row, { marginVertical: 10, backgroundColor: connection ? c.greenSoft : c.blueSoft }]}>
+        <Tile name={connection ? 'done' : 'heart'} tone={connection ? 'green' : 'blue'} size={38} />
         <View style={s.flex}>
-          <Copy bold size={11}>
-            Health Score
+          <Copy bold size={12}>Apple Health</Copy>
+          <Copy size={10} color={connection ? c.green : c.muted}>
+            ● {connection ? 'Connected' : 'Not connected'}
           </Copy>
-          <Copy size={10} color={c.muted}>
-            ▲ Up {6 + n} pts from {n === 0 ? 'yesterday' : n === 1 ? 'last week' : 'last month'}
+          <Copy size={9} color={c.muted}>
+            Last sync: {formatHealthLastSync(connection?.lastSyncedAt)}
           </Copy>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="2 items to watch"
-          onPress={() => p.setSheet({ kind: 'alert' })}
-          style={[s.row, { flex: 1, gap: 7 }]}
-        >
-          <Tile name="alert" tone="orange" size={29} />
-          <View style={s.flex}>
-            <Copy size={11} bold>
-              2 items to watch
-            </Copy>
-            <Copy size={10} color={c.muted}>
-              See details
-            </Copy>
-          </View>
-        </Pressable>
+        <Action secondary style={{ minHeight: 34 }} onPress={() => router.push(designRoutes.devices)}>
+          {connection ? 'Manage' : 'Connect'}
+        </Action>
       </Card>
-      {metrics.map((m, i) => (
-        <Card
-          key={m.name}
-          onPress={() => router.push({ pathname: designRoutes.metric, params: { name: m.name } })}
-          label={`${m.name} details`}
-          style={[st.metric, large && { flexWrap: 'wrap' }]}
-        >
-          <Tile name={m.icon} tone={m.tone} />
-          <View style={{ flex: 1.2 }}>
-            <Copy size={12}>{m.name}</Copy>
-            <Copy size={16} bold>
-              {values[n][i]} <Copy size={11}>{m.unit}</Copy>
-            </Copy>
-          </View>
-          <View style={s.flex}>
-            <Copy size={11} color={i === 0 ? c.red : c.green}>
-              {i === 0 ? ['+8% above', '+5% above', 'Within'][n] : m.change}
-            </Copy>
-            <Copy size={10} color={c.muted}>
-              your usual range
-            </Copy>
-          </View>
-          <Trend tone={m.tone} variant={i + n} />
-          <Icon name="chevron" size={13} color={c.muted} />
+
+      {error ? (
+        <Card style={{ backgroundColor: c.redSoft, borderColor: c.red, marginBottom: 10 }}>
+          <Copy bold size={11} color={c.red}>Couldn’t load Apple Health data</Copy>
+          <Copy size={10} color={c.muted} style={s.top4}>{error}</Copy>
+          <Action secondary style={{ marginTop: 8 }} onPress={() => void refresh()}>Retry</Action>
         </Card>
-      ))}
-      <Section
-        title={`What changed this ${p.period === 'Day' ? 'month' : p.period.toLowerCase()}`}
-        style={s.card}
-      >
-        <View style={s.grid3}>
-          {[
-            {
-              title: 'Activity',
-              change: 'Biggest improvement',
-              text: '28% higher than your baseline. You took an average of 1,841 more steps per day this month.',
-              tone: 'green' as const,
-              icon: 'up',
-            },
-            {
-              title: 'Heart Rate',
-              change: 'Biggest decline',
-              text: '8% lower than your baseline. Your average resting heart rate decreased from 74 to 68 bpm.',
-              tone: 'red' as const,
-              icon: 'down',
-            },
-          ].map((item) => (
-            <View key={item.title} style={[s.third, s.row, { alignItems: 'flex-start', gap: 7 }]}>
-              <Tile name={item.icon} tone={item.tone} size={26} />
-              <View style={s.flex}>
-                <Copy size={9} color={c.muted}>
-                  {item.change}
-                </Copy>
-                <Copy size={12} bold>
-                  {item.title}
-                </Copy>
-                <Copy size={10} color={c.muted}>
-                  {item.text}
+      ) : null}
+
+      {isLoading ? (
+        <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+          <ActivityIndicator />
+          <Copy size={10} color={c.muted} style={s.top4}>Loading Apple Health readings…</Copy>
+        </View>
+      ) : (
+        HEALTH_METRIC_DISPLAY.map((definition) => {
+          const metric = metrics.get(definition.type);
+          const formatted = formatMetricValue(metric);
+          return (
+            <Card
+              key={definition.type}
+              onPress={() =>
+                router.push({ pathname: designRoutes.metric, params: { type: definition.type } })
+              }
+              label={`${definition.name} details`}
+              style={[st.metric, compact && { flexWrap: 'wrap' }]}
+            >
+              <Tile name={definition.icon} tone={definition.tone} />
+              <View style={{ flex: 1.25 }}>
+                <Copy size={12}>{definition.name}</Copy>
+                <Copy size={16} bold>
+                  {formatted.value}{formatted.unit ? <Copy size={11}> {formatted.unit}</Copy> : null}
                 </Copy>
               </View>
-            </View>
-          ))}
-        </View>
+              <View style={s.flex}>
+                <Copy size={10} color={c.muted}>{metricContextLabel(metric, period)}</Copy>
+                {metric?.sampleCount ? (
+                  <Copy size={9} color={c.muted}>
+                    {metric.sampleCount} source {metric.sampleCount === 1 ? 'sample' : 'samples'}
+                  </Copy>
+                ) : null}
+              </View>
+              <Icon name="chevron" size={13} color={c.muted} />
+            </Card>
+          );
+        })
+      )}
+
+      <Section title="About these readings" style={s.card}>
+        <Copy size={10} color={c.muted}>
+          {connection
+            ? summary?.metrics.length
+              ? 'Values above come from the Apple Health samples already synced to Medivo. Steps and active energy are totals for the selected period; heart rate, resting heart rate and HRV show the latest reading in the period; sleep shows recorded asleep duration.'
+              : 'Apple Health is connected, but no supported readings were found in this period.'
+            : 'Connect Apple Health to replace empty states with your synced readings.'}
+        </Copy>
+        <Action secondary style={{ marginTop: 10 }} onPress={() => router.push(designRoutes.devices)}>
+          Manage Apple Health
+        </Action>
       </Section>
-      <DemoNote />
     </Screen>
   );
 }
+
 export function MetricDetails() {
-  const { name } = useLocalSearchParams<{ name?: string }>();
+  const { type, name } = useLocalSearchParams<{ type?: string; name?: string }>();
   const router = useRouter();
-  const metric = metrics.find((m) => m.name === name) || metrics[0];
+  const { connection, metrics, isLoading, error, refresh } = useHealthSummary('day');
+  const definition =
+    HEALTH_METRIC_DISPLAY.find((item) => item.type === type || item.name === name) ||
+    HEALTH_METRIC_DISPLAY[0];
+  const metric = metrics.get(definition.type as HealthMetricType);
+  const formatted = formatMetricValue(metric);
+
   return (
     <Screen>
       <PageHeading
-        title={metric.name}
-        subtitle="Sample reading and personal baseline"
+        title={definition.name}
+        subtitle="Latest synced Apple Health data for today"
         back={() => (router.canGoBack() ? router.back() : router.replace(designRoutes.metrics))}
       />
+
       <Card style={s.center}>
-        <Tile name={metric.icon} tone={metric.tone} size={48} />
-        <Copy size={32} bold style={{ marginVertical: 12 }}>
-          {metric.value} <Copy size={18}>{metric.unit}</Copy>
+        <Tile name={definition.icon} tone={definition.tone} size={48} />
+        {isLoading ? (
+          <ActivityIndicator style={{ marginVertical: 18 }} />
+        ) : (
+          <Copy size={32} bold style={{ marginVertical: 12 }}>
+            {formatted.value}{formatted.unit ? <Copy size={18}> {formatted.unit}</Copy> : null}
+          </Copy>
+        )}
+        <Copy size={11} color={c.muted} style={{ textAlign: 'center' }}>
+          {metricContextLabel(metric, 'day')}
         </Copy>
-        <Trend large tone={metric.tone} />
-        <Chip tone={metric.name === 'Heart Rate' ? 'orange' : 'green'}>
-          {metric.change} your usual range
-        </Chip>
       </Card>
-      <Section title="About this reading">
+
+      {error ? (
+        <Card style={{ backgroundColor: c.redSoft, borderColor: c.red, marginTop: 10 }}>
+          <Copy size={10} color={c.red}>{error}</Copy>
+          <Action secondary style={{ marginTop: 8 }} onPress={() => void refresh()}>Retry</Action>
+        </Card>
+      ) : null}
+
+      <Section title="Reading details">
         <Copy color={c.muted}>
-          {metric.name === 'Heart Rate'
-            ? 'Your resting heart rate has been above your personal baseline for 3 days. Keep track of changes and share persistent changes with your care team.'
-            : `Your ${metric.name.toLowerCase()} readings help you follow patterns over time. Compare your daily readings with your usual range.`}
+          {metric
+            ? `This value was synced from Apple Health${metric.sourceName ? ` via ${metric.sourceName}` : ''}${metric.deviceName ? ` on ${metric.deviceName}` : ''}. Medivo has not classified it against a personal baseline.`
+            : connection
+              ? `No ${definition.name.toLowerCase()} reading is available for today.`
+              : 'Apple Health is not connected.'}
         </Copy>
+        {metric ? (
+          <Copy size={10} color={c.muted} style={s.top4}>
+            Samples represented: {metric.sampleCount}
+          </Copy>
+        ) : null}
       </Section>
-      <DemoNote text="Illustrative data only. This is not medical advice." />
+
+      <Action secondary style={{ marginTop: 12 }} onPress={() => router.push(designRoutes.devices)}>
+        Manage Apple Health
+      </Action>
       <Action
-        style={{ marginTop: 20 }}
+        style={{ marginTop: 8 }}
         onPress={() => (router.canGoBack() ? router.back() : router.replace(designRoutes.metrics))}
       >
         Done
@@ -183,8 +204,14 @@ export function MetricDetails() {
     </Screen>
   );
 }
+
 const st = StyleSheet.create({
-  segmented: { flexDirection: 'row', backgroundColor: '#edf2f8', borderRadius: 13, padding: 2 },
+  segmented: {
+    flexDirection: 'row',
+    backgroundColor: '#edf2f8',
+    borderRadius: 13,
+    padding: 2,
+  },
   segment: { flex: 1, borderRadius: 11, paddingVertical: 8, alignItems: 'center' },
   metric: {
     flexDirection: 'row',
@@ -192,7 +219,7 @@ const st = StyleSheet.create({
     gap: 8,
     padding: 10,
     marginBottom: 7,
-    minHeight: 60,
+    minHeight: 70,
     borderWidth: 0,
   },
 });
