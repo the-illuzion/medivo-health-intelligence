@@ -7,6 +7,8 @@ export interface AuthenticatedRequest extends Request {
   user?: {
     userId: string;
     role: string;
+    email?: string;
+    name?: string;
   };
 }
 
@@ -24,10 +26,12 @@ export const authenticateToken = (req: AuthenticatedRequest, res: Response, next
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { sub: string; role: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { sub: string; role?: string; email?: string; name?: string; userId?: string };
     req.user = {
-      userId: decoded.sub,
+      userId: decoded.userId || decoded.sub,
       role: decoded.role || 'PATIENT',
+      email: decoded.email,
+      name: decoded.name,
     };
     next();
   } catch (err: any) {
