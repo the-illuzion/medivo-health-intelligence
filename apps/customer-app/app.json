@@ -31,7 +31,15 @@
         }
       ],
       "expo-notifications",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Medivo uses Apple Health data you choose to share to provide your health metrics, trends, and personalized insights.",
+          "NSHealthUpdateUsageDescription": false,
+          "background": false
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,

@@ -10,6 +10,7 @@ import orderRoutes from './order.routes.js';
 import notificationRoutes from './notification.routes.js';
 import privacyRoutes from './privacy.routes.js';
 import adminRoutes from './admin.routes.js';
+import healthRoutes from './health.routes.js';
 import { checkout } from '../controllers/order.controller.js';
 import { validateRequest } from '../middleware/errorHandler.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
@@ -41,6 +42,7 @@ mobileBffRouter.use('/orders', orderRoutes);
 mobileBffRouter.use('/notifications', notificationRoutes);
 mobileBffRouter.use('/privacy', privacyRoutes);
 mobileBffRouter.use('/admin', adminRoutes);
+mobileBffRouter.use('/health', healthRoutes);
 
 // Protected Checkout
 mobileBffRouter.post('/checkout', authenticateToken, validateRequest(checkoutSchema), checkout);

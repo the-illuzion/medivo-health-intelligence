@@ -48,3 +48,32 @@ All API endpoints across Medivo Health Intelligence Platform enforce strict Zod 
 ### 5. Dermatologist Telehealth Appointments
 - **Endpoint**: `POST /api/v1/customer/consultations/book`
 - **Body**: `{ "doctorId": 1, "slot": "3:30 PM", "date": "2026-07-30" }`
+
+### 6. Apple Health Synchronization
+- **Endpoint**: `POST /api/mobile-bff/health/sync`
+- **Authentication**: Bearer token required. The patient ID is derived from the authenticated token and is never accepted from the request body.
+- **Body**:
+  ```json
+  {
+    "provider": "apple_health",
+    "samples": [
+      {
+        "externalId": "healthkit-sample-uuid",
+        "metricType": "heart_rate",
+        "value": 68,
+        "unit": "count/min",
+        "startAt": "2026-09-14T03:30:00.000Z",
+        "endAt": "2026-09-14T03:30:00.000Z",
+        "sourceName": "Apple Watch"
+      }
+    ],
+    "deletedExternalIds": [],
+    "requestedMetrics": ["heart_rate", "step_count"]
+  }
+  ```
+- **Behavior**: Upserts by HealthKit UUID and soft-deletes samples reported as deleted by HealthKit. Requests are limited to 1,000 samples and 1,000 deletions per batch.
+
+### 7. Apple Health Connection Status
+- **Endpoint**: `GET /api/mobile-bff/health/connection`
+- **Authentication**: Bearer token required.
+- **Response**: The current Apple Health connection metadata and last successful sync timestamp, or `null` when no connection has been created.

@@ -77,13 +77,68 @@ const EMBEDDED_MIGRATIONS: Migration[] = [
          OR password_hash NOT LIKE '$scrypt$%';
     `,
   },
+  {
+    version: '006',
+    name: 'health_data_sync',
+    sql: `
+      CREATE TABLE IF NOT EXISTS health_schema.health_connections (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id VARCHAR(100) NOT NULL,
+        provider VARCHAR(50) NOT NULL CHECK (provider IN ('apple_health', 'health_connect')),
+        status VARCHAR(20) NOT NULL DEFAULT 'CONNECTED' CHECK (status IN ('CONNECTED', 'DISCONNECTED')),
+        requested_metrics TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+        connected_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_synced_at TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        deleted_at TIMESTAMP WITH TIME ZONE,
+        CONSTRAINT uq_health_connections_user_provider UNIQUE (user_id, provider)
+      );
+
+      CREATE TABLE IF NOT EXISTS health_schema.health_samples (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id VARCHAR(100) NOT NULL,
+        provider VARCHAR(50) NOT NULL CHECK (provider IN ('apple_health', 'health_connect')),
+        external_id VARCHAR(255) NOT NULL,
+        metric_type VARCHAR(80) NOT NULL CHECK (metric_type IN (
+          'step_count',
+          'heart_rate',
+          'resting_heart_rate',
+          'active_energy_burned',
+          'sleep_analysis',
+          'heart_rate_variability_sdnn'
+        )),
+        numeric_value DOUBLE PRECISION NOT NULL,
+        unit VARCHAR(50) NOT NULL,
+        start_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        end_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        source_name VARCHAR(255),
+        source_bundle_id VARCHAR(255),
+        device_name VARCHAR(255),
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        deleted_at TIMESTAMP WITH TIME ZONE,
+        CONSTRAINT uq_health_samples_user_provider_external UNIQUE (user_id, provider, external_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_health_connections_user
+        ON health_schema.health_connections (user_id, provider)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_health_samples_user_metric_start
+        ON health_schema.health_samples (user_id, metric_type, start_at DESC)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_health_samples_user_provider_external
+        ON health_schema.health_samples (user_id, provider, external_id);
+    `,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {
   console.log('🔄 Checking PostgreSQL Database Migrations...');
 
   try {
-    // 1. Ensure migration tracking table exists
     await DatabasePool.query(`
       CREATE TABLE IF NOT EXISTS public.schema_migrations (
         version VARCHAR(100) PRIMARY KEY,
@@ -92,19 +147,14 @@ export async function runMigrations(): Promise<void> {
       );
     `);
 
-    // 2. Fetch already-applied migrations
     const appliedResult = await DatabasePool.query(`SELECT version FROM public.schema_migrations;`);
     const appliedVersions = new Set(appliedResult.rows.map((r) => r.version));
-
-    // 3. Collect migrations from disk if folder exists
     const migrationsMap = new Map<string, Migration>();
 
-    // Start with embedded baseline migrations
-    for (const m of EMBEDDED_MIGRATIONS) {
-      migrationsMap.set(m.version, m);
+    for (const migration of EMBEDDED_MIGRATIONS) {
+      migrationsMap.set(migration.version, migration);
     }
 
-    // Overlay file-based migrations if present
     const possiblePaths = [
       path.join(process.cwd(), 'services/api/src/infrastructure/db/migrations'),
       path.join(process.cwd(), 'services/api/dist/infrastructure/db/migrations'),
@@ -113,7 +163,7 @@ export async function runMigrations(): Promise<void> {
 
     for (const migrationsDir of possiblePaths) {
       if (fs.existsSync(migrationsDir)) {
-        const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
+        const files = fs.readdirSync(migrationsDir).filter((file) => file.endsWith('.sql')).sort();
         for (const file of files) {
           const version = file.split('_')[0];
           const name = file.replace(/\.sql$/, '').replace(/^\d+_/, '');
@@ -124,8 +174,9 @@ export async function runMigrations(): Promise<void> {
       }
     }
 
-    // 4. Sort and execute pending migrations
-    const allMigrations = Array.from(migrationsMap.values()).sort((a, b) => a.version.localeCompare(b.version));
+    const allMigrations = Array.from(migrationsMap.values()).sort((a, b) =>
+      a.version.localeCompare(b.version),
+    );
     let appliedCount = 0;
 
     for (const migration of allMigrations) {
@@ -136,12 +187,13 @@ export async function runMigrations(): Promise<void> {
           await DatabasePool.query(
             `INSERT INTO public.schema_migrations (version, name, applied_at) VALUES ($1, $2, NOW())
              ON CONFLICT (version) DO NOTHING;`,
-            [migration.version, migration.name]
+            [migration.version, migration.name],
           );
           console.log(`  ✓ Successfully applied migration [${migration.version}]: ${migration.name}`);
           appliedCount++;
-        } catch (err: any) {
-          console.warn(`  ⚠ Migration [${migration.version}] notice:`, err.message);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : 'Unknown migration error';
+          console.warn(`  ⚠ Migration [${migration.version}] notice:`, message);
         }
       }
     }
@@ -151,7 +203,8 @@ export async function runMigrations(): Promise<void> {
     } else {
       console.log(`  ✓ Database schema is up to date (${allMigrations.length} total migrations verified).`);
     }
-  } catch (err: any) {
-    console.warn('[Migration Runner Warning]:', err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown migration runner error';
+    console.warn('[Migration Runner Warning]:', message);
   }
 }

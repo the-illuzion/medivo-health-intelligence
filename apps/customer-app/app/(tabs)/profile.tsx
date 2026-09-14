@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { User, Shield, Bell, CreditCard, History, LogOut, ChevronRight, Sun, Moon, Monitor, Sparkles, Activity, Mail } from 'lucide-react-native';
+import { User, Shield, Bell, CreditCard, History, LogOut, ChevronRight, Sun, Moon, Monitor, Sparkles, Activity, Mail, HeartPulse } from 'lucide-react-native';
 import { useTheme } from '../../src/theme/ThemeProvider';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { Badge } from '../../src/components/ui';
@@ -33,8 +33,6 @@ export default function ProfileScreen() {
   return (
     <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 100 }}>
       <View className="px-4 sm:px-6 pt-6 gap-6 max-w-4xl mx-auto w-full">
-        
-        {/* Page Title & Subtitle Banner (Fully Responsive Container) */}
         <View className="flex-row items-center justify-between">
           <View className="flex-1 min-w-0 pr-2">
             <Text className="text-slate-900 dark:text-white text-2xl sm:text-3xl font-extrabold tracking-tight">
@@ -47,7 +45,6 @@ export default function ProfileScreen() {
           <Badge label="HIPAA Compliant" variant="success" className="hidden sm:flex flex-shrink-0" />
         </View>
 
-        {/* Dermal Baseline & Clinical Account Card */}
         <View className="bg-slate-50 dark:bg-[#111827] p-5 sm:p-6 rounded-3xl border border-slate-200 dark:border-[#374151] shadow-sm">
           <View className="flex-row items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
             <View className="flex-row items-center flex-1 min-w-0 mr-2">
@@ -82,7 +79,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Appearance Theme Switcher Control (Fixed System Mode Overflow) */}
         <View>
           <Text className="text-slate-900 dark:text-white font-extrabold text-sm mb-3">Appearance Theme</Text>
           <TouchableOpacity
@@ -102,14 +98,12 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             </View>
-
             <View className="bg-sky-500/10 dark:bg-sky-500/20 px-3 py-1.5 rounded-xl border border-sky-500/30 flex-shrink-0">
               <Text className="text-brand-primary font-bold text-xs">Switch Theme ↻</Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* Preview entry only; existing account actions and integrations remain unchanged. */}
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel="Open new design"
@@ -120,9 +114,22 @@ export default function ProfileScreen() {
           <ChevronRight size={18} color="#1F7FC4" />
         </TouchableOpacity>
 
-        {/* Account Management Actions */}
         <View className="gap-3">
           <Text className="text-slate-900 dark:text-white font-extrabold text-sm mb-1">Account & Preferences</Text>
+
+          <TouchableOpacity
+            onPress={() => router.push('/connected-devices')}
+            className="bg-slate-50 dark:bg-[#111827] p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-[#374151] flex-row items-center justify-between shadow-sm"
+          >
+            <View className="flex-row items-center flex-1 min-w-0 pr-2">
+              <HeartPulse size={18} color="#DC2626" className="flex-shrink-0" />
+              <View className="ml-3 flex-1">
+                <Text className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base" numberOfLines={1}>Connected Devices</Text>
+                <Text className="text-slate-500 dark:text-slate-400 text-xs mt-0.5" numberOfLines={1}>Apple Health and wearable data</Text>
+              </View>
+            </View>
+            <ChevronRight size={18} color="#64748B" className="flex-shrink-0" />
+          </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.push('/edit-profile')}
@@ -189,7 +196,6 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
         </View>
-
       </View>
     </ScrollView>
   );
