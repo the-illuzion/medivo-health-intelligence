@@ -50,6 +50,21 @@ target 'MedivoHealth' do
   )
 
   post_install do |installer|
+    # Expo SDK 51's expo-device@6.0.2 uses TARGET_OS_SIMULATOR, which newer
+    # Xcode toolchains no longer expose to Swift. Patch the installed source
+    # idempotently during pod installation so local and CI builds stay stable.
+    expo_device_uid = File.expand_path('../node_modules/expo-device/ios/UIDevice.swift', __dir__)
+    if File.exist?(expo_device_uid)
+      source = File.read(expo_device_uid)
+      legacy_simulator_check = "  var isSimulator: Bool {\n    return TARGET_OS_SIMULATOR != 0\n  }"
+      swift_simulator_check = "  var isSimulator: Bool {\n    #if targetEnvironment(simulator)\n    return true\n    #else\n    return false\n    #endif\n  }"
+
+      if source.include?(legacy_simulator_check)
+        File.write(expo_device_uid, source.sub(legacy_simulator_check, swift_simulator_check))
+        Pod::UI.puts('Patched expo-device simulator detection for current Xcode'.green)
+      end
+    end
+
     react_native_post_install(
       installer,
       config[:reactNativePath],
