@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { apiClient } from '@medivo/api-client';
 import { Screen, useCompact, useDesktop } from '../components/Shell';
 import {
@@ -47,25 +47,31 @@ export default function Home() {
   const { connection, metrics, isLoading, error, refresh } = useHealthSummary('day');
   const [routines, setRoutines] = useState<Routine[]>([]);
 
-  useEffect(() => {
-    let active = true;
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-    const loadRoutines = async () => {
-      if (!token) return;
-      try {
-        apiClient.setAuthToken(token);
-        const data = await apiClient.routines.list();
-        if (active) setRoutines((data || []) as Routine[]);
-      } catch {
-        if (active) setRoutines([]);
-      }
-    };
+      const loadRoutines = async () => {
+        if (!token) {
+          if (active) setRoutines([]);
+          return;
+        }
 
-    void loadRoutines();
-    return () => {
-      active = false;
-    };
-  }, [token]);
+        try {
+          apiClient.setAuthToken(token);
+          const data = await apiClient.routines.list();
+          if (active) setRoutines((data || []) as Routine[]);
+        } catch {
+          if (active) setRoutines([]);
+        }
+      };
+
+      void loadRoutines();
+      return () => {
+        active = false;
+      };
+    }, [token]),
+  );
 
   const careItems = useMemo(
     () =>
