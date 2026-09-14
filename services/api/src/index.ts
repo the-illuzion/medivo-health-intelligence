@@ -35,5 +35,6 @@ export * from './application/skin/SubmitSkinScanUseCase.js';
 export * from './application/health/SyncHealthDataUseCase.js';
 export * from './application/health/GetHealthConnectionUseCase.js';
 export * from './application/health/DisconnectHealthConnectionUseCase.js';
+export * from './application/health/GetHealthSummaryUseCase.js';
 export * from './application/appointments/ListDoctorsUseCase.js';
 export * from './application/ecommerce/GetOrderDetailsUseCase.js';
