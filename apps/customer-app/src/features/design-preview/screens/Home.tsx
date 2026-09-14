@@ -11,6 +11,7 @@ import {
   Heading,
   Icon,
   Section,
+  Ring,
   Tile,
   s,
 } from '../components/UI';
@@ -104,33 +105,37 @@ export default function Home() {
   return (
     <Screen>
       <View style={st.greeting}>
-        <Heading size={19}>{greeting}, {firstName}</Heading>
+        <Heading size={desktop ? 24 : 19}>{greeting}, {firstName}</Heading>
         <Copy size={10} color={c.muted}>{today}</Copy>
       </View>
       <Copy color={c.muted}>Here’s your health overview for today.</Copy>
 
-      <View style={desktop && st.desktopHero}>
+      <View style={st.heroStack}>
         <Card
-          onPress={() => router.push(designRoutes.metrics)}
-          label="Apple Health status"
+          onPress={() => router.push(designRoutes.status)}
+          label="Your Health Status"
           style={[
             st.health,
             { backgroundColor: connection ? c.greenSoft : c.blueSoft },
-            desktop && st.desktopHeroCard,
+            desktop && st.desktopHealth,
           ]}
         >
-          <Tile name={connection ? 'done' : 'heart'} tone={connection ? 'green' : 'blue'} size={48} />
+          {connection ? (
+            <Ring value={metrics.size / HEALTH_METRIC_DISPLAY.length * 100} size={desktop ? 112 : 88}
+              displayValue={String(metrics.size)} caption="/ 6"
+              accessibilityLabel={`${metrics.size} of 6 health categories have readings today`} />
+          ) : <Tile name="heart" tone="blue" size={desktop ? 90 : 72} />}
           <View style={s.flex}>
-            <Copy>Apple Health</Copy>
+            <Copy>Your Health Status</Copy>
             <View style={[s.row, { marginVertical: 5 }]}>
               <Heading size={22} style={{ color: connection ? c.green : c.blue }}>
-                {connection ? (hasHealthData ? 'Health data synced' : 'Connected') : 'Not connected'}
+                {connection ? (hasHealthData ? 'Up to date' : 'Connected') : 'Not connected'}
               </Heading>
             </View>
             <Copy size={11} color={c.muted}>
               {connection
                 ? hasHealthData
-                  ? `${metrics.size} HealthKit categories have data today. Last sync: ${formatHealthLastSync(connection.lastSyncedAt)}.`
+                  ? 'Your latest readings across 6 health categories are ready to review.'
                   : `Apple Health is connected. Last sync: ${formatHealthLastSync(connection.lastSyncedAt)}.`
                 : 'Connect Apple Health to show your real health readings here.'}
             </Copy>
@@ -141,7 +146,7 @@ export default function Home() {
         <Card
           onPress={() => router.push(designRoutes.metrics)}
           label="Apple Health snapshot"
-          style={[st.insight, desktop && st.desktopHeroCard]}
+          style={[st.insight, desktop && st.desktopInsight]}
         >
           <Tile name="bulb" />
           <View style={s.flex}>
@@ -180,15 +185,15 @@ export default function Home() {
                 key={definition.type}
                 onPress={() => router.push({ pathname: designRoutes.metric, params: { type: definition.type } })}
                 label={`${definition.name} details`}
-                style={[st.mini, compact && { width: '48%' }]}
+                style={[st.mini, desktop && st.miniDesktop, compact && st.miniAccessible]}
               >
-                <Tile name={definition.icon} tone={definition.tone} size={27} />
+                <Tile name={definition.icon} tone={definition.tone} size={desktop ? 46 : 29} />
                 <View style={s.flex}>
-                  <Copy size={9} color={c.muted}>{definition.shortName}</Copy>
-                  <Copy size={13} bold>
-                    {formatted.value}<Copy size={8}> {formatted.unit}</Copy>
+                  <Copy size={desktop ? 11 : 9} color={c.muted}>{definition.shortName}</Copy>
+                  <Copy size={desktop ? 18 : 14} bold>
+                    {metric ? formatted.value : '—'}<Copy size={desktop ? 11 : 9}> {formatted.unit}</Copy>
                   </Copy>
-                  <Copy size={8} color={c.muted}>{metricContextLabel(metric, 'day')}</Copy>
+                  <Copy size={9} color={c.muted}>{metric ? metricContextLabel(metric, 'day') : 'No reading yet'}</Copy>
                 </View>
               </Card>
             );
@@ -236,7 +241,7 @@ export default function Home() {
               ))}
             </View>
           ) : (
-            <Copy size={10} color={c.muted}>No routine tasks are available right now.</Copy>
+            <View style={st.emptyCare}><Tile name="calendar" size={42} /><View style={s.flex}><Copy bold>Your day, at a glance</Copy><Copy color={c.muted} style={s.top4}>Your care tasks will appear here when a routine is available.</Copy></View></View>
           )}
         </Section>
 
@@ -276,7 +281,9 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     gap: 15,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 0,
+    minHeight: 122,
+    padding: 14,
     borderWidth: 0,
   },
   insight: {
@@ -284,23 +291,25 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     gap: 9,
     alignItems: 'flex-start',
-    marginTop: 8,
+    marginTop: 0,
+    padding: 12,
     borderWidth: 0,
   },
-  metrics: { flexDirection: 'row', gap: 7, flexWrap: 'wrap' },
+  heroStack: { gap: 10, marginTop: 14 },
+  metrics: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   mini: {
-    width: '31.8%',
-    flexDirection: 'row',
-    gap: 5,
-    padding: 5,
-    minHeight: 70,
-    borderRadius: 10,
+    flexBasis: '30%', flexGrow: 1, minWidth: 0,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    padding: 6, minHeight: 76, borderRadius: 12,
   },
+  miniDesktop: { flexBasis: '30%', padding: 20, minHeight: 126, gap: 16 },
+  miniAccessible: { flexBasis: '100%' },
+  emptyCare: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 104 },
   alert: { backgroundColor: '#fff8ef', borderColor: '#ffe5c2', marginTop: 10 },
   alertAction: { marginTop: 10, minHeight: 34, borderColor: c.border },
-  white: { backgroundColor: 'white', padding: 10, borderRadius: 12 },
-  desktopHero: { flexDirection: 'row', gap: 16, marginTop: 16 },
-  desktopHeroCard: { flex: 1, marginTop: 0 },
-  desktopLower: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
-  desktopLowerCard: { flex: 1 },
+  white: { backgroundColor: 'white', padding: 12, borderRadius: 14, borderWidth: 1, borderColor: c.border },
+  desktopHealth: { minHeight: 188, padding: 28, gap: 28 },
+  desktopInsight: { padding: 22, alignItems: 'center' },
+  desktopLower: { flexDirection: 'row', alignItems: 'stretch', gap: 20 },
+  desktopLowerCard: { flex: 1, padding: 18, borderRadius: 18 },
 });

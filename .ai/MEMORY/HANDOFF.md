@@ -1,5 +1,16 @@
 # Agent Handoff
 
+## 2026-09-14 — Mobile reference fidelity revision
+
+User priority: make mobile as close as possible to supplied images while preserving desktop. Mobile and desktop type/card sizing now differ intentionally. Desktop sidebar and constrained wide canvas remain. Home uses three metric columns at normal mobile widths, with a lower-density fallback below 370px or for large system text.
+
+Live data must remain live: no sample health score, trend assessment, device connection, or clinical claim was introduced. Home's circle shows available readings out of six supported health categories. Generated portrait is illustrative scan onboarding artwork, never a user avatar.
+
+Relevant files: `apps/customer-app/src/features/design-preview/{components,screens,tokens.ts}`; `assets/design/scan-portrait.png`; `tests/design-preview/layout.spec.cjs`. Exact asset prompt and provenance: `apps/customer-app/assets/design/README.md`.
+
+Validation: TypeScript and all three Expo exports passed; seven browser checks passed against the final rebuilt Docker instance on port 8081. Screenshots and build logs: `/tmp/medivo-ui-review/`. Existing `journeys.spec.cjs` targets an older fixture-only version and is stale for the now-live health/routines flows; the new layout suite intercepts APIs and never uses real credentials. Native runtime QA remains outstanding. Unrelated pre-existing untracked iOS duplicate files were left untouched.
+
+
 ## Latest Session: Medivo Design Preview
 
 - Added `/design` routes in `apps/customer-app` and a `src/features/design-preview` native feature.

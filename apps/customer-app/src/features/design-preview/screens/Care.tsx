@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { apiClient } from '@medivo/api-client';
 import { Screen, useCompact } from '../components/Shell';
 import {
@@ -39,6 +39,7 @@ export default function Care() {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const compact = useCompact();
+  const narrow = useWindowDimensions().width < 370 || compact;
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,7 +150,7 @@ export default function Care() {
         <Copy size={10} color={c.muted}>{today}</Copy>
       </View>
       <Copy color={c.muted} style={{ marginVertical: 5 }}>
-        Your current routines and completion status from Medivo.
+        Your plan for today and what’s coming next.
       </Copy>
 
       {error ? (
@@ -167,22 +168,22 @@ export default function Care() {
         </View>
       ) : (
         <>
-          <Card style={[s.grid3, { marginVertical: 12 }]}>
-            <View style={[s.third, s.row, { gap: 5 }]}>
-              <Ring value={total ? Math.round((completed / total) * 100) : 0} percent size={43} />
+          <Card style={[st.summary, { marginVertical: 18 }]}>
+            <View style={[st.summaryCompletion, narrow && st.summaryFull]}>
+              <Ring value={total ? Math.round((completed / total) * 100) : 0} percent size={narrow ? 54 : 40} />
               <View style={s.flex}>
-                <Copy size={9} bold>Completion</Copy>
+                <Copy size={9} bold>Adherence</Copy>
                 <Copy size={9} color={c.muted}>{completed} of {total} tasks completed</Copy>
               </View>
             </View>
-            <View style={[s.third, { gap: 4 }]}>
+            <View style={st.summaryItem}>
               <Copy size={9} bold>Next task</Copy>
               <Copy bold size={11} color={next ? c.blue : c.green}>
                 {next?.title || (total ? 'All done' : 'No tasks')}
               </Copy>
               <Copy size={9} color={c.muted}>{next?.duration || ' '}</Copy>
             </View>
-            <View style={[s.third, { gap: 4 }]}>
+            <View style={st.summaryItem}>
               <Copy size={9} bold>Routine source</Copy>
               <Copy bold size={11} color={c.green}>Medivo</Copy>
               <Copy size={9} color={c.muted}>{routines.length} active {routines.length === 1 ? 'routine' : 'routines'}</Copy>
@@ -278,7 +279,7 @@ export default function Care() {
             <View style={s.flex}>
               <Heading size={13}>About this care plan</Heading>
               <Copy size={10} color={c.muted} style={s.top4}>
-                Task state is loaded from Medivo’s routines service. No additional clinical claims are shown here unless they are provided by a real care-plan source.
+                Small daily steps make your plan easier to follow. Check off each task as you complete it to keep track of your progress.
               </Copy>
             </View>
           </Card>
@@ -289,7 +290,11 @@ export default function Care() {
 }
 
 const st = StyleSheet.create({
-  timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+  summary: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  summaryCompletion: { flex: 1.4, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 7 },
+  summaryFull: { flexBasis: '100%', borderBottomWidth: 1, borderBottomColor: c.border, paddingBottom: 14 },
+  summaryItem: { flex: 1, minWidth: 0, gap: 4 },
+  timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   markerColumn: { width: 12, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
   line: { position: 'absolute', top: '50%', bottom: -30, width: 1, backgroundColor: '#d4dfeb' },
   marker: {
@@ -306,8 +311,9 @@ const st = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    padding: 7,
-    borderRadius: 10,
+    gap: 10,
+    padding: 10,
+    minHeight: 64,
+    borderRadius: 16,
   },
 });

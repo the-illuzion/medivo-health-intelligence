@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Screen } from '../components/Shell';
+import { Screen, useDesktop } from '../components/Shell';
 import {
   Action,
   Card,
@@ -23,6 +23,7 @@ import { formatHealthLastSync } from '../../../services/health/healthDisplay';
 
 export default function Scan() {
   const p = usePreview();
+  const desktop = useDesktop();
   const router = useRouter();
   const { connection } = useHealthSummary('day');
 
@@ -30,7 +31,7 @@ export default function Scan() {
     <Screen>
       <PageHeading title="Start a Scan" subtitle="Capture a new scan or add supporting health data." />
 
-      <View style={st.scan}>
+      <View style={[st.scan, desktop && st.desktopScan]}>
         <ScanPortrait />
         <View style={st.label}>
           <Chip tone="blue" icon="camera">Face Scan</Chip>
@@ -40,7 +41,7 @@ export default function Scan() {
           <Copy bold size={15} color={c.white}>Begin Face Scan</Copy>
         </Action>
         <Copy size={10} color={c.muted} style={{ textAlign: 'center', marginVertical: 8 }}>
-          Opens Medivo’s existing authenticated scan workflow.
+          Position your face in the frame
         </Copy>
       </View>
 
@@ -115,8 +116,8 @@ export default function Scan() {
         <Card style={s.grid3}>
           {[
             { title: 'Capture', sub: 'Take a quick scan', icon: 'camera' },
-            { title: 'Analyze', sub: 'Existing scan service processes the capture', icon: 'chart' },
-            { title: 'Review', sub: 'Review the returned scan result', icon: 'file' },
+            { title: 'Analyze', sub: 'Analyze your capture', icon: 'chart' },
+            { title: 'Review', sub: 'See your scan results', icon: 'file' },
           ].map((item, i) => (
             <View key={item.title} style={[s.third, s.center, { gap: 5 }]}>
               <View style={s.row}>
@@ -133,14 +134,14 @@ export default function Scan() {
       <View style={{ marginTop: 12 }}>
         <Row
           title="Your health data stays protected"
-          description="Apple Health permissions stay read-only and scan requests use your authenticated Medivo session."
+          description="You choose what to share. Your health data stays private and protected."
           icon="shield"
           tone="green"
           onPress={() => router.push(designRoutes.devices)}
         />
       </View>
 
-      <DemoNote text="Face Scan and Connected Device now open existing integrated flows. Vitals Check, Upload Photo and Manual Entry remain preview-only until a real workflow is available." />
+      <DemoNote text="Vitals Check, Upload Photo and Manual Entry are previews." />
     </Screen>
   );
 }
@@ -153,6 +154,7 @@ const st = StyleSheet.create({
     borderColor: '#d3e5fc',
     overflow: 'hidden',
   },
+  desktopScan: { width: '100%', maxWidth: 560, alignSelf: 'center' },
   label: { position: 'absolute', top: 10, right: 10 },
   scanButton: { marginHorizontal: 16, borderRadius: 50, backgroundColor: '#102957', marginTop: -4 },
 });

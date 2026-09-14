@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen } from '../components/Shell';
 import {
@@ -23,6 +23,7 @@ import { formatHealthLastSync } from '../../../services/health/healthDisplay';
 
 export default function Profile() {
   const p = usePreview();
+  const narrow = useWindowDimensions().width < 370;
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const { connection } = useHealthSummary('day');
@@ -37,7 +38,7 @@ export default function Profile() {
 
   const memberSince = user?.registered
     ? new Date(user.registered).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
-    : 'Available in account';
+    : '—';
 
   return (
     <Screen>
@@ -47,11 +48,11 @@ export default function Profile() {
           <View style={s.flex}>
             <Heading size={16}>{user?.name || 'Medivo user'}</Heading>
             <Copy size={10} color={c.muted}>{user?.email || 'Signed-in account'}</Copy>
-            <Copy size={9} color={c.blue}>Authenticated profile</Copy>
+            <Copy size={9} color={c.blue}>Your health profile</Copy>
           </View>
           <TextAction onPress={() => router.push('/edit-profile')}>Edit Profile</TextAction>
         </View>
-        <View style={[s.grid3, { marginTop: 10 }]}>
+        <View style={[st.facts, { marginTop: 16 }]}>
           {[
             ['user', user?.skinType || 'Not set', 'Skin profile'],
             ['calendar', memberSince, 'Member since'],
@@ -60,7 +61,7 @@ export default function Profile() {
           ].map(([icon, value, label]) => (
             <View
               key={label}
-              style={[s.third, { backgroundColor: '#f6f8fc', padding: 6, borderRadius: 6 }]}
+              style={[st.fact, narrow && st.factMobile]}
             >
               <Icon name={icon} size={15} color={c.muted} />
               <Copy size={8} bold style={s.top4}>{value}</Copy>
@@ -112,7 +113,7 @@ export default function Profile() {
         onAction={() => router.push(designRoutes.devices)}
         style={s.card}
       >
-        <Copy size={10} color={c.muted}>Live connection state from Medivo.</Copy>
+        <Copy size={10} color={c.muted}>Manage your wearables and health devices.</Copy>
         <Card
           style={{ marginTop: 8, padding: 9 }}
           onPress={() => router.push(designRoutes.devices)}
@@ -201,7 +202,7 @@ export default function Profile() {
         onAction={() => router.push(designRoutes.devices)}
         style={s.card}
       >
-        <Copy size={10} color={c.muted}>Health data integrations available to this build.</Copy>
+        <Copy size={10} color={c.muted}>Bring your health data together.</Copy>
         <Card style={{ marginTop: 8, padding: 8 }} onPress={() => router.push(designRoutes.devices)}>
           <View style={[s.row, { gap: 6 }]}>
             <Tile name="heart" tone="red" size={28} />
@@ -241,3 +242,9 @@ export default function Profile() {
     </Screen>
   );
 }
+
+const st = StyleSheet.create({
+  facts: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  fact: { flex: 1, minWidth: 0, backgroundColor: '#f6f8fc', padding: 8, borderRadius: 8 },
+  factMobile: { flexBasis: '45%' },
+});

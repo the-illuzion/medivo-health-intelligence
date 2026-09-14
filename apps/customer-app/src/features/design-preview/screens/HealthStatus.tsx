@@ -19,6 +19,7 @@ import {
   Tile,
   s,
 } from '../components/UI';
+import { WellnessIllustration } from '../components/Illustrations';
 import { colors as c, designRoutes } from '../tokens';
 import { useHealthSummary } from '../../../hooks/useHealthSummary';
 import {
@@ -85,7 +86,7 @@ export default function HealthStatus() {
   const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
   const desktop = Platform.OS === 'web' && windowWidth >= 900;
-  const [width, setWidth] = useState(Math.min(windowWidth, desktop ? 760 : 430));
+  const [width, setWidth] = useState(Math.min(windowWidth, 760));
   const [index, setIndex] = useState(0);
   const ref = useRef<ScrollView>(null);
   const { connection, metrics, isLoading, error, refresh } = useHealthSummary('day');
@@ -103,7 +104,7 @@ export default function HealthStatus() {
   return (
     <View
       style={st.root}
-      onLayout={(event) => setWidth(Math.min(event.nativeEvent.layout.width, desktop ? 760 : 430))}
+      onLayout={(event) => setWidth(Math.min(event.nativeEvent.layout.width, 760))}
     >
       <View style={st.header}>
         <IconButton
@@ -120,7 +121,7 @@ export default function HealthStatus() {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={(event) => setIndex(Math.round(event.nativeEvent.contentOffset.x / width))}
-        style={[s.flex, desktop && st.desktopCarousel]}
+        style={[s.flex, st.carousel, desktop && st.desktopCarousel]}
       >
         {SLIDES.map((slide, slideIndex) => (
           <ScrollView
@@ -134,7 +135,7 @@ export default function HealthStatus() {
             </View>
 
             <View style={st.heroIcon}>
-              <Tile name={slide.icon} tone={slide.tone} size={58} />
+              <WellnessIllustration kind={['meditate', 'shield', 'celebrate', 'checklist'][slideIndex]} />
             </View>
             <Heading size={slideIndex === 0 ? 34 : 29} style={st.title}>{slide.title}</Heading>
             <Copy size={15} color={c.muted} style={st.description}>{slide.description}</Copy>
@@ -203,7 +204,7 @@ export default function HealthStatus() {
             <Card style={st.notice}>
               <Icon name="info" color={c.blue} />
               <Copy size={10} color={c.muted} style={s.flex}>
-                These are synced measurements, not a diagnosis or a medical assessment. Medivo does not infer a personal baseline here unless a real baseline service supplies one.
+                These are synced measurements, not a diagnosis or a medical assessment. A personal baseline is needed to put them in context.
               </Copy>
             </Card>
           </ScrollView>
@@ -242,7 +243,7 @@ const st = StyleSheet.create({
     backgroundColor: '#f0f2f6',
     marginBottom: 14,
   },
-  heroIcon: { alignItems: 'center', marginTop: 4 },
+  heroIcon: { alignItems: 'center', alignSelf: 'center', width: '100%', maxWidth: 400, marginTop: 4 },
   title: { color: c.navy, textAlign: 'center', marginTop: 15 },
   description: { textAlign: 'center', marginTop: 10, marginBottom: 18, lineHeight: 22 },
   loading: { alignItems: 'center', paddingVertical: 28 },
@@ -257,6 +258,7 @@ const st = StyleSheet.create({
   },
   footer: { paddingHorizontal: 19, paddingBottom: 12 },
   next: { backgroundColor: '#19465f', borderRadius: 40, gap: 20 },
+  carousel: { width: '100%', maxWidth: 760, alignSelf: 'center' },
   desktopCarousel: { width: 760, alignSelf: 'center' },
   desktopFooter: { width: 760, alignSelf: 'center' },
 });

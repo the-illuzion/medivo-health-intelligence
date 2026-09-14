@@ -7,7 +7,7 @@ module.exports = defineConfig({
   reporter: 'list',
   outputDir: '/tmp/medivo-native-checks/test-results',
   use: {
-    baseURL: 'http://127.0.0.1:5174',
+    baseURL: process.env.DESIGN_BASE_URL || 'http://127.0.0.1:5174',
     viewport: { width: 390, height: 844 },
     isMobile: true,
     hasTouch: true,

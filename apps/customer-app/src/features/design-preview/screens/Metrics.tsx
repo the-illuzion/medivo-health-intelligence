@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Screen, useCompact } from '../components/Shell';
+import { Screen, useCompact, useDesktop } from '../components/Shell';
 import {
   Action,
   Card,
@@ -31,6 +31,7 @@ const PERIODS: readonly { label: 'Day' | 'Week' | 'Month'; value: HealthSummaryP
 export default function Metrics() {
   const router = useRouter();
   const compact = useCompact();
+  const desktop = useDesktop();
   const [period, setPeriod] = useState<HealthSummaryPeriod>('day');
   const { connection, summary, metrics, isLoading, error, refresh } = useHealthSummary(period);
 
@@ -38,7 +39,7 @@ export default function Metrics() {
     <Screen>
       <PageHeading
         title="Key Metrics"
-        subtitle="Readings synced from Apple Health. Medivo only shows categories you chose to share."
+        subtitle="Track your vital signs and the readings you choose to share."
       />
 
       <View accessibilityRole="tablist" style={st.segmented}>
@@ -99,7 +100,7 @@ export default function Metrics() {
                 router.push({ pathname: designRoutes.metric, params: { type: definition.type } })
               }
               label={`${definition.name} details`}
-              style={[st.metric, compact && { flexWrap: 'wrap' }]}
+              style={[st.metric, !desktop && st.mobileMetric, compact && { flexWrap: 'wrap' }]}
             >
               <Tile name={definition.icon} tone={definition.tone} />
               <View style={{ flex: 1.25 }}>
@@ -212,14 +213,15 @@ const st = StyleSheet.create({
     borderRadius: 13,
     padding: 2,
   },
-  segment: { flex: 1, borderRadius: 11, paddingVertical: 8, alignItems: 'center' },
+  segment: { flex: 1, borderRadius: 11, paddingVertical: 11, alignItems: 'center' },
+  mobileMetric: { padding: 12, minHeight: 66, marginBottom: 8 },
   metric: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    padding: 10,
-    marginBottom: 7,
-    minHeight: 70,
-    borderWidth: 0,
+    padding: 18,
+    marginBottom: 12,
+    minHeight: 94,
+    borderWidth: 1,
   },
 });

@@ -1,6 +1,7 @@
 import React, { useRef, useState, type ReactNode } from 'react';
 import {
   View,
+  Platform,
   Text,
   Pressable,
   ScrollView,
@@ -37,6 +38,7 @@ import {
   HelpCircle,
   Home,
   Image,
+  Info,
   Lightbulb,
   Link,
   List,
@@ -93,6 +95,7 @@ const icons: Record<string, LucideIcon> = {
   help: HelpCircle,
   home: Home,
   image: Image,
+  info: Info,
   bulb: Lightbulb,
   link: Link,
   list: List,
@@ -144,6 +147,14 @@ export function Icon({
   const Component = icons[name] || FileText;
   return <Component size={size} color={color} strokeWidth={1.9} />;
 }
+// Keep compact reference labels readable, and scale the hierarchy with the canvas.
+function useTypeSize(size: number, heading = false) {
+  const { width } = useWindowDimensions();
+  const desktop = Platform.OS === 'web' && width >= 900;
+  if (heading) return size + (desktop ? 6 : 0);
+  return desktop ? Math.max(13, size + 3) : Math.max(9, size);
+}
+
 export function Copy({
   children,
   size = 12,
@@ -157,10 +168,11 @@ export function Copy({
   color?: string;
   style?: StyleProp<TextStyle>;
 }) {
+  const fontSize = useTypeSize(size);
   return (
     <Text
       style={[
-        { fontSize: size, lineHeight: size * 1.4, color, fontWeight: bold ? '600' : '400' },
+        { fontSize, lineHeight: fontSize * 1.45, color, fontWeight: bold ? '600' : '400' },
         style,
       ]}
     >
@@ -177,13 +189,14 @@ export function Heading({
   size?: number;
   style?: StyleProp<TextStyle>;
 }) {
+  const fontSize = useTypeSize(size, true);
   return (
     <Text
       accessibilityRole="header"
       style={[
         {
-          fontSize: size,
-          lineHeight: size * 1.25,
+          fontSize,
+          lineHeight: fontSize * 1.25,
           fontWeight: '700',
           letterSpacing: -0.35,
           color: c.navy,
@@ -206,17 +219,20 @@ export function Card({
   onPress?: () => void;
   label?: string;
 }) {
+  const { width } = useWindowDimensions();
+  const desktop = Platform.OS === 'web' && width >= 900;
+  const presentation = desktop ? s.desktopCard : s.mobileCard;
   return onPress ? (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [s.card, style, pressed && s.pressed]}
+      style={({ pressed }) => [s.card, presentation, style, pressed && s.pressed]}
     >
       {children}
     </Pressable>
   ) : (
-    <View style={[s.card, style]}>{children}</View>
+    <View style={[s.card, presentation, style]}>{children}</View>
   );
 }
 export function Action({
@@ -348,8 +364,10 @@ export function Section({
   children?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { width } = useWindowDimensions();
+  const desktop = Platform.OS === 'web' && width >= 900;
   return (
-    <View style={[s.section, style]}>
+    <View style={[s.section, !desktop && s.mobileSection, style]}>
       <View style={s.sectionHeading}>
         <Heading size={16}>{title}</Heading>
         {action && onAction && <TextAction onPress={onAction}>{action} ›</TextAction>}
@@ -389,16 +407,22 @@ export function Ring({
   value = 85,
   size = 90,
   percent = false,
+  displayValue,
+  caption,
+  accessibilityLabel,
 }: {
   value?: number;
   size?: number;
   percent?: boolean;
+  displayValue?: string;
+  caption?: string;
+  accessibilityLabel?: string;
 }) {
   return (
     <View
       style={{ width: size, height: size }}
       accessible
-      accessibilityLabel={`Health score ${value}${percent ? ' percent' : ' out of 100'}`}
+      accessibilityLabel={accessibilityLabel || `Health score ${value}${percent ? ' percent' : ' out of 100'}`}
     >
       <Svg width={size} height={size} viewBox="0 0 100 100">
         <Circle cx={50} cy={50} r={42} fill="none" stroke="#dcefe6" strokeWidth={8} />
@@ -417,12 +441,12 @@ export function Ring({
       </Svg>
       <View style={[StyleSheet.absoluteFill, s.center]}>
         <Copy size={size > 60 ? 30 : 14} bold>
-          {value}
+          {displayValue ?? value}
           {percent ? '%' : ''}
         </Copy>
         {size > 60 && !percent && (
           <Copy size={12} color={c.muted}>
-            / 100
+            {caption || '/ 100'}
           </Copy>
         )}
       </View>
@@ -476,9 +500,9 @@ export function Row({
     <Card
       onPress={onPress}
       label={title}
-      style={[s.row, s.settingsRow, compact && { padding: 8, gap: 7 }]}
+      style={[s.row, s.settingsRow, compact && { padding: 10, gap: 7, height: '100%' }]}
     >
-      <Tile name={icon} tone={tone} size={compact ? 29 : 36} />
+      <Tile name={icon} tone={tone} size={compact ? 32 : 40} />
       <View style={s.flex}>
         <Copy bold size={compact ? 10 : 12}>
           {title}
@@ -593,12 +617,15 @@ export const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: radius.card,
-    padding: 12,
+    padding: 16,
   },
+  mobileCard: { padding: 12, borderRadius: 14 },
+  desktopCard: { padding: 16, borderRadius: 18 },
+  mobileSection: { marginTop: 16 },
   pressed: { opacity: 0.65 },
   button: {
-    minHeight: 44,
-    borderRadius: 10,
+    minHeight: 48,
+    borderRadius: 14,
     backgroundColor: c.blue,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -620,23 +647,23 @@ export const s = StyleSheet.create({
     gap: 3,
     alignSelf: 'flex-start',
   },
-  section: { marginTop: 15 },
+  section: { marginTop: 24 },
   sectionHeading: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    marginBottom: 7,
+    marginBottom: 12,
   },
-  pageHeading: { marginBottom: 14 },
+  pageHeading: { marginBottom: 22 },
   top4: { marginTop: 4 },
-  settingsRow: { marginBottom: 7 },
-  demo: { textAlign: 'center', marginTop: 12, lineHeight: 15 },
+  settingsRow: { marginBottom: 8, minHeight: 58 },
+  demo: { textAlign: 'center', marginTop: 16 },
   dots: { flexDirection: 'row', justifyContent: 'center', marginVertical: 10 },
   dotTouch: { width: 25, height: 28, alignItems: 'center', justifyContent: 'center' },
   dot: { height: 8, width: 8, borderRadius: 4 },
   grid2: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  half: { width: '48.7%' },
+  half: { flexBasis: '47%', flexGrow: 1, minWidth: 0 },
   grid3: { flexDirection: 'row', gap: 7 },
   third: { flex: 1, minWidth: 0 },
   input: {
@@ -648,5 +675,5 @@ export const s = StyleSheet.create({
     color: c.navy,
     backgroundColor: '#fbfdff',
   },
-  panel: { backgroundColor: c.blueSoft, borderRadius: 14, padding: 12, marginTop: 10 },
+  panel: { backgroundColor: c.blueSoft, borderRadius: 18, padding: 16, marginTop: 16 },
 });

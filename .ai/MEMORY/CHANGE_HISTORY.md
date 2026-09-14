@@ -1,5 +1,13 @@
 # Change History
 
+## 2026-09-14 — Reference-aligned responsive customer UI
+
+- Separated compact mobile typography/cards from desktop sizing; retained desktop navigation and wide layouts.
+- Restored mobile dashboard hierarchy and three-column metrics, refined care/profile formatting, repaired tablet status paging, and introduced photographic scan artwork.
+- Preserved existing live integration behavior; status circle displays real category coverage.
+- Added browser layout/navigation/state checks and documented generated asset provenance.
+
+
 This document serves as a persistent, high-level chronological log of significant changes made to the Medivo Health Intelligence Platform. It provides a vital audit trail for architectural shifts, major feature releases, database schema migrations, and critical fixes. It is NOT a replacement for git commit history, but rather an executive summary of system evolution.
 
 ## Format Specification

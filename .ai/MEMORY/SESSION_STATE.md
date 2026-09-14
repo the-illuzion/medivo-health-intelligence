@@ -1,5 +1,15 @@
 # Current Session State
 
+## 2026-09-14 — Reference-aligned mobile UI, retained desktop
+
+- Reworked `/design` presentation to follow the supplied mobile references: three-column metrics, compact card/typography rhythm, status ring, scan photography, care summary/timeline, profile facts, and bottom navigation.
+- Retained the web desktop sidebar and separate larger type/cards at 900px and above. Tablet status carousel now displays one complete slide.
+- Existing Apple Health, routines, authentication, and scan integrations remain intact. The status ring represents synced category coverage, not an invented clinical score.
+- Added a fictional generated scan portrait under `apps/customer-app/assets/design/`; provenance and exact prompt are in its README.
+- Validation: customer-app TypeScript check and Expo web/iOS/Android exports passed. Seven browser tests cover nine routes at 390/768/1440px, empty/error states, status navigation, metric periods, and sheets. Browser screenshots use intercepted synthetic data only. Native runtime/device QA was not performed.
+- Local customer-app Docker image rebuilt and container refreshed on port 8081; final seven browser checks passed against that instance. Source changes are uncommitted.
+
+
 - **Agent**: Codex
 - **Last Updated**: 2026-09-14
 - **Task**: Medivo native design preview and web desktop presentation
