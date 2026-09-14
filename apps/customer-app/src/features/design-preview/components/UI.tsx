@@ -500,7 +500,7 @@ export function Row({
     <Card
       onPress={onPress}
       label={title}
-      style={[s.row, s.settingsRow, compact && { padding: 10, gap: 7, height: '100%' }]}
+      style={[s.row, s.settingsRow, compact && { padding: 10, gap: 7 }]}
     >
       <Tile name={icon} tone={tone} size={compact ? 32 : 40} />
       <View style={s.flex}>
