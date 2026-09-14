@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, ShieldAlert, Sparkles, Droplet, Zap, Sun, Shield, Activity, Clock, Heart, Eye, Target, Award, Minimize2 } from 'lucide-react-native';
 import { useScanStore } from '../../src/store/useScanStore';
 import { Badge, Button } from '../../src/components/ui';
-import { SkinScanResult } from '@medivo/types';
+import { SkinMetrics, SkinScanResult } from '@medivo/types';
 import { apiClient } from '@medivo/api-client';
 
 export default function ScanReportScreen() {
@@ -60,7 +60,7 @@ export default function ScanReportScreen() {
   }
 
   const score = scan?.overallScore || 0;
-  const metrics = scan?.metrics || {};
+  const metrics: Partial<SkinMetrics> = scan?.metrics ?? {};
   const formattedDate = scan?.scannedAt
     ? new Date(scan.scannedAt).toLocaleDateString('en-US', {
         month: 'short',
