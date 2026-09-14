@@ -109,6 +109,17 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Preview entry only; existing account actions and integrations remain unchanged. */}
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Open new design"
+          onPress={() => router.replace('/design')}
+          className="bg-sky-50 dark:bg-[#111827] p-4 rounded-2xl border border-sky-200 dark:border-[#374151] flex-row items-center justify-between"
+        >
+          <Text className="text-brand-primary font-bold text-sm">Open new design</Text>
+          <ChevronRight size={18} color="#1F7FC4" />
+        </TouchableOpacity>
+
         {/* Account Management Actions */}
         <View className="gap-3">
           <Text className="text-slate-900 dark:text-white font-extrabold text-sm mb-1">Account & Preferences</Text>

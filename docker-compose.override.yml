@@ -1,0 +1,7 @@
+services:
+  customer-app:
+    ports:
+      - "8081:8081"
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-03-30T09-41-56Z

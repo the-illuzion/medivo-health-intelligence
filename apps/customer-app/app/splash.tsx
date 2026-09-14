@@ -17,7 +17,7 @@ export default function SplashScreen() {
         if (!isOnboarded) {
           router.replace('/onboarding');
         } else {
-          router.replace('/(tabs)');
+          router.replace('/design');
         }
       } else {
         router.replace('/login');
