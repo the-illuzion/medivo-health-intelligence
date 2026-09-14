@@ -25,7 +25,7 @@ async function runAutoSync(userId: string): Promise<void> {
     const connection = await healthApi.getAppleHealthConnection();
     if (!connection) return;
 
-    const result = await appleHealthService.connectAndSync(userId);
+    const result = await appleHealthService.sync(userId);
     if (result.available) {
       notifyAppleHealthSyncCompleted();
     }
