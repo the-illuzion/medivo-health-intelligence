@@ -27,19 +27,18 @@ export function useHealthSummary(period: HealthSummaryPeriod = 'day') {
 
     setIsLoading(true);
     setError(null);
+    setSummary(null);
 
     try {
       const nextConnection = await healthApi.getAppleHealthConnection();
       setConnection(nextConnection);
 
-      if (!nextConnection) {
-        setSummary(null);
-        return;
-      }
+      if (!nextConnection) return;
 
       const nextSummary = await healthApi.getAppleHealthSummary(period);
       setSummary(nextSummary);
     } catch (nextError) {
+      setSummary(null);
       setError(nextError instanceof Error ? nextError.message : 'Unable to load health data.');
     } finally {
       setIsLoading(false);
