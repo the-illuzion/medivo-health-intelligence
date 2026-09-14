@@ -26,13 +26,74 @@ export const tones = {
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20 };
 export const radius = { small: 10, card: 18, pill: 99 };
 export const designRoutes = {
-  home: '/design',
-  metrics: '/design/insights',
-  scan: '/design/scan',
-  care: '/design/care',
-  profile: '/design/profile',
-  devices: '/design/devices',
-  connect: '/design/connect-device',
-  status: '/design/health-status',
-  metric: '/design/metric-details',
+  home: '/(tabs)',
+  metrics: '/(tabs)/insights',
+  scan: '/(tabs)/scan',
+  care: '/(tabs)/care',
+  profile: '/(tabs)/profile',
+  devices: '/devices',
+  connect: '/connect-device',
+  status: '/health-status',
+  metric: '/metric-details',
 } as const;
+
+export function isRouteActive(name: string, pathname: string): boolean {
+  if (!pathname) return name === 'Home';
+  const clean = pathname.replace(/\/$/, '');
+  const normalized = clean.replace(/^\/design/, '');
+
+  switch (name) {
+    case 'Home':
+      return (
+        normalized === '' ||
+        normalized === '/' ||
+        normalized === '/index' ||
+        normalized === '/(tabs)' ||
+        normalized === '/(tabs)/index'
+      );
+    case 'Insights':
+      return (
+        normalized === '/insights' ||
+        normalized === '/(tabs)/insights' ||
+        normalized === '/metric-details' ||
+        normalized.startsWith('/insights/') ||
+        normalized.startsWith('/(tabs)/insights/') ||
+        normalized.startsWith('/metric-details/')
+      );
+    case 'Scan':
+      return (
+        normalized === '/scan' ||
+        normalized === '/(tabs)/scan' ||
+        normalized.startsWith('/scan/') ||
+        normalized.startsWith('/(tabs)/scan/') ||
+        normalized.startsWith('/scan-report')
+      );
+    case 'Care':
+      return (
+        normalized === '/care' ||
+        normalized === '/(tabs)/care' ||
+        normalized.startsWith('/care/') ||
+        normalized.startsWith('/(tabs)/care/') ||
+        normalized.startsWith('/routine')
+      );
+    case 'Profile':
+      return (
+        normalized === '/profile' ||
+        normalized === '/(tabs)/profile' ||
+        normalized === '/devices' ||
+        normalized === '/connect-device' ||
+        normalized === '/connected-devices' ||
+        normalized === '/health-status' ||
+        normalized === '/edit-profile' ||
+        normalized.startsWith('/profile/') ||
+        normalized.startsWith('/(tabs)/profile/') ||
+        normalized.startsWith('/devices/') ||
+        normalized.startsWith('/connect-device/') ||
+        normalized.startsWith('/connected-devices/') ||
+        normalized.startsWith('/health-status/') ||
+        normalized.startsWith('/edit-profile/')
+      );
+    default:
+      return false;
+  }
+}

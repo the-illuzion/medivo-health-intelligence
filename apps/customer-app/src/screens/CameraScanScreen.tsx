@@ -104,7 +104,7 @@ export function CameraScanScreen({ onNavigate }: CameraScanScreenProps) {
     };
   }, [facingMode]);
 
-  // Real-time video frame face positioning analyzer (Perfect AI style guidance)
+  // Real-time video frame face positioning analyzer (Medivo AI optical guidance)
   useEffect(() => {
     if (phase !== 'idle' || !hasCameraPermission || Platform.OS !== 'web') {
       return;
@@ -508,7 +508,7 @@ export function CameraScanScreen({ onNavigate }: CameraScanScreenProps) {
             </View>
           )}
 
-          {/* Intelligent Oval Bounding Box Guide with Perfect AI Alignment Feedback */}
+          {/* Intelligent Oval Bounding Box Guide with Medivo AI Alignment Feedback */}
           {phase !== 'complete' && (
             <View
               style={[

@@ -40,12 +40,14 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   try {
     const { name, email, password, skinType } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanName = (name || '').trim() || cleanEmail.split('@')[0];
     const id = `usr-${Date.now()}`;
     const passwordHash = await PasswordService.hash(password);
     const newUser = new User({
       id,
-      name,
-      email,
+      name: cleanName,
+      email: cleanEmail,
       passwordHash,
       skinType: skinType || 'Combination',
       hipaaConsent: true,
@@ -53,12 +55,12 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     });
     await authRepo.save(newUser);
     const token = await jwtService.generateToken(id, 'PATIENT');
-    auditService.logEvent('USER_REGISTRATION', email, 'AUTH_SERVICE', {
+    auditService.logEvent('USER_REGISTRATION', cleanEmail, 'AUTH_SERVICE', {
       ip,
       reqId: req.id,
       userId: id,
     });
-    authLogger.info(`User registered successfully: ${email} (${id})`, { reqId: req.id, userId: id });
+    authLogger.info(`User registered successfully: ${cleanEmail} (${id})`, { reqId: req.id, userId: id });
     res.status(201).json({ success: true, data: { user: newUser.toDTO(), token } });
   } catch (err: any) {
     authLogger.error(`User registration failed for ${req.body?.email}: ${err.message}`, { reqId: req.id }, err);

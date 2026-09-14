@@ -6,7 +6,7 @@ export interface PerfectCorpConfig {
 }
 
 export class PerfectCorpSkinProvider implements SkinAnalysisProvider {
-  public name = 'Perfect Corp AI API';
+  public name = 'Medivo Optical AI Engine';
   private apiKey: string;
   private baseUrl: string;
 

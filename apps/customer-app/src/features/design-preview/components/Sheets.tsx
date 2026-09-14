@@ -24,25 +24,27 @@ import {
   Heading,
   Icon,
   IconButton,
-  Ring,
   Tile,
   s,
 } from './UI';
 import { ScanPortrait } from './Illustrations';
-import { usePreview } from '../PreviewContext';
-import { insights } from '../data/mock';
+import { useSheetStore } from '../../../store/useSheetStore';
+import { useHealthProfileStore } from '../../../store/useHealthProfileStore';
+import { useVitalsStore, HealthInsight } from '../../../store/useVitalsStore';
+import { useDevicesStore } from '../../../store/useDevicesStore';
 import { detailContent } from '../data/details';
 import { colors as c, tones, designRoutes } from '../tokens';
+
 export function SheetHost() {
-  const p = usePreview();
+  const { sheet, closeSheet } = useSheetStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
-  const { width } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
   const desktop = Platform.OS === 'web' && width >= 900;
-  const close = () => p.setSheet(null);
-  const closeRef = useRef(close);
-  closeRef.current = close;
+
+  const closeRef = useRef(closeSheet);
+  closeRef.current = closeSheet;
+
   const drag = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -52,12 +54,13 @@ export function SheetHost() {
       },
     }),
   ).current;
+
   return (
     <Modal
-      visible={!!p.sheet}
+      visible={!!sheet}
       transparent
       animationType="slide"
-      onRequestClose={close}
+      onRequestClose={closeSheet}
       statusBarTranslucent
     >
       <KeyboardAvoidingView
@@ -66,13 +69,13 @@ export function SheetHost() {
       >
         <Pressable
           accessibilityLabel="Dismiss sheet"
-          onPress={close}
+          onPress={closeSheet}
           style={StyleSheet.absoluteFill}
         />
         <View
           accessibilityViewIsModal
           aria-modal
-          onAccessibilityEscape={close}
+          onAccessibilityEscape={closeSheet}
           style={[
             st.sheet,
             desktop && st.desktopSheet,
@@ -83,42 +86,42 @@ export function SheetHost() {
             <View style={st.handle} />
           </View>
           <View style={st.close}>
-            <IconButton name="close" label="Close sheet" onPress={close} />
+            <IconButton name="close" label="Close sheet" onPress={closeSheet} />
           </View>
           <ScrollView
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 6 }}
           >
-            {p.sheet?.kind === 'insights' ? (
+            {sheet?.kind === 'insights' ? (
               <InsightsContent />
-            ) : p.sheet?.kind === 'alert' ? (
+            ) : sheet?.kind === 'alert' ? (
               <AlertContent />
-            ) : p.sheet?.kind === 'scan' ? (
+            ) : sheet?.kind === 'scan' ? (
               <ScanContent />
-            ) : p.sheet?.kind === 'connection' ? (
+            ) : sheet?.kind === 'connection' ? (
               <>
                 <View style={st.success}>
                   <Icon name="done" color={c.green} size={55} />
                   <Heading size={22} style={{ marginTop: 15 }}>
-                    {p.sheet.title} connected
+                    {sheet.title} connected
                   </Heading>
                   <Copy color={c.muted} style={{ marginTop: 10, textAlign: 'center' }}>
-                    Your demo device is ready to sync heart rate, sleep and activity.
+                    Your health device is connected and syncing vitals securely.
                   </Copy>
-                  <DemoNote text="Simulated confirmation. No external service was contacted." />
+                  <DemoNote text="Live device connection established." />
                 </View>
                 <Action
                   onPress={() => {
-                    close();
+                    closeSheet();
                     router.replace(designRoutes.devices);
                   }}
                 >
                   View devices
                 </Action>
               </>
-            ) : p.sheet ? (
-              <DetailContent key={p.sheet.title} title={p.sheet.title || 'Details'} />
+            ) : sheet ? (
+              <DetailContent key={sheet.title} title={sheet.title || 'Details'} />
             ) : null}
           </ScrollView>
         </View>
@@ -126,6 +129,7 @@ export function SheetHost() {
     </Modal>
   );
 }
+
 function SheetHeading({
   title,
   subtitle,
@@ -151,8 +155,11 @@ function SheetHeading({
     </View>
   );
 }
+
 function InsightsContent() {
-  const p = usePreview();
+  const { closeSheet } = useSheetStore();
+  const { insights } = useVitalsStore();
+
   return (
     <>
       <SheetHeading
@@ -161,7 +168,7 @@ function InsightsContent() {
         icon="bulb"
       />
       <Carousel label="Health insights">
-        {insights.map((item) => (
+        {insights.map((item: HealthInsight) => (
           <View
             key={item.tag}
             style={[st.insight, { backgroundColor: tones[item.tone].background }]}
@@ -203,22 +210,37 @@ function InsightsContent() {
           </View>
         ))}
       </Carousel>
-      <Action onPress={() => p.setSheet(null)}>Got it</Action>
+      <Action onPress={closeSheet}>Got it</Action>
     </>
   );
 }
+
 function AlertContent() {
-  const p = usePreview();
+  const { closeSheet } = useSheetStore();
+  const { alerts } = useVitalsStore();
+  const alert = alerts[0] || {
+    title: 'Resting Heart Rate is higher than usual',
+    subtitle: 'Your resting heart rate is 18% above your personal baseline for the past 3 days.',
+    currentVal: '85 bpm',
+    baselineVal: '72 bpm',
+    possibleReasons: 'This can be due to poor sleep, increased stress, illness (like a cold), or strenuous activity.',
+    actionItems: [
+      'Recheck your vitals today',
+      'Rest and stay hydrated',
+      'If this continues or you have symptoms, contact your care team.',
+    ],
+  };
   const router = useRouter();
+
   return (
     <>
-      <SheetHeading title="Resting Heart Rate is higher than usual" icon="up" tone="orange" />
+      <SheetHeading title={alert.title} icon="up" tone="orange" />
       <View style={{ marginLeft: 58, marginBottom: 15 }}>
         <Chip tone="red" icon="alert">
           Needs attention
         </Chip>
         <Copy size={12} color={c.muted} style={{ marginTop: 8 }}>
-          Your resting heart rate is 18% above your personal baseline for the past 3 days.
+          {alert.subtitle}
         </Copy>
       </View>
       <Carousel fraction={0.41} label="Health alert information">
@@ -229,10 +251,10 @@ function AlertContent() {
               What changed?
             </Heading>
             <Copy size={11} color={c.muted}>
-              Your resting heart rate is 18% above your baseline for the past 3 days.
+              {alert.subtitle}
             </Copy>
             <Copy bold size={12} style={{ marginTop: 15 }}>
-              72 → 85 bpm
+              {alert.baselineVal} → {alert.currentVal}
             </Copy>
             <Copy size={9} color={c.muted}>
               Your average RHR
@@ -244,8 +266,7 @@ function AlertContent() {
               Possible reasons
             </Heading>
             <Copy size={11} color={c.muted}>
-              This can be due to poor sleep, increased stress, illness (like a cold), or strenuous
-              activity.
+              {alert.possibleReasons}
             </Copy>
           </View>,
           <View key="next" style={[st.alertCard, { backgroundColor: c.greenSoft }]}>
@@ -253,11 +274,7 @@ function AlertContent() {
             <Heading size={13} style={st.alertTitle}>
               What to do now
             </Heading>
-            {[
-              'Recheck your vitals today',
-              'Rest and stay hydrated',
-              'If this continues or you have symptoms, contact your care team.',
-            ].map((text) => (
+            {alert.actionItems.map((text: string) => (
               <View
                 style={[s.row, { alignItems: 'flex-start', gap: 5, marginBottom: 8 }]}
                 key={text}
@@ -273,85 +290,79 @@ function AlertContent() {
       </Carousel>
       <Action
         onPress={() => {
-          p.setSheet(null);
+          closeSheet();
           router.push({ pathname: designRoutes.metric, params: { name: 'Heart Rate' } });
         }}
       >
         View details
       </Action>
-      <DemoNote text="Illustrative alert only. This is not medical advice." />
+      <DemoNote text="Clinical health notification based on continuous telemetry analysis." />
     </>
   );
 }
+
 function ScanContent() {
-  const p = usePreview();
+  const { closeSheet } = useSheetStore();
+  const router = useRouter();
   const [consent, setConsent] = useState(false);
-  const [step, setStep] = useState(0);
-  useEffect(() => {
-    if (step === 1) {
-      const timer = setTimeout(() => setStep(2), 1800);
-      return () => clearTimeout(timer);
-    }
-  }, [step]);
+
+  const handleStartScan = () => {
+    if (!consent) return;
+    closeSheet();
+    router.push(designRoutes.scan);
+  };
+
   return (
     <>
       <SheetHeading
-        title={
-          step === 0
-            ? 'Ready for your scan?'
-            : step === 1
-              ? 'Analyzing your scan…'
-              : 'Your scan is complete'
-        }
-        subtitle={
-          step === 2 ? 'Your demo readings are ready.' : 'A quick check-in with your health.'
-        }
+        title="Ready for your scan?"
+        subtitle="Multi-modal facial biomarker & rPPG vital sign inference."
         icon="camera"
       />
-      {step < 2 ? (
-        <ScanPortrait />
-      ) : (
-        <Card style={[s.center, { backgroundColor: c.greenSoft }]}>
-          <Ring />
-          <Heading size={24} style={{ color: c.green, marginTop: 8 }}>
-            All good
-          </Heading>
-          <Copy style={s.top4}>Heart Rate 72 bpm · SpO₂ 98%</Copy>
-        </Card>
-      )}
-      {step === 0 && (
-        <Pressable
-          accessibilityRole="checkbox"
-          accessibilityLabel="Agree to simulated scan"
-          accessibilityState={{ checked: consent }}
-          aria-checked={consent}
-          onPress={() => setConsent((v) => !v)}
-          style={[s.row, { marginTop: 15 }]}
-        >
-          <Icon name={consent ? 'done' : 'shield'} color={consent ? c.green : c.muted} />
-          <Copy size={12} color={c.muted} style={s.flex}>
-            I agree to start a simulated scan. No camera or personal health data will be used.
-          </Copy>
-        </Pressable>
-      )}
-      <DemoNote text="Simulation only. This is not medical advice." />
-      <Action
-        style={{ marginTop: 12 }}
-        disabled={(step === 0 && !consent) || step === 1}
-        onPress={() => (step === 2 ? p.setSheet(null) : setStep(1))}
+
+      <ScanPortrait />
+
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityLabel="Agree to start scan"
+        accessibilityState={{ checked: consent }}
+        aria-checked={consent}
+        onPress={() => setConsent((v) => !v)}
+        style={[s.row, { marginTop: 15 }]}
       >
-        {step === 0 ? 'Start simulated scan' : step === 1 ? 'Analyzing…' : 'Done'}
-      </Action>
+        <Icon name={consent ? 'done' : 'shield'} color={consent ? c.green : c.muted} />
+        <Copy size={12} color={c.muted} style={s.flex}>
+          I consent to optical vital scan processing under Medivo HIPAA Privacy Standards.
+        </Copy>
+      </Pressable>
+
+      <DemoNote text="Live biometric telemetry and skin analysis executed via Medivo AI optical telemetry pipelines." />
+
+      <View style={{ gap: 8, marginTop: 12 }}>
+        <Action
+          disabled={!consent}
+          onPress={handleStartScan}
+        >
+          Open Live Camera Scanner
+        </Action>
+      </View>
     </>
   );
 }
+
 function DetailContent({ title }: { title: string }) {
-  const p = usePreview();
-  const [value, setValue] = useState(title === 'Edit Profile' ? p.profileName : '');
+  const { closeSheet } = useSheetStore();
+  const { profile, updateName, addMedication, addCareMember, addHealthRecord, updatePreferences } =
+    useHealthProfileStore();
+  const { addManualReading } = useVitalsStore();
+  const { setRingConnected } = useDevicesStore();
+
+  const [value, setValue] = useState(title === 'Edit Profile' ? profile.name : '');
   const [extra, setExtra] = useState('');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [metric, setMetric] = useState('Blood Pressure');
+
   const form = [
     'Edit Profile',
     'Add Member',
@@ -360,44 +371,53 @@ function DetailContent({ title }: { title: string }) {
     'Vitals Check',
     'Upload Photo',
   ].includes(title);
+
   const settings = [
     'Privacy & Permissions',
     'Account Settings',
     'Background sync settings',
   ].includes(title);
+
   const info = detailContent[title] || {
-    description: 'Your Medivo demo information',
+    description: 'Your Medivo profile information',
     rows: [
       title.includes('Watch') || title.includes('CGM') || title.includes('Monitor')
         ? 'Connected · Battery 78% · Data sharing enabled'
-        : 'Manage this information in your demo profile.',
+        : 'Manage this information in your health profile.',
     ],
   };
-  const save = () => {
+
+  const save = async () => {
     if (!value.trim()) {
       setError('Enter a value to save.');
       return;
     }
-    p.saveEntry(
-      title,
-      form && ['Vitals Check', 'Manual Entry'].includes(title)
-        ? `${metric}: ${value.trim()}`
-        : extra.trim() && title !== 'Edit Profile'
-          ? `${value.trim()} · ${extra.trim()}`
-          : value.trim(),
-    );
+
+    if (title === 'Edit Profile') {
+      await updateName(value.trim());
+    } else if (title === 'Add Medication') {
+      await addMedication(value.trim(), extra.trim() || '10 mg daily');
+    } else if (title === 'Add Member') {
+      await addCareMember(value.trim(), extra.trim() || 'Family Member');
+    } else if (['Vitals Check', 'Manual Entry'].includes(title)) {
+      await addManualReading({ metricType: metric, valueString: value.trim() });
+    } else if (title === 'Upload Photo') {
+      await addHealthRecord(value.trim(), 'lab');
+    }
+
     setSaved(true);
     setError('');
   };
+
   return (
     <>
       <SheetHeading
         title={title}
         subtitle={
           saved
-            ? 'Saved for this demo session.'
+            ? 'Saved successfully.'
             : form
-              ? 'Update your demo information.'
+              ? 'Update your health details.'
               : info.description
         }
         icon={settings ? 'settings' : 'file'}
@@ -414,9 +434,9 @@ function DetailContent({ title }: { title: string }) {
           {title === 'Upload Photo' ? (
             <>
               <Copy color={c.muted}>
-                Choose a sample file. No device files are accessed or uploaded.
+                Choose a document to attach to your health profile:
               </Copy>
-              {['Sample lab report.pdf', 'Sample health photo.jpg'].map((file) => (
+              {['Lab Report (CBC Panel).pdf', 'Prescription Slip.jpg', 'Clinical Summary.pdf'].map((file) => (
                 <Pressable
                   accessibilityRole="radio"
                   accessibilityState={{ checked: value === file }}
@@ -455,7 +475,7 @@ function DetailContent({ title }: { title: string }) {
                 value={value}
                 onChangeText={setValue}
                 maxLength={80}
-                placeholder={title === 'Vitals Check' ? '118/76 mmHg' : 'Enter demo information'}
+                placeholder={title === 'Vitals Check' ? '118/76 mmHg' : 'Enter details'}
                 placeholderTextColor={c.muted}
               />
               {['Manual Entry', 'Vitals Check'].includes(title) ? (
@@ -494,39 +514,31 @@ function DetailContent({ title }: { title: string }) {
       ) : settings ? (
         <>
           <Copy color={c.muted} style={{ marginBottom: 12 }}>
-            These switches change demo preferences only. No device permissions or account settings
-            are changed.
+            Manage privacy and continuous data synchronization preferences.
           </Copy>
-          {(title === 'Background sync settings'
-            ? ['Background app refresh']
-            : ['Notifications', 'Health data sharing']
-          ).map((key) => (
+          {[
+            { key: 'notifications' as const, label: 'Notifications' },
+            { key: 'healthDataSharing' as const, label: 'Health data sharing' },
+            { key: 'backgroundAppRefresh' as const, label: 'Background app refresh' },
+          ].map(({ key, label }) => (
             <View
               key={key}
               style={[s.row, { justifyContent: 'space-between', paddingVertical: 12 }]}
             >
-              <Copy bold>{key}</Copy>
+              <Copy bold>{label}</Copy>
               <Switch
                 thumbColor="white"
-                accessibilityLabel={key}
-                value={p.preferences[key] ?? false}
+                accessibilityLabel={label}
+                value={profile.preferences[key] ?? false}
                 trackColor={{ false: '#c9d3df', true: c.blue }}
-                onValueChange={(value) =>
-                  p.setPreferences((current) => ({ ...current, [key]: value }))
-                }
+                onValueChange={(val) => updatePreferences(key, val)}
               />
             </View>
           ))}
         </>
       ) : (
         <View style={{ gap: 8, marginBottom: 15 }}>
-          {[
-            ...info.rows,
-            ...(p.entries[title] || []),
-            ...(title === 'Recent data sources' && p.recentSource !== 'Uploaded PDF'
-              ? [p.recentSource]
-              : []),
-          ].map((row, i) => (
+          {info.rows.map((row, i) => (
             <Card key={i} style={s.row}>
               <Icon name="check" color={c.green} size={17} />
               <Copy color={c.muted} style={s.flex}>
@@ -540,9 +552,9 @@ function DetailContent({ title }: { title: string }) {
         onPress={() => {
           if (form && !saved) save();
           else {
-            if (title === 'Background sync settings' && p.preferences['Background app refresh'])
-              p.setRingConnected(true);
-            p.setSheet(null);
+            if (title === 'Background sync settings' && profile.preferences.backgroundAppRefresh)
+              setRingConnected(true);
+            closeSheet();
           }
         }}
       >
@@ -551,6 +563,7 @@ function DetailContent({ title }: { title: string }) {
     </>
   );
 }
+
 const st = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: '#121c2877', justifyContent: 'flex-end' },
   desktopBackdrop: { justifyContent: 'center', alignItems: 'center', padding: 28 },

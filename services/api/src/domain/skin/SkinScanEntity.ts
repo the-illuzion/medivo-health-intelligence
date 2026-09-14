@@ -55,52 +55,32 @@ export class SkinScan {
   get scannedAt(): Date { return this.props.scannedAt; }
 
   toDTO() {
-    const hydration = this.props.metrics.hydration ?? 85;
-    const oiliness = this.props.metrics.oiliness ?? 60;
-    const texture = this.props.metrics.texture ?? 82;
-    const poreClarity = this.props.metrics.poreClarity ?? texture;
-    const pigmentation = this.props.metrics.pigmentation ?? 88;
-    const wrinkles = this.props.metrics.wrinkles ?? 86;
-    const acneScore = this.props.metrics.acneScore ?? 92;
-    const darkCircles = this.props.metrics.darkCircles ?? 74;
-    const eyeBags = this.props.metrics.eyeBags ?? 78;
-    const rednessScore = this.props.metrics.rednessScore ?? Math.round(100 - pigmentation);
-    const firmness = this.props.metrics.firmness ?? 85;
-    const radiance = this.props.metrics.radiance ?? 86;
-    const skinAge = this.props.metrics.skinAge ?? 26;
-    const skinType = this.props.metrics.skinType ?? (oiliness > 70 ? 'Oily' : oiliness < 45 ? 'Dry' : 'Combination');
-    const barrierHealth = this.props.metrics.barrierHealth ?? Math.min(98, Math.max(60, Math.round(hydration * 0.6 + (100 - rednessScore) * 0.4)));
-
-    const photoprotection = this.props.metrics.photoprotection ?? (darkCircles > 50 ? 'SPF 50 Active' : 'SPF 30 Active');
-    const heartRate = this.props.metrics.heartRate ?? Math.min(84, Math.max(64, 72 + ((hydration + texture) % 9) - 4));
-    const stressIndex = this.props.metrics.stressIndex ?? Math.min(50, Math.max(12, Math.round(rednessScore * 0.8 + (100 - hydration) * 0.3)));
-    const oilinessLevel = this.props.metrics.oilinessLevel ?? (oiliness > 70 ? 'High Sebum Production' : oiliness < 45 ? 'Low Lipids / Dry' : 'Balanced Sebum');
-
+    const m = this.props.metrics;
     return {
       id: this.props.id,
       userId: this.props.userId,
       overallScore: this.props.overallScore,
       grade: this.grade,
       metrics: {
-        hydration,
-        oiliness,
-        texture,
-        poreClarity,
-        pigmentation,
-        wrinkles,
-        acneScore,
-        darkCircles,
-        eyeBags,
-        rednessScore,
-        firmness,
-        radiance,
-        skinAge,
-        skinType,
-        barrierHealth,
-        photoprotection,
-        heartRate,
-        stressIndex,
-        oilinessLevel,
+        hydration: m.hydration,
+        oiliness: m.oiliness,
+        texture: m.texture,
+        poreClarity: m.poreClarity ?? m.texture,
+        pigmentation: m.pigmentation,
+        wrinkles: m.wrinkles,
+        acneScore: m.acneScore,
+        darkCircles: m.darkCircles,
+        eyeBags: m.eyeBags,
+        rednessScore: m.rednessScore,
+        firmness: m.firmness,
+        radiance: m.radiance,
+        skinAge: m.skinAge,
+        skinType: m.skinType,
+        barrierHealth: m.barrierHealth,
+        photoprotection: m.photoprotection || (m.darkCircles < 65 || m.pigmentation < 75 ? 'SPF 50 Active' : 'SPF 30 Active'),
+        heartRate: m.heartRate,
+        stressIndex: m.stressIndex,
+        oilinessLevel: m.oilinessLevel || (m.oiliness > 70 ? 'High Sebum Production' : m.oiliness < 45 ? 'Low Lipids / Dry' : 'Balanced Sebum'),
       },
       recommendations: this.props.recommendations,
       riskLevel: this.riskLevel,
@@ -109,4 +89,5 @@ export class SkinScan {
     };
   }
 }
+
 

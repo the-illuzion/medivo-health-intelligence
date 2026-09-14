@@ -1,4 +1,4 @@
-export type AIProviderType = 'perfect_corp' | 'shen_ai' | 'medivo_internal' | 'mock';
+export type AIProviderType = 'perfect_corp' | 'shen_ai' | 'medivo_internal' | 'optical_skin_vision' | 'mock';
 
 export interface PerfectCorpSkinAnalysis {
   overallScore: number;

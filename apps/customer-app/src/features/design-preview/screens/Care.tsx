@@ -1,300 +1,266 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { apiClient } from '@medivo/api-client';
-import { Screen, useCompact } from '../components/Shell';
+import React, { useEffect, useState } from 'react';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { Screen, useCompact, useDesktop } from '../components/Shell';
 import {
   Action,
   Card,
   Chip,
   Copy,
+  DemoNote,
   Heading,
   Icon,
+  IconButton,
   Ring,
+  Section,
+  TextAction,
   Tile,
   s,
 } from '../components/UI';
+import { Avatar } from '../components/Illustrations';
+import { useCareStore } from '../../../store/useCareStore';
+import { useSheetStore } from '../../../store/useSheetStore';
 import { colors as c } from '../tokens';
-import { useAuthStore } from '../../../store/useAuthStore';
-
-interface RoutineStep {
-  id: string;
-  step?: number;
-  title: string;
-  desc: string;
-  duration?: string;
-  completed?: boolean;
-}
-
-interface Routine {
-  id: string;
-  name: string;
-  timing: 'Morning' | 'Evening' | string;
-  duration?: string;
-  completedCount?: number;
-  totalSteps?: number;
-  steps: RoutineStep[];
-}
 
 export default function Care() {
-  const token = useAuthStore((state) => state.token);
-  const isHydrated = useAuthStore((state) => state.isHydrated);
-  const compact = useCompact();
-  const narrow = useWindowDimensions().width < 370 || compact;
-  const [routines, setRoutines] = useState<Routine[]>([]);
-  const [collapsed, setCollapsed] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [togglingStepId, setTogglingStepId] = useState<string | null>(null);
-  const [markingAll, setMarkingAll] = useState(false);
+  const {
+    carePlan,
+    selectedDate,
+    shiftDate,
+    toggleTask,
+    markAllCompleted,
+    collapsedPeriods,
+    togglePeriodCollapse,
+    fetchCarePlan,
+  } = useCareStore();
+  const { openDetail } = useSheetStore();
 
-  const fetchRoutines = useCallback(async () => {
-    if (!token) {
-      setRoutines([]);
-      setLoading(false);
-      return;
-    }
-
-    apiClient.setAuthToken(token);
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await apiClient.routines.list();
-      setRoutines((data || []) as Routine[]);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Unable to load your care routines.');
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+  const [dateExpanded, setDateExpanded] = useState(false);
+  const large = useCompact();
+  const desktop = useDesktop();
 
   useEffect(() => {
-    if (!isHydrated) return;
-    void fetchRoutines();
-  }, [fetchRoutines, isHydrated]);
+    fetchCarePlan(selectedDate);
+  }, [selectedDate]);
 
-  const allSteps = useMemo(
-    () => routines.flatMap((routine) => routine.steps.map((step) => ({ ...step, routineId: routine.id }))),
-    [routines],
-  );
-  const completed = allSteps.filter((step) => step.completed).length;
-  const total = allSteps.length;
-  const next = allSteps.find((step) => !step.completed);
+  const completed = carePlan.tasks.filter((t) => t.status === 'Completed').length;
+  const totalTasks = carePlan.tasks.length;
+  const next = carePlan.tasks.find((t) => t.status !== 'Completed');
 
-  const toggleStep = async (routineId: string, stepId: string, completedNow: boolean) => {
-    if (!token) return;
-    const nextCompleted = !completedNow;
-    setTogglingStepId(stepId);
-    setError(null);
-
-    setRoutines((current) =>
-      current.map((routine) => {
-        if (routine.id !== routineId) return routine;
-        const steps = routine.steps.map((step) =>
-          step.id === stepId ? { ...step, completed: nextCompleted } : step,
-        );
-        return {
-          ...routine,
-          steps,
-          completedCount: steps.filter((step) => step.completed).length,
-          totalSteps: steps.length,
-        };
-      }),
-    );
-
-    try {
-      const updated = await apiClient.routines.toggleStep(routineId, stepId, nextCompleted);
-      if (updated) {
-        setRoutines((current) =>
-          current.map((routine) => (routine.id === routineId ? (updated as Routine) : routine)),
-        );
-      }
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Unable to update this task.');
-      await fetchRoutines();
-    } finally {
-      setTogglingStepId(null);
-    }
-  };
-
-  const markAllDone = async () => {
-    if (!token || total === 0 || completed === total) return;
-    setMarkingAll(true);
-    setError(null);
-    try {
-      for (const routine of routines) {
-        for (const step of routine.steps) {
-          if (!step.completed) {
-            await apiClient.routines.toggleStep(routine.id, step.id, true);
-          }
-        }
-      }
-      await fetchRoutines();
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Unable to complete all tasks.');
-      await fetchRoutines();
-    } finally {
-      setMarkingAll(false);
-    }
-  };
-
-  const today = new Date().toLocaleDateString(undefined, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'short',
-  });
+  const isToday = selectedDate === new Date().toISOString().slice(0, 10);
+  const formattedDateLabel = isToday
+    ? 'Today'
+    : new Date(`${selectedDate}T12:00:00Z`).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      });
 
   return (
     <Screen>
-      <View style={[s.row, { justifyContent: 'space-between', flexWrap: 'wrap' }]}>
+      <View style={[s.row, { justifyContent: 'space-between' }]}>
         <Heading size={25}>Care Plan</Heading>
-        <Copy size={10} color={c.muted}>{today}</Copy>
+        <TextAction onPress={() => setDateExpanded((v) => !v)} label="Choose care plan date">
+          ▣ {formattedDateLabel} ⌄
+        </TextAction>
       </View>
       <Copy color={c.muted} style={{ marginVertical: 5 }}>
-        Your plan for today and what’s coming next.
+        Your personalized clinical plan for {formattedDateLabel.toLowerCase()} and upcoming activities.
       </Copy>
-
-      {error ? (
-        <Card style={{ backgroundColor: c.redSoft, borderColor: c.red, marginTop: 8 }}>
-          <Copy bold size={11} color={c.red}>Care plan update failed</Copy>
-          <Copy size={10} color={c.muted} style={s.top4}>{error}</Copy>
-          <Action secondary style={{ marginTop: 8 }} onPress={() => void fetchRoutines()}>Retry</Action>
+      {dateExpanded && (
+        <Card style={[s.row, { marginVertical: 6 }]}>
+          <IconButton label="Previous day" name="back" onPress={() => shiftDate(-1)} />
+          <Copy bold style={[s.flex, { textAlign: 'center' }]}>
+            {formattedDateLabel} ({selectedDate})
+          </Copy>
+          <IconButton label="Next day" name="arrow" onPress={() => shiftDate(1)} />
+          <TextAction onPress={() => setDateExpanded(false)}>Done</TextAction>
         </Card>
-      ) : null}
-
-      {loading ? (
-        <View style={{ paddingVertical: 36, alignItems: 'center' }}>
-          <ActivityIndicator />
-          <Copy size={10} color={c.muted} style={s.top4}>Loading your routines…</Copy>
-        </View>
-      ) : (
-        <>
-          <Card style={[st.summary, { marginVertical: 18 }]}>
-            <View style={[st.summaryCompletion, narrow && st.summaryFull]}>
-              <Ring value={total ? Math.round((completed / total) * 100) : 0} percent size={narrow ? 54 : 40} />
-              <View style={s.flex}>
-                <Copy size={9} bold>Adherence</Copy>
-                <Copy size={9} color={c.muted}>{completed} of {total} tasks completed</Copy>
-              </View>
-            </View>
-            <View style={st.summaryItem}>
-              <Copy size={9} bold>Next task</Copy>
-              <Copy bold size={11} color={next ? c.blue : c.green}>
-                {next?.title || (total ? 'All done' : 'No tasks')}
-              </Copy>
-              <Copy size={9} color={c.muted}>{next?.duration || ' '}</Copy>
-            </View>
-            <View style={st.summaryItem}>
-              <Copy size={9} bold>Routine source</Copy>
-              <Copy bold size={11} color={c.green}>Medivo</Copy>
-              <Copy size={9} color={c.muted}>{routines.length} active {routines.length === 1 ? 'routine' : 'routines'}</Copy>
-            </View>
-          </Card>
-
-          {routines.length === 0 ? (
-            <Card>
-              <Copy color={c.muted}>No care routines are currently available for your account.</Copy>
-            </Card>
-          ) : null}
-
-          {routines.map((routine) => {
-            const hidden = collapsed.includes(routine.id);
-            const routineCompleted = routine.steps.filter((step) => step.completed).length;
-            const isEvening = routine.timing === 'Evening';
-            return (
-              <View key={routine.id} style={{ marginBottom: 14 }}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${routine.name} tasks`}
-                  accessibilityState={{ expanded: !hidden }}
-                  aria-expanded={!hidden}
-                  onPress={() =>
-                    setCollapsed((current) =>
-                      hidden ? current.filter((id) => id !== routine.id) : [...current, routine.id],
-                    )
-                  }
-                  style={[s.row, { marginBottom: 8 }]}
-                >
-                  <Tile name={isEvening ? 'moon' : 'sun'} tone={isEvening ? 'purple' : 'blue'} size={39} />
-                  <View style={s.flex}>
-                    <Heading size={16}>{routine.name}</Heading>
-                    <Copy size={10} color={c.muted}>
-                      {routine.timing}{routine.duration ? ` · ${routine.duration}` : ''}
-                    </Copy>
-                  </View>
-                  <Copy size={9} color={c.muted}>{routineCompleted} of {routine.steps.length} completed</Copy>
-                  <Icon name="down" size={15} />
-                </Pressable>
-
-                {!hidden && routine.steps.map((step, index) => (
-                  <View key={step.id} style={st.timelineRow}>
-                    <Copy size={9} style={{ width: 26, textAlign: 'center' }}>{step.step ?? index + 1}</Copy>
-                    <View style={st.markerColumn}>
-                      {index < routine.steps.length - 1 && <View style={st.line} />}
-                      <View
-                        style={[
-                          st.marker,
-                          step.completed && { backgroundColor: c.green, borderColor: c.green },
-                        ]}
-                      >
-                        {step.completed && <Icon name="check" size={9} color={c.white} />}
-                      </View>
-                    </View>
-                    <Card
-                      label={`${step.completed ? 'Undo completion of' : 'Complete'} ${step.title}`}
-                      onPress={() => void toggleStep(routine.id, step.id, Boolean(step.completed))}
-                      style={[st.task, compact && { flexWrap: 'wrap' }]}
-                    >
-                      {togglingStepId === step.id ? (
-                        <ActivityIndicator size="small" />
-                      ) : (
-                        <Tile name={step.completed ? 'done' : 'clock'} tone={step.completed ? 'green' : 'blue'} size={29} />
-                      )}
-                      <View style={s.flex}>
-                        <Copy size={11} bold>{step.title}</Copy>
-                        <Copy size={9} color={c.muted}>{step.desc}</Copy>
-                        {step.duration ? <Copy size={8} color={c.muted} style={s.top4}>{step.duration}</Copy> : null}
-                      </View>
-                      <Chip tone={step.completed ? 'green' : 'blue'} icon={step.completed ? 'check' : 'clock'}>
-                        {step.completed ? 'Completed' : 'Pending'}
-                      </Chip>
-                    </Card>
-                  </View>
-                ))}
-              </View>
-            );
-          })}
-
-          {total > 0 ? (
-            <Action
-              disabled={completed === total || markingAll}
-              onPress={() => void markAllDone()}
-              style={{ marginTop: 4 }}
-            >
-              {markingAll ? 'Updating…' : completed === total ? 'All tasks completed' : 'Mark all done'}
-            </Action>
-          ) : null}
-
-          <Card style={[s.panel, s.row, { marginTop: 12 }]}> 
-            <Tile name="info" tone="blue" />
-            <View style={s.flex}>
-              <Heading size={13}>About this care plan</Heading>
-              <Copy size={10} color={c.muted} style={s.top4}>
-                Small daily steps make your plan easier to follow. Check off each task as you complete it to keep track of your progress.
-              </Copy>
-            </View>
-          </Card>
-        </>
       )}
+      <Card style={[s.grid3, { marginVertical: 12 }]}>
+        <View style={[s.third, s.row, { gap: 5 }]}>
+          <Ring value={totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0} percent size={43} />
+          <View style={s.flex}>
+            <Copy size={9} bold>
+              Adherence
+            </Copy>
+            <Copy size={9} color={c.muted}>
+              {completed} of {totalTasks} tasks completed
+            </Copy>
+          </View>
+        </View>
+        <View style={[s.third, { gap: 4 }]}>
+          <Copy size={9} bold>
+            Next task
+          </Copy>
+          <Copy bold size={11} color={c.blue}>
+            {next?.time || 'All done'}
+          </Copy>
+          <Copy size={9} color={c.muted}>
+            {next?.name || 'Great work today!'}
+          </Copy>
+        </View>
+        <View style={[s.third, { gap: 4 }]}>
+          <Copy size={9} bold>
+            Overall status
+          </Copy>
+          <Copy bold size={12} color={c.green}>
+            ☺ {carePlan.overallStatus || 'On track'}
+          </Copy>
+          <Copy size={9} color={c.muted}>
+            Keep it up!
+          </Copy>
+        </View>
+      </Card>
+      {(['Morning', 'Afternoon', 'Evening'] as const).map((period, i) => {
+        const items = carePlan.tasks.filter((t) => t.period === period);
+        const hidden = collapsedPeriods.includes(period);
+        return (
+          <View key={period} style={{ marginBottom: 14 }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${period} tasks`}
+              accessibilityState={{ expanded: !hidden }}
+              aria-expanded={!hidden}
+              onPress={() => togglePeriodCollapse(period)}
+              style={[s.row, { marginBottom: 8 }]}
+            >
+              <Tile
+                name={i === 2 ? 'moon' : 'sun'}
+                tone={i === 0 ? 'blue' : i === 1 ? 'orange' : 'purple'}
+                size={39}
+              />
+              <View style={s.flex}>
+                <Heading size={16}>{period}</Heading>
+                <Copy size={10} color={c.muted}>
+                  {
+                    ['Start your day well', 'Keep your momentum', 'Wind down for better tomorrows'][
+                      i
+                    ]
+                  }
+                </Copy>
+              </View>
+              <Copy size={9} color={c.muted}>
+                {items.filter((t) => t.status === 'Completed').length} of {items.length} completed
+              </Copy>
+              <Icon name="down" size={15} />
+            </Pressable>
+            {!hidden && items.length === 0 && (
+              <View style={[s.card, { padding: 10, marginVertical: 4, backgroundColor: '#f7faff', borderColor: '#e6edf5' }]}>
+                <Copy size={10} color={c.muted}>
+                  No {period.toLowerCase()} tasks scheduled. Your plan adapts automatically as health readings are logged.
+                </Copy>
+              </View>
+            )}
+            {!hidden &&
+              items.map((t, j) => (
+                <View key={t.id} style={st.timelineRow}>
+                  <Copy size={9} style={{ width: 44, textAlign: 'center' }}>
+                    {t.time}
+                  </Copy>
+                  <View style={st.markerColumn}>
+                    {j < items.length - 1 && <View style={st.line} />}
+                    <View
+                      style={[
+                        st.marker,
+                        t.status === 'Completed' && {
+                          backgroundColor: c.green,
+                          borderColor: c.green,
+                        },
+                      ]}
+                    >
+                      {t.status === 'Completed' && <Icon name="check" size={9} color="white" />}
+                    </View>
+                  </View>
+                  <Card
+                    label={`${t.status === 'Completed' ? 'Undo completion of' : 'Complete'} ${t.name}`}
+                    onPress={() => toggleTask(t.id)}
+                    style={[st.task, large && { flexWrap: 'wrap' }]}
+                  >
+                    <Tile name={t.icon} tone={t.tone} size={29} />
+                    <View style={s.flex}>
+                      <Copy size={11} bold>
+                        {t.name}
+                      </Copy>
+                      <Copy size={9} color={c.muted}>
+                        {t.description}
+                      </Copy>
+                    </View>
+                    <Chip
+                      tone={
+                        t.status === 'Completed'
+                          ? 'green'
+                          : t.status === 'Pending'
+                            ? 'orange'
+                            : 'blue'
+                      }
+                      icon={t.status === 'Completed' ? 'check' : 'clock'}
+                    >
+                      {t.status}
+                    </Chip>
+                  </Card>
+                </View>
+              ))}
+          </View>
+        );
+      })}
+      <View style={desktop ? st.desktopBottomGrid : undefined}>
+        <Section
+          title="Care team notes"
+          action="See all"
+          onAction={() => openDetail('Care team notes')}
+          style={[s.card, desktop && st.desktopBottomCard]}
+        >
+          <View style={s.row}>
+            <View style={[s.row, { gap: 0 }]}>
+              <Avatar size={24} />
+              <Avatar male size={24} />
+              <Avatar size={24} />
+            </View>
+            <View style={s.flex}>
+              <Copy size={10} color={c.muted}>
+                {carePlan.careTeamNotes[0]?.note ||
+                  'No notes from your care team yet. Your care team will share notes here after reviewing your health trends.'}
+              </Copy>
+              <Copy size={9} color={c.muted} style={s.top4}>
+                — {carePlan.careTeamNotes[0]?.doctor || 'Care Team'} · {carePlan.careTeamNotes[0]?.date || 'Today'}
+              </Copy>
+            </View>
+          </View>
+        </Section>
+        <Card
+          onPress={() => openDetail('Why this matters')}
+          style={[s.panel, s.row, desktop && st.desktopBottomCard]}
+        >
+          <Tile name="bulb" />
+          <View style={s.flex}>
+            <Heading size={15}>{carePlan.whyItMatters?.title || 'Why this matters'}</Heading>
+            <Copy size={11} color={c.muted} style={s.top4}>
+              {carePlan.whyItMatters?.description ||
+                'Today’s plan is based on your hypertension care plan and recent readings. These activities help keep your blood pressure stable, support your heart health, and track your progress.'}
+            </Copy>
+          </View>
+          <Icon name="chevron" />
+        </Card>
+      </View>
+      <View style={[s.grid3, { marginTop: 12 }]}>
+        <Action
+          style={s.third}
+          disabled={completed === totalTasks && totalTasks > 0}
+          onPress={markAllCompleted}
+        >
+          {completed === totalTasks && totalTasks > 0 ? 'All tasks completed' : 'Mark all done'}
+        </Action>
+        <Action style={s.third} secondary onPress={() => openDetail('Full care plan')}>
+          View full care plan
+        </Action>
+      </View>
+      <DemoNote text="Interactive care plan. Tap a task to toggle completion. Synchronized with live health schedule." />
     </Screen>
   );
 }
 
 const st = StyleSheet.create({
-  summary: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  summaryCompletion: { flex: 1.4, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 7 },
-  summaryFull: { flexBasis: '100%', borderBottomWidth: 1, borderBottomColor: c.border, paddingBottom: 14 },
-  summaryItem: { flex: 1, minWidth: 0, gap: 4 },
-  timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   markerColumn: { width: 12, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
   line: { position: 'absolute', top: '50%', bottom: -30, width: 1, backgroundColor: '#d4dfeb' },
   marker: {
@@ -303,7 +269,7 @@ const st = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1.5,
     borderColor: c.blue,
-    backgroundColor: c.white,
+    backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -311,9 +277,17 @@ const st = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    padding: 10,
-    minHeight: 64,
-    borderRadius: 16,
+    gap: 6,
+    padding: 7,
+    borderRadius: 10,
+  },
+  desktopBottomGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 8,
+  },
+  desktopBottomCard: {
+    flex: 1,
+    marginTop: 0,
   },
 });

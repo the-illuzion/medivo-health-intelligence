@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors as c, designRoutes } from '../tokens';
-import { usePreview } from '../PreviewContext';
+import { colors as c, designRoutes, isRouteActive } from '../tokens';
+import { useSheetStore } from '../../../store/useSheetStore';
+import { useHealthProfileStore } from '../../../store/useHealthProfileStore';
+import { useVitalsStore } from '../../../store/useVitalsStore';
 import { Copy, Icon, IconButton, s } from './UI';
 import { Avatar } from './Illustrations';
 import { DesktopFrame } from './DesktopShell';
@@ -20,15 +22,21 @@ export function useDesktop() {
   const { width } = useWindowDimensions();
   return Platform.OS === 'web' && width >= 900;
 }
+
 export function DesignFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { sheet, openDetail } = usePreview();
+  const { sheet, openDetail } = useSheetStore();
+  const { profile } = useHealthProfileStore();
+  const { alerts } = useVitalsStore();
   const insets = useSafeAreaInsets();
   const status = pathname.includes('health-status');
   const connect = pathname.includes('connect-device');
   const desktop = useDesktop();
+  const unreadCount = alerts.length;
+
   if (desktop) return <DesktopFrame>{children}</DesktopFrame>;
+
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safe}>
       <View style={styles.frame}>
@@ -52,18 +60,20 @@ export function DesignFrame({ children }: { children: ReactNode }) {
                   name="bell"
                   onPress={() => openDetail('Notifications')}
                 />
-                <View pointerEvents="none" style={styles.notification}>
-                  <Copy size={9} color="white">
-                    3
-                  </Copy>
-                </View>
+                {unreadCount > 0 && (
+                  <View pointerEvents="none" style={styles.notification}>
+                    <Copy size={9} color="white">
+                      {unreadCount}
+                    </Copy>
+                  </View>
+                )}
               </View>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Open profile"
                 onPress={() => router.navigate(designRoutes.profile)}
               >
-                <Avatar />
+                <Avatar male={profile.gender !== 'Female'} />
               </Pressable>
             </View>
           )}
@@ -77,6 +87,7 @@ export function DesignFrame({ children }: { children: ReactNode }) {
     </SafeAreaView>
   );
 }
+
 export function DesignNavigation() {
   const path = usePathname();
   const router = useRouter();
@@ -95,7 +106,7 @@ export function DesignNavigation() {
           { name: 'Profile', path: designRoutes.profile, icon: 'user' },
         ] as const
       ).map((item) => {
-        const active = path === item.path;
+        const active = isRouteActive(item.name, path);
         const scan = item.name === 'Scan';
         return (
           <Pressable
@@ -123,6 +134,7 @@ export function DesignNavigation() {
     </View>
   );
 }
+
 export function Screen({ children }: { children: ReactNode }) {
   const desktop = useDesktop();
   return (
@@ -136,10 +148,12 @@ export function Screen({ children }: { children: ReactNode }) {
     </ScrollView>
   );
 }
+
 export function useCompact() {
   const { width, fontScale } = useWindowDimensions();
   return width < 370 || fontScale > 1.25;
 }
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
   frame: {

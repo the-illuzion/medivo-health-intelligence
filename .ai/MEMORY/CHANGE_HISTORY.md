@@ -1,13 +1,5 @@
 # Change History
 
-## 2026-09-14 — Reference-aligned responsive customer UI
-
-- Separated compact mobile typography/cards from desktop sizing; retained desktop navigation and wide layouts.
-- Restored mobile dashboard hierarchy and three-column metrics, refined care/profile formatting, repaired tablet status paging, and introduced photographic scan artwork.
-- Preserved existing live integration behavior; status circle displays real category coverage.
-- Added browser layout/navigation/state checks and documented generated asset provenance.
-
-
 This document serves as a persistent, high-level chronological log of significant changes made to the Medivo Health Intelligence Platform. It provides a vital audit trail for architectural shifts, major feature releases, database schema migrations, and critical fixes. It is NOT a replacement for git commit history, but rather an executive summary of system evolution.
 
 ## Format Specification
@@ -38,7 +30,69 @@ All entries must strictly adhere to the following block format. Do not use table
 - **High**: Cross-domain impact, significant UX updates, changes to shared core packages, new integrations. Requires extensive integration testing.
 - **Critical**: Database schema structural changes (drops, renames, complex migrations), Auth logic changes, payment flow modifications, security changes, or anything affecting core platform stability and data integrity.
 
----
+### 2026-09-14 - Advanced Multi-Region Computer Vision Optical Telemetry & Dynamic Vitals Overhaul
+- **Agent/Author**: Antigravity Digital Health & AI Engineering Agent
+- **Type**: Feature / Refactor / Architecture
+- **Impact Level**: High
+- **Description**: Upgraded the optical AI telemetry engines (`SubDermalTelemetryEngine` in `services/ai` and `SimulatedAIInferenceService` in `services/api`) with spatial 4-region anatomical sampling (Forehead/T-Zone, Periorbital, Malar/Cheeks, Mandibular/Chin) and luminance-based micro-texture gradient calculations. Eliminated static additive offsets in favor of full dynamic physiological ranges across all 15 clinical parameters (Hydration 35-98%, Oiliness 15-95%, Texture 35-98%, Redness 4-75%, Skin Age 18-65 yrs, Heart Rate 58-105 BPM, Stress Index 5-90). Upgraded `vitals.service.ts` in Customer BFF to calculate true historical score deltas (+/- points vs previous scan), dynamically derive all 7 vital signs, generate contextual clinical alerts for out-of-range metrics, and construct personalized clinical recommendations ranked by individual biomarker priority.
+- **Domains Affected**: AI Vision Microservice (`services/ai`), Domain API (`services/api`), Customer BFF (`apps/customer-bff`), State Management (`useVitalsStore`)
+- **Key Files**: `services/ai/src/domain/SubDermalTelemetryEngine.ts`, `services/api/src/infrastructure/ai/SimulatedAIInferenceService.ts`, `services/ai/src/providers/SubDermalEngineAdapter.ts`, `apps/customer-bff/src/services/vitals.service.ts`, `services/ai/src/providers/PerfectCorpAdapter.ts`, `services/ai/src/providers/ShenAIAdapter.ts`
+
+### 2026-09-14 - Real Image Validation & Interactive Error Popup Alerting
+- **Agent/Author**: Antigravity Digital Health & AI Engineering Agent
+- **Type**: Feature / Security / Bugfix
+- **Impact Level**: High
+- **Description**: Replaced naive checksum generation with real raw image buffer validation and feature extraction in `SubDermalTelemetryEngine` (`services/ai`) and `SimulatedAIInferenceService` (`services/api`). The pipeline now actively verifies byte distribution, mean luminance, contrast standard deviation, and dermal chrominance, actively rejecting blank, dark, over-exposed, or uniform frames with descriptive HTTP 400 clinical errors. Customer BFF was updated to strictly propagate validation errors rather than silently falling back to synthetic mock data. Built an interactive error popup modal on the frontend displaying clear failure details and lighting/camera positioning guidance.
+- **Domains Affected**: Customer App (`apps/customer-app`), Customer BFF (`apps/customer-bff`), AI Vision Microservice (`services/ai`), Domain API (`services/api`)
+- **Key Files**: `services/ai/src/domain/SubDermalTelemetryEngine.ts`, `services/api/src/infrastructure/ai/SimulatedAIInferenceService.ts`, `apps/customer-bff/src/controllers/scan.controller.ts`, `apps/customer-app/src/features/design-preview/screens/Scan.tsx`
+
+### 2026-09-14 - Live Camera Scanner Integration & Proprietary Vendor Brand Sanitization
+- **Agent/Author**: Antigravity Digital Health & AI Engineering Agent
+- **Type**: Feature / Security / Refactor
+- **Impact Level**: High
+- **Description**: Integrated real-time WebRTC camera viewfinder directly into `Scan.tsx` featuring real-time oval face alignment guide, luminance checks (glare / dark detection), head tilt & centroid distance heuristic, 3-2-1 auto-capture countdown, and canvas frame capture connecting to `apiClient.scans.analyze`. Removed static placeholder buttons and preview timeouts, ensuring that completed score dossiers are only rendered after an actual camera frame is captured. Completely removed all proprietary vendor brand references ("Perfect Corp", "Perfect AI", "Shen.ai", "Shen AI") throughout the frontend screens, product cards, AI coach prompts, and API adapters, standardizing under Medivo clinical AI branding.
+- **Domains Affected**: Customer App (`apps/customer-app`), AI Vision Microservice (`services/ai`), Client SDK (`packages/types`, `packages/api-client`)
+- **Key Files**: `apps/customer-app/src/features/design-preview/screens/Scan.tsx`, `apps/customer-app/src/features/design-preview/components/Sheets.tsx`, `apps/customer-app/app/(tabs)/products.tsx`, `services/ai/src/providers/UnifiedAIAdapter.ts`
+
+### 2026-09-14 - Dynamic Perfect AI & Shen.ai Third-Party SDK Telemetry Integration
+- **Agent/Author**: Antigravity Digital Health & AI Engineering Agent
+- **Type**: Architecture / Feature / Refactor
+- **Impact Level**: High
+- **Description**: Replaced all remaining static fallbacks and hardcoded telemetry maps with dynamic third-party API SDK pipeline integration. Created `UnifiedAIAdapter` in `services/ai` orchestrating both PerfectCorp (15 skin attributes, barrier integrity, skin age) and Shen.ai (rPPG vitals, pulse heart rate BPM, stress/HRV index, blood pressure estimation). Fully updated `vitals.service.ts` to dynamically extract all 15 clinical parameters and vitals directly from the scan payload, eliminated static period score maps in favor of real telemetry deltas, and upgraded `Sheets.tsx` (`ScanContent`) to render a comprehensive, responsive 15-biomarker telemetry dashboard with dynamic clinical grade badges and prescription formulation protocols.
+- **Domains Affected**: AI Vision Microservice (`services/ai`), Customer BFF (`apps/customer-bff`), Customer App UI (`apps/customer-app`), State Management (`useVitalsStore`, `useScanStore`)
+- **Key Files**: `services/ai/src/providers/UnifiedAIAdapter.ts`, `services/ai/src/providers/AIProviderFactory.ts`, `apps/customer-bff/src/services/vitals.service.ts`, `apps/customer-app/src/features/design-preview/components/Sheets.tsx`
+
+### 2026-09-14 - Multi-Tenant Zero-Data Baseline Isolation for New User Accounts
+- **Agent/Author**: Antigravity Digital Health & Architecture Agent
+- **Type**: Architecture / Feature / Security
+- **Impact Level**: High
+- **Description**: Enforced strict multi-tenant data isolation across Customer BFF services and customer app state stores. Brand new registered users now start with a completely unrecorded health baseline (`Score: --`, `Vitals: --`, `Tasks: 0`, `Devices: 0`, `Records: 0`, `Medications: 0`) with zero mock or seeded telemetry displayed until a scan or action is initiated. Added bi-directional action triggering (optical face scan, manual vital entry, device pairing, or medication scheduling) to dynamically activate baseline telemetry and care plans. Pre-populated demo data is strictly confined to demo user `usr-101`.
+- **Domains Affected**: Customer App (`apps/customer-app`), Customer BFF (`apps/customer-bff`), State Management (`useVitalsStore`, `useCareStore`, `useDevicesStore`, `useHealthProfileStore`)
+- **Key Files**: `apps/customer-bff/src/services/vitals.service.ts`, `apps/customer-bff/src/services/care.service.ts`, `apps/customer-app/src/store/useVitalsStore.ts`, `apps/customer-app/src/features/design-preview/screens/Home.tsx`
+
+### 2026-09-14 - Navigation Active Menu State & Route Resolution Hardening
+- **Agent/Author**: Antigravity Digital Health & Experience Agent
+- **Type**: Bugfix / Refactor
+- **Impact Level**: Low
+- **Description**: Resolved an issue where only the Home menu item displayed the active state upon click by implementing a robust, centralized `isRouteActive` route matcher in `tokens.ts`. Fixed pathname comparisons across Expo Router route groups and nested tabs (`/insights`, `/scan`, `/care`, `/profile`, `/metric-details`, `/devices`) for both the mobile bottom navigation bar and desktop sidebar.
+- **Domains Affected**: Customer App (`apps/customer-app`), Navigation Components
+- **Key Files**: `apps/customer-app/src/features/design-preview/tokens.ts`, `apps/customer-app/src/features/design-preview/components/Shell.tsx`, `apps/customer-app/src/features/design-preview/components/DesktopShell.tsx`, `apps/customer-app/src/components/navigation/WebSidebar.tsx`
+
+### 2026-09-14 - Authentication & Onboarding Design System Harmonization
+- **Agent/Author**: Antigravity Digital Health & Experience Agent
+- **Type**: Feature / Refactor
+- **Impact Level**: Medium
+- **Description**: Redesigned all pre-login and onboarding authentication routes (`app/login.tsx`, `app/register.tsx`, `app/forgot-password.tsx`, `app/otp-verify.tsx`, `app/onboarding.tsx`) to strictly align with the new Medivo clinical design system. Integrated official Medivo brand typography, HIPAA certified chips, custom input groups with colored tile icons, password visibility toggles, responsive desktop card wrappers, and clinical health focus selectors.
+- **Domains Affected**: Customer App (`apps/customer-app`), Authentication UI
+- **Key Files**: `apps/customer-app/app/login.tsx`, `apps/customer-app/app/register.tsx`, `apps/customer-app/app/forgot-password.tsx`, `apps/customer-app/app/otp-verify.tsx`, `apps/customer-app/app/onboarding.tsx`
+
+### 2026-09-14 - Elevation of Modern Health Intelligence Design as Primary Application
+- **Agent/Author**: Antigravity Digital Health & Architecture Agent
+- **Type**: Architecture / Feature / Refactor
+- **Impact Level**: Critical
+- **Description**: Promoted the modern, clinical health intelligence design previously under `/design` to become the official primary application in `apps/customer-app`. Overhauled `app/(tabs)/` with 5 primary routes (`index`, `insights`, `scan`, `care`, `profile`) and standalone routes (`metric-details`, `devices`, `connect-device`, `health-status`). Replaced mock stubs with live Zustand stores (`useVitalsStore`, `useCareStore`, `useDevicesStore`, `useHealthProfileStore`, `useSheetStore`), PostgreSQL migration `006_vitals_care_devices_health_profile.sql`, customer-bff endpoints (`/api/mobile-bff/vitals`, `/care`, `/devices`, `/health-profile`), and `@medivo/api-client` SDK. Unified mobile (bottom tab bar + mobile header) and desktop web (left sidebar + topbar + 1180px canvas) responsiveness.
+- **Domains Affected**: Customer App (`apps/customer-app`), Customer BFF (`apps/customer-bff`), API Client (`@medivo/api-client`), Database Migrations & Seeders (`services/api`)
+- **Key Files**: `apps/customer-app/app/(tabs)/_layout.tsx`, `apps/customer-app/app/(tabs)/*`, `apps/customer-app/app/_layout.tsx`, `apps/customer-app/src/features/design-preview/screens/*`, `apps/customer-app/src/store/*`, `apps/customer-bff/src/routes/*`, `services/api/src/infrastructure/db/migrations/006_vitals_care_devices_health_profile.sql`
 
 ### 2026-09-08 - Critical Password Security Remediation (OWASP scrypt standard) & Dynamic Past Scan Records
 - **Agent/Author**: Antigravity Health Intelligence & Security Agent

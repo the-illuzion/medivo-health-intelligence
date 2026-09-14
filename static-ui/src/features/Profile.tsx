@@ -26,7 +26,7 @@ export function Profile({
           <div>
             <h1>{name}</h1>
             <p>32 years · Male</p>
-            <p>prateek@example.com</p>
+            <p>alex.morgan@example.com</p>
           </div>
           <button className="edit-profile" onClick={() => openSheet('Edit Profile')}>
             <Icon name="edit" size={13} />

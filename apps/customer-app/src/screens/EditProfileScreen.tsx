@@ -31,7 +31,7 @@ export function EditProfileScreen({ onNavigate }: EditProfileScreenProps) {
       email: email.trim(),
       phone: phone.trim(),
       allergies: allergies.trim(),
-      goals: goals.split(',').map((g) => g.trim()).filter(Boolean),
+      goals: goals.split(',').map((g: string) => g.trim()).filter(Boolean),
     });
     onNavigate('profile');
   };

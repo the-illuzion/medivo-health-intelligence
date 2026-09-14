@@ -1,5 +1,5 @@
 export interface TelemetryMetrics {
-  // 15 Core Clinical Skin Attributes from Perfect AI
+  // 15 Core Clinical Skin Attributes from Medivo Optical AI
   hydration: number;         // 1. Stratum Corneum Hydration (0-100%)
   oiliness: number;          // 2. Oiliness / Sebum Balance (0-100%)
   texture: number;           // 3. Epidermal Micro-Texture & Smoothness (0-100)

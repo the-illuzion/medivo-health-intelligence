@@ -9,7 +9,7 @@ function usePreviewState() {
   const [tasks, setTasks] = useState(() => initialTasks.map((t) => ({ ...t })));
   const [devices, setDevices] = useState(() => initialDevices.map((d) => ({ ...d })));
   const [ringConnected, setRingConnected] = useState(false);
-  const [profileName, setProfileName] = useState('Prateek Gautam');
+  const [profileName, setProfileName] = useState('Alex Morgan');
   const [entries, setEntries] = useState<Record<string, string[]>>({});
   const [period, setPeriod] = useState<'Day' | 'Week' | 'Month'>('Day');
   const [careDate, setCareDate] = useState('2025-04-28');

@@ -19,7 +19,7 @@ export default function CoachScreen() {
     {
       id: 'init_1',
       sender: 'ai',
-      text: `Hello ${patientName}! I am your Medivo AI Health Coach powered by ChatGPT Health intelligence. I have synced your latest Perfect Corp skin analysis (Hydration 93%) and Shen.ai telemetry (HRV 62ms). How can I assist your health regimen today?`,
+      text: `Hello ${patientName}! I am your Medivo AI Health Coach powered by clinical health intelligence. I have synced your latest sub-dermal skin analysis (Hydration 93%) and optical vital telemetry (HRV 62ms). How can I assist your health regimen today?`,
       timestamp: '12:00 PM',
       suggestedActions: [
         'Explain my hydration score',
@@ -34,7 +34,7 @@ export default function CoachScreen() {
   useEffect(() => {
     async function loadTelemetry() {
       try {
-        const data = await aiServiceManager.runFullScan('mock_frame', 'perfect_corp');
+        const data = await aiServiceManager.runFullScan('mock_frame', 'optical_skin_vision');
         setTelemetry(data);
       } catch (e) {}
     }

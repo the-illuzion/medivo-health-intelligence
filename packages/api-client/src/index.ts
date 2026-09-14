@@ -289,6 +289,94 @@ export class MedivoApiClient {
     },
   };
 
+  public vitals = {
+    getOverview: async (period: 'Day' | 'Week' | 'Month' = 'Day') => {
+      return this.request<any>(`/api/mobile-bff/vitals?period=${period}`);
+    },
+    getDetails: async (name: string) => {
+      return this.request<any>(`/api/mobile-bff/vitals/details/${encodeURIComponent(name)}`);
+    },
+    getInsights: async () => {
+      return this.request<any[]>('/api/mobile-bff/vitals/insights');
+    },
+    getAlerts: async () => {
+      return this.request<any[]>('/api/mobile-bff/vitals/alerts');
+    },
+    addReading: async (reading: { metricType: string; valueString: string; unit?: string; source?: string }) => {
+      return this.request<any>('/api/mobile-bff/vitals', {
+        method: 'POST',
+        body: JSON.stringify(reading),
+      });
+    },
+  };
+
+  public care = {
+    getPlan: async (date?: string) => {
+      const q = date ? `?date=${encodeURIComponent(date)}` : '';
+      return this.request<any>(`/api/mobile-bff/care/plan${q}`);
+    },
+    toggleTask: async (taskId: string, date?: string, status?: 'Completed' | 'Pending' | 'Upcoming') => {
+      return this.request<any>('/api/mobile-bff/care/tasks/toggle', {
+        method: 'POST',
+        body: JSON.stringify({ taskId, date, status }),
+      });
+    },
+    markAllTasks: async (planDate?: string) => {
+      return this.request<any>('/api/mobile-bff/care/tasks/mark-all', {
+        method: 'POST',
+        body: JSON.stringify({ planDate }),
+      });
+    },
+  };
+
+  public devices = {
+    list: async () => {
+      return this.request<any[]>('/api/mobile-bff/devices');
+    },
+    connect: async (name: string, kind?: string, sharingScopes?: string[]) => {
+      return this.request<any[]>('/api/mobile-bff/devices/connect', {
+        method: 'POST',
+        body: JSON.stringify({ name, kind, sharingScopes }),
+      });
+    },
+    toggleSync: async (deviceId: string, isEnabled: boolean) => {
+      return this.request<any[]>('/api/mobile-bff/devices/toggle', {
+        method: 'POST',
+        body: JSON.stringify({ deviceId, isEnabled }),
+      });
+    },
+  };
+
+  public healthProfile = {
+    get: async () => {
+      return this.request<any>('/api/mobile-bff/health-profile');
+    },
+    update: async (data: any) => {
+      return this.request<any>('/api/mobile-bff/health-profile', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+    addMedication: async (data: { name: string; dosage: string; frequency?: string; instructions?: string }) => {
+      return this.request<any>('/api/mobile-bff/health-profile/medications', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    addCareMember: async (data: { memberName: string; relationship: string; role?: string; isMale?: boolean }) => {
+      return this.request<any>('/api/mobile-bff/health-profile/care-network', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    addRecord: async (data: { title: string; recordType: 'lab' | 'medical' | 'prescription'; doctorName?: string; recordDate?: string; notes?: string }) => {
+      return this.request<any>('/api/mobile-bff/health-profile/records', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+  };
+
   // ============================================================================
   // Admin BFF Group (/api/admin-bff)
   // ============================================================================

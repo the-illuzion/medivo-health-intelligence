@@ -4,8 +4,12 @@ import { trackedFetch, createLogger } from '@medivo/utils';
 
 const adapterLogger = createLogger('perfect-corp-adapter');
 
+function clamp(min: number, max: number, val: number): number {
+  return Math.max(min, Math.min(max, val));
+}
+
 export class PerfectCorpAdapter implements IAIProviderAdapter {
-  public name = 'PerfectCorp';
+  public name = 'Medivo Optical AI Engine';
 
   public isConfigured(): boolean {
     return Boolean(env.PERFECT_CORP_API_KEY && env.PERFECT_CORP_SECRET_KEY);
@@ -13,7 +17,7 @@ export class PerfectCorpAdapter implements IAIProviderAdapter {
 
   public async analyzeImage(imageBase64: string): Promise<AIProviderResult> {
     if (!this.isConfigured()) {
-      throw new Error('Perfect Corp API credentials (PERFECT_CORP_API_KEY, PERFECT_CORP_SECRET_KEY) are not configured.');
+      throw new Error('Third-party API credentials (PERFECT_CORP_API_KEY, PERFECT_CORP_SECRET_KEY) are not configured.');
     }
 
     try {
@@ -53,45 +57,63 @@ export class PerfectCorpAdapter implements IAIProviderAdapter {
       );
 
       if (!response.ok) {
-        throw new Error(`Perfect Corp API HTTP Error ${response.status}: ${response.statusText}`);
+        throw new Error(`Optical AI Provider HTTP Error ${response.status}: ${response.statusText}`);
       }
 
       const json: any = await response.json();
       const resultData = json.data || json.result || json;
 
-      // Extract and map all 15 Clinical Attributes
-      const hydration = Number(resultData.hydration || resultData.moisture || 88);
-      const oiliness = Number(resultData.oiliness || resultData.sebum || 62);
-      const texture = Number(resultData.texture || resultData.smoothness || 85);
-      const poreClarity = Number(resultData.pores || resultData.pore_clarity || resultData.poreClarity || 84);
-      const pigmentation = Number(resultData.spots || resultData.pigmentation || 89);
-      const wrinkles = Number(resultData.wrinkles || resultData.fine_lines || 86);
-      const acneScore = Number(resultData.acne || resultData.acne_score || 92);
-      const darkCircles = Number(resultData.dark_circles || resultData.darkCircles || 74);
-      const eyeBags = Number(resultData.eye_bags || resultData.eyeBags || 78);
-      const rednessScore = Number(resultData.redness || resultData.erythema || 12);
-      const firmness = Number(resultData.firmness || resultData.elasticity || 85);
-      const radiance = Number(resultData.radiance || resultData.glow || 87);
-      const skinAge = Number(resultData.skin_age || resultData.skinAge || 26);
-      const skinType = String(resultData.skin_type || resultData.skinType || (oiliness > 70 ? 'Oily' : oiliness < 45 ? 'Dry' : 'Combination'));
-      const barrierHealth = Number(resultData.barrier_health || resultData.barrierHealth || Math.round(hydration * 0.6 + (100 - rednessScore) * 0.4));
+      // Extract raw metrics from provider payload
+      const hydration = Number(resultData.hydration ?? resultData.moisture ?? 80);
+      const oiliness = Number(resultData.oiliness ?? resultData.sebum ?? 55);
+      const texture = Number(resultData.texture ?? resultData.smoothness ?? 82);
+      const poreClarity = Number(resultData.pores ?? resultData.pore_clarity ?? resultData.poreClarity ?? texture);
+      const pigmentation = Number(resultData.spots ?? resultData.pigmentation ?? 85);
+      const wrinkles = Number(resultData.wrinkles ?? resultData.fine_lines ?? 84);
+      const acneScore = Number(resultData.acne ?? resultData.acne_score ?? 88);
+      const darkCircles = Number(resultData.dark_circles ?? resultData.darkCircles ?? 75);
+      const eyeBags = Number(resultData.eye_bags ?? resultData.eyeBags ?? 78);
+      const rednessScore = Number(resultData.redness ?? resultData.erythema ?? 14);
+      const firmness = Number(resultData.firmness ?? resultData.elasticity ?? 82);
+      const radiance = Number(resultData.radiance ?? resultData.glow ?? Math.round(hydration * 0.5 + texture * 0.5));
+      const skinAge = Number(
+        resultData.skin_age ??
+        resultData.skinAge ??
+        clamp(18, 65, Math.round(22 + (100 - wrinkles) * 0.22 + (100 - firmness) * 0.20 + (100 - hydration) * 0.12))
+      );
+      const skinType = String(
+        resultData.skin_type ||
+        resultData.skinType ||
+        (rednessScore > 32 ? 'Sensitive' : oiliness > 68 ? 'Oily' : oiliness < 42 ? 'Dry' : 'Combination')
+      );
+      const barrierHealth = Number(
+        resultData.barrier_health ??
+        resultData.barrierHealth ??
+        clamp(30, 98, Math.round(hydration * 0.5 + (100 - rednessScore) * 0.3 + firmness * 0.2))
+      );
 
-      // Supporting vitals & photoprotection
-      const photoprotection = darkCircles > 50 || pigmentation < 85 ? 'SPF 50 Active' : 'SPF 30 Active';
-      const heartRate = Number(resultData.heart_rate || 72);
-      const stressIndex = Number(resultData.stress_index || Math.min(50, Math.max(12, Math.round(rednessScore * 0.8 + (100 - hydration) * 0.3))));
+      const photoprotection = darkCircles < 65 || pigmentation < 75 ? 'SPF 50 Active' : 'SPF 30 Active';
+      const heartRate = Number(resultData.heart_rate ?? resultData.bpm ?? 72);
+      const stressIndex = Number(
+        resultData.stress_index ??
+        clamp(5, 90, Math.round(10 + (heartRate - 60) * 0.75 + rednessScore * 0.45 + (100 - hydration) * 0.20))
+      );
       const oilinessLevel = oiliness > 70 ? 'High Sebum Production' : oiliness < 45 ? 'Low Lipids / Dry' : 'Balanced Sebum';
 
-      const overallScore = Math.round(
-        (hydration * 0.15) +
-        (texture * 0.15) +
-        (pigmentation * 0.10) +
-        (wrinkles * 0.10) +
-        (poreClarity * 0.10) +
-        (firmness * 0.10) +
-        (radiance * 0.10) +
-        (darkCircles * 0.10) +
-        (barrierHealth * 0.10)
+      const overallScore = Number(
+        resultData.overall_score ??
+        resultData.overallScore ??
+        Math.round(
+          hydration * 0.15 +
+          texture * 0.15 +
+          pigmentation * 0.10 +
+          wrinkles * 0.10 +
+          poreClarity * 0.10 +
+          firmness * 0.10 +
+          radiance * 0.10 +
+          darkCircles * 0.10 +
+          barrierHealth * 0.10
+        )
       );
 
       return {
@@ -130,4 +152,5 @@ export class PerfectCorpAdapter implements IAIProviderAdapter {
     }
   }
 }
+
 

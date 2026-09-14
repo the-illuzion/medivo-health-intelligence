@@ -17,7 +17,7 @@ export default function SplashScreen() {
         if (!isOnboarded) {
           router.replace('/onboarding');
         } else {
-          router.replace('/design');
+          router.replace('/(tabs)');
         }
       } else {
         router.replace('/login');
@@ -34,7 +34,7 @@ export default function SplashScreen() {
       </View>
 
       <Text className="text-slate-900 dark:text-white text-3xl font-black tracking-tight mb-2">Medivo</Text>
-      <Text className="text-brand-primary text-sm font-bold uppercase tracking-widest mb-8">Clinical AI Skin Intelligence</Text>
+      <Text className="text-brand-primary text-sm font-bold uppercase tracking-widest mb-8">Clinical AI Health Intelligence</Text>
 
       <ActivityIndicator size="large" color="#1F7FC4" className="mt-4" />
       <Text className="text-slate-500 dark:text-slate-400 text-xs mt-4">Restoring Encrypted Telemetry Session...</Text>

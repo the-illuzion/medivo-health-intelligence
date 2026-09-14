@@ -70,7 +70,7 @@ export default function ProductsScreen() {
               <Sparkles size={22} color="#1F7FC4" />
             </View>
             <View className="flex-1">
-              <Text className="text-slate-900 dark:text-white font-extrabold text-base">Perfect Corp AI Matched</Text>
+              <Text className="text-slate-900 dark:text-white font-extrabold text-base">Medivo Optical AI Matched</Text>
               <Text className="text-slate-600 dark:text-slate-400 text-xs mt-0.5">
                 Products ranked by compatibility with your current neural skin biomarkers.
               </Text>

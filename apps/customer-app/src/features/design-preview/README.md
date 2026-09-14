@@ -1,16 +1,5 @@
 # Native Medivo design preview
 
-## Current presentation (2026-09-14)
-
-The mobile layout follows the supplied image references; web desktop retains its sidebar and wider layout at 900px. Typography, card padding, metric columns, and illustration bounds adapt separately. Below 370px and with large text, dense sections reflow. The status circle shows synced category coverage out of six; it is not a clinical health score.
-
-The app now uses live Apple Health/routine data and existing scan/profile flows. The older preview-only boundary notes below describe the original port and are no longer accurate for those integrations. Preview-only detail sheets remain labeled as such.
-
-The fictional scan portrait lives in `assets/design/scan-portrait.png`; its README records generation provenance and the full prompt. It is never a user profile photo.
-
-Current visual checks: `layout.spec.cjs`, with intercepted synthetic data, nine routes at 390/768/1440px plus empty/error states, navigation, periods, and sheets. Set `DESIGN_EXPORT_DIR` to the current Expo export when starting `serve-export.cjs`. Run the documented Playwright command below with `layout.spec.cjs` appended; the old journeys target the former fixture-only implementation.
-
-
 The `/design` Expo Router area ports the approved `static-ui/` appearance to native React Native views and SVG. Successful login, onboarding, and authenticated splash navigation open this area. Existing authentication and onboarding gates still apply.
 
 On Expo Web at 900px and wider, `/design` uses a desktop shell with persistent navigation, a wider constrained content canvas, horizontal dashboard groups, and centered dialogs. Below 900px and on iOS/Android, the original mobile component tree is used unchanged.

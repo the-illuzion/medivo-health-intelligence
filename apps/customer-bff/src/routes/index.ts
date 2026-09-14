@@ -10,6 +10,10 @@ import orderRoutes from './order.routes.js';
 import notificationRoutes from './notification.routes.js';
 import privacyRoutes from './privacy.routes.js';
 import adminRoutes from './admin.routes.js';
+import vitalsRoutes from './vitals.routes.js';
+import careRoutes from './care.routes.js';
+import deviceRoutes from './device.routes.js';
+import healthProfileRoutes from './health-profile.routes.js';
 import healthRoutes from './health.routes.js';
 import { checkout } from '../controllers/order.controller.js';
 import { validateRequest } from '../middleware/errorHandler.js';
@@ -34,6 +38,11 @@ mobileBffRouter.use('/user', authRoutes);
 // Protected Clinical & E-Commerce Endpoints
 mobileBffRouter.use('/scans', scanRoutes);
 mobileBffRouter.use('/routines', routineRoutes);
+mobileBffRouter.use('/vitals', vitalsRoutes);
+mobileBffRouter.use('/care', careRoutes);
+mobileBffRouter.use('/devices', deviceRoutes);
+mobileBffRouter.use('/health-profile', healthProfileRoutes);
+mobileBffRouter.use('/health', healthRoutes);
 mobileBffRouter.use('/coach', coachRoutes);
 mobileBffRouter.use('/doctors', doctorRoutes);
 mobileBffRouter.use('/appointments', appointmentRoutes);
@@ -42,7 +51,6 @@ mobileBffRouter.use('/orders', orderRoutes);
 mobileBffRouter.use('/notifications', notificationRoutes);
 mobileBffRouter.use('/privacy', privacyRoutes);
 mobileBffRouter.use('/admin', adminRoutes);
-mobileBffRouter.use('/health', healthRoutes);
 
 // Protected Checkout
 mobileBffRouter.post('/checkout', authenticateToken, validateRequest(checkoutSchema), checkout);

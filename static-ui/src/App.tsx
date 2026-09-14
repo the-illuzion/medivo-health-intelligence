@@ -26,7 +26,7 @@ function currentPage(): Page {
 export default function App() {
   const [page, setPage] = useState<Page>(currentPage);
   const [sheet, setSheet] = useState('');
-  const [name, setName] = useState('Prateek Gautam');
+  const [name, setName] = useState('Alex Morgan');
   const [device, setDevice] = useState('Apple Watch');
   const [connectedDevice, setConnectedDevice] = useState('');
   const [ringConnected, setRingConnected] = useState(false);

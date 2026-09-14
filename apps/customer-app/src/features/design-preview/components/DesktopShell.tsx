@@ -2,8 +2,10 @@ import React, { type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors as c, designRoutes } from '../tokens';
-import { usePreview } from '../PreviewContext';
+import { colors as c, designRoutes, isRouteActive } from '../tokens';
+import { useSheetStore } from '../../../store/useSheetStore';
+import { useHealthProfileStore } from '../../../store/useHealthProfileStore';
+import { useVitalsStore } from '../../../store/useVitalsStore';
 import { Avatar } from './Illustrations';
 import { Copy, Icon, IconButton, s } from './UI';
 
@@ -18,8 +20,12 @@ const items = [
 export function DesktopFrame({ children }: { children: ReactNode }) {
   const path = usePathname();
   const router = useRouter();
-  const { sheet, openDetail } = usePreview();
+  const { sheet, openDetail } = useSheetStore();
+  const { profile } = useHealthProfileStore();
+  const { alerts } = useVitalsStore();
   const insets = useSafeAreaInsets();
+  const unreadCount = alerts.length;
+
   return (
     <View style={[st.root, { paddingTop: insets.top }]}>
       <View
@@ -35,7 +41,7 @@ export function DesktopFrame({ children }: { children: ReactNode }) {
         </View>
         <View accessibilityRole="tablist" style={st.nav}>
           {items.map((item) => {
-            const active = path === item.path;
+            const active = isRouteActive(item.name, path);
             return (
               <Pressable
                 key={item.name}
@@ -75,25 +81,30 @@ export function DesktopFrame({ children }: { children: ReactNode }) {
           accessibilityElementsHidden={!!sheet}
           importantForAccessibility={sheet ? 'no-hide-descendants' : 'auto'}
         >
-          <View style={s.flex}><Copy size={13} bold>Health Intelligence</Copy><Copy size={10} color={c.muted}>A little more clarity, every day</Copy></View>
+          <View style={s.flex}>
+            <Copy size={13} bold>Health Intelligence</Copy>
+            <Copy size={10} color={c.muted}>A little more clarity, every day</Copy>
+          </View>
           <View style={st.notice}>
             <IconButton
               name="bell"
               label="Notifications"
               onPress={() => openDetail('Notifications')}
             />
-            <View style={st.badge}>
-              <Copy size={9} color="white">
-                3
-              </Copy>
-            </View>
+            {unreadCount > 0 && (
+              <View style={st.badge}>
+                <Copy size={9} color="white">
+                  {unreadCount}
+                </Copy>
+              </View>
+            )}
           </View>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Open profile"
             onPress={() => router.navigate(designRoutes.profile)}
           >
-            <Avatar />
+            <Avatar male={profile.gender !== 'Female'} />
           </Pressable>
         </View>
         <View style={[s.flex, { backgroundColor: c.background }]}>{children}</View>

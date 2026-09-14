@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Switch, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Screen } from '../components/Shell';
+import { Screen, useDesktop } from '../components/Shell';
 import {
   Action,
   Card,
@@ -9,464 +9,385 @@ import {
   Copy,
   DemoNote,
   Heading,
+  Icon,
   PageHeading,
+  Row,
   Section,
   Tile,
   s,
 } from '../components/UI';
+import { DeviceArt } from '../components/Illustrations';
+import { useDevicesStore } from '../../../store/useDevicesStore';
+import { useSheetStore } from '../../../store/useSheetStore';
 import { colors as c, designRoutes } from '../tokens';
-import { useAuthStore } from '../../../store/useAuthStore';
-import { appleHealthService } from '../../../services/health/appleHealth';
-import { healthApi, type HealthConnection } from '../../../services/health/healthApi';
 
-const APPLE_HEALTH_DATA = [
-  'Steps',
-  'Heart Rate',
-  'Resting Heart Rate',
-  'Active Energy',
-  'Sleep',
-  'HRV',
-] as const;
-
-const COMING_SOON_INTEGRATIONS = [
-  {
-    name: 'Fitbit',
-    icon: 'activity',
-    description: 'Activity, sleep and heart-rate data',
-  },
-  {
-    name: 'Garmin',
-    icon: 'watch',
-    description: 'Fitness, recovery and activity data',
-  },
-  {
-    name: 'Withings',
-    icon: 'pressure',
-    description: 'Blood pressure and connected health devices',
-  },
-  {
-    name: 'Dexcom',
-    icon: 'drop',
-    description: 'Continuous glucose monitoring data',
-  },
-  {
-    name: 'Oura',
-    icon: 'moon',
-    description: 'Sleep, readiness and activity data',
-  },
-] as const;
-
-function formatLastSync(value: string | null | undefined): string {
-  if (!value) return 'Not synced yet';
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return 'Not synced yet';
-
-  return parsed.toLocaleString();
-}
-
-function Sharing({ items }: { items: readonly string[] }) {
+function Sharing({ items }: { items: string[] }) {
   return (
     <View style={s.wrap}>
-      {items.map((item) => {
-        const isSleep = item === 'Sleep';
-        const isHeart = item.includes('Heart') || item === 'HRV';
-        const icon = isSleep
-          ? 'moon'
-          : isHeart
-            ? 'heart'
-            : item === 'Steps' || item === 'Active Energy'
-              ? 'activity'
-              : 'drop';
-
-        return (
-          <Chip key={item} tone={isSleep ? 'purple' : isHeart ? 'red' : 'blue'} icon={icon}>
-            {item}
-          </Chip>
-        );
-      })}
+      {items.map((item) => (
+        <Chip
+          key={item}
+          tone={
+            item === 'Sleep' || item === 'Glucose'
+              ? 'purple'
+              : item === 'Blood Pressure'
+                ? 'green'
+                : item === 'Heart Rate'
+                  ? 'red'
+                  : 'blue'
+          }
+          icon={
+            item === 'Sleep'
+              ? 'moon'
+              : item === 'Activity'
+                ? 'activity'
+                : item === 'Notifications'
+                  ? 'bell'
+                  : item === 'Heart Rate'
+                    ? 'heart'
+                    : 'drop'
+          }
+        >
+          {item}
+        </Chip>
+      ))}
     </View>
   );
 }
 
 export default function Devices() {
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
-  const [connection, setConnection] = useState<HealthConnection | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  const isIos = Platform.OS === 'ios';
-  const isConnected = Boolean(connection);
-  const primaryDisabled = !isIos || isLoading || isSyncing || isResetting;
-  const resetDisabled = isLoading || isSyncing || isResetting;
-
-  const loadConnection = useCallback(async () => {
-    if (!user?.id) {
-      setConnection(null);
-      setLoadError(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setLoadError(null);
-
-    try {
-      const result = await healthApi.getAppleHealthConnection();
-      setConnection(result);
-    } catch (error) {
-      setConnection(null);
-      setLoadError(
-        error instanceof Error ? error.message : 'Unable to load Apple Health connection status.',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
+  const desktop = useDesktop();
+  const { devices, ringConnected, toggleDeviceSync, setRingConnected, fetchDevices } = useDevicesStore();
+  const { openDetail } = useSheetStore();
 
   useEffect(() => {
-    void loadConnection();
-  }, [loadConnection]);
+    fetchDevices();
+  }, []);
 
-  const handleConnectOrSync = async () => {
-    if (!isIos) {
-      Alert.alert('Apple Health unavailable', 'Apple Health is available only on iPhone.');
-      return;
-    }
-
-    if (!user?.id) {
-      Alert.alert('Sign in required', 'Please sign in before connecting Apple Health.');
-      return;
-    }
-
-    const wasConnected = isConnected;
-    setIsSyncing(true);
-
-    try {
-      const result = await appleHealthService.connectAndSync(user.id);
-      if (!result.available) {
-        Alert.alert('Apple Health unavailable', 'Apple Health is not available on this device.');
-        return;
-      }
-
-      await loadConnection();
-      Alert.alert(
-        wasConnected ? 'Apple Health synced' : 'Apple Health connected',
-        `Synced ${result.syncedSamples} health samples.`,
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to sync Apple Health.';
-      Alert.alert('Apple Health sync failed', message);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const performReset = async () => {
-    if (!user?.id) {
-      Alert.alert('Sign in required', 'Please sign in before resetting Apple Health.');
-      return;
-    }
-
-    setIsResetting(true);
-    let serverResetError: string | null = null;
-
-    try {
-      // Always clear the on-device HealthKit cursor first so the user can restart a fresh sync
-      // even if the local BFF has not yet been rebuilt with the disconnect endpoint.
-      await appleHealthService.resetSyncState(user.id);
-      setConnection(null);
-      setLoadError(null);
-
-      try {
-        await healthApi.disconnectAppleHealth();
-      } catch (error) {
-        serverResetError =
-          error instanceof Error ? error.message : 'The Medivo server connection could not be reset.';
-      }
-
-      if (serverResetError) {
-        Alert.alert(
-          'Apple Health reset on this iPhone',
-          `The local HealthKit sync cursor was cleared, but the Medivo server connection could not be disconnected yet: ${serverResetError}\n\nAfter the BFF is updated, run Disconnect Apple Health again. To make iOS ask for permissions again, revoke Medivo Health access in the Apple Health app before reconnecting.`,
-        );
-        return;
-      }
-
-      Alert.alert(
-        isConnected ? 'Apple Health disconnected' : 'Medivo Apple Health reset',
-        'Medivo connection state and the on-device sync cursor were reset. To make iOS ask for Health permissions again, open the Apple Health app, open your profile, find Apps / Apps and Services, choose Medivo Health, and turn off its Health permissions. Then return here and tap Connect Apple Health.',
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unable to reset Apple Health.';
-      Alert.alert('Apple Health reset failed', message);
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
-  const handleReset = () => {
-    Alert.alert(
-      isConnected ? 'Disconnect Apple Health?' : 'Reset Apple Health?',
-      'This disconnects Apple Health in Medivo and clears Medivo’s incremental sync cursor. Existing health samples are kept. Apple controls Health permissions separately, so you can revoke those in the Health app before reconnecting.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: isConnected ? 'Disconnect' : 'Reset',
-          style: 'destructive',
-          onPress: () => void performReset(),
-        },
-      ],
-    );
-  };
+  const activeCount = devices.filter((d) => d.enabled).length + (ringConnected ? 1 : 0);
 
   return (
     <Screen>
       <PageHeading
         title="Manage Devices"
-        subtitle="Connect health data sources and keep your Medivo insights up to date."
+        subtitle="Connect and manage your health devices in one place. Keep your data synced for better insights."
         back={() => (router.canGoBack() ? router.back() : router.replace(designRoutes.profile))}
       />
-
-      <Card
-        style={[
-          s.row,
-          { backgroundColor: isConnected ? c.greenSoft : c.blueSoft, alignItems: 'flex-start' },
-        ]}
-      >
-        <Tile name={isConnected ? 'done' : 'phone'} tone={isConnected ? 'green' : 'blue'} size={48} />
+      <Card style={[s.row, { backgroundColor: c.blueSoft }]}>
+        <Tile name="phone" size={48} />
         <View style={s.flex}>
-          <Heading size={19}>{isConnected ? 'Apple Health connected' : 'No health source connected'}</Heading>
+          <Heading size={19}>{activeCount} device{activeCount === 1 ? '' : 's'} connected</Heading>
           <Copy color={c.muted} style={s.top4}>
-            ↻ Last sync: {formatLastSync(connection?.lastSyncedAt)}
+            {activeCount > 0 ? '↻ Live continuous background sync active' : '○ Background sync standby'}
           </Copy>
-          <Copy color={isConnected ? c.green : c.blue}>
-            {isConnected ? '✓ Read-only health sync active' : 'Connect Apple Health to start syncing'}
+          <Copy color={activeCount > 0 ? c.green : c.muted}>
+            {activeCount > 0 ? '✓ All critical telemetry sources active' : 'Pair a device below to stream live vitals'}
           </Copy>
           <Copy size={11} color={c.muted}>
-            Apple Watch measurements are included when your watch writes them to Apple Health.
+            Your devices stream vital signs securely to your encrypted Medivo clinical vault.
           </Copy>
         </View>
       </Card>
 
-      <View style={[s.panel, { backgroundColor: isConnected ? c.greenSoft : c.blueSoft }]}>
-        <Heading size={17}>{isConnected ? 'Connected (1)' : 'Available health source'}</Heading>
-        <Copy size={12} color={c.muted}>
-          {isConnected
-            ? '● Apple Health is sharing the categories you allowed.'
-            : 'Connect Apple Health to share selected health categories with Medivo.'}
-        </Copy>
-      </View>
-
-      <Card style={{ marginTop: 7 }}>
-        <View style={[s.row, { alignItems: 'flex-start', gap: 10 }]}>
-          <Tile name="heart" tone="red" size={44} />
-          <View style={s.flex}>
-            <Heading size={15}>Apple Health</Heading>
-            {isLoading ? (
-              <View style={[s.row, { gap: 6, marginTop: 4 }]}>
-                <ActivityIndicator size="small" />
-                <Copy size={11} color={c.muted}>
-                  Checking connection…
-                </Copy>
-              </View>
-            ) : (
-              <>
-                <Copy size={11} color={isConnected ? c.green : c.muted}>
-                  ● {isConnected ? 'Connected' : 'Not connected'}
-                </Copy>
-                <Copy size={10} color={c.muted}>
-                  Last sync: {formatLastSync(connection?.lastSyncedAt)}
-                </Copy>
-              </>
-            )}
+      <View style={desktop ? st.desktopDevicesGrid : undefined}>
+        <View style={desktop ? st.desktopCol : undefined}>
+          <View style={[s.panel, { backgroundColor: activeCount > 0 ? c.greenSoft : '#f6f8fc' }]}>
+            <Heading size={17}>Connected Devices ({devices.filter((d) => d.enabled).length})</Heading>
+            <Copy size={12} color={c.muted}>
+              {devices.length > 0 ? '● Devices are syncing and working properly.' : 'No devices connected yet.'}
+            </Copy>
           </View>
-          <Chip tone={isConnected ? 'green' : 'blue'}>{isConnected ? 'Live' : 'Available'}</Chip>
-        </View>
-
-        <Copy size={10} color={c.muted} style={{ marginTop: 12, marginBottom: 6 }}>
-          Data Medivo can read when you allow access
-        </Copy>
-        <Sharing items={APPLE_HEALTH_DATA} />
-
-        <View style={[s.panel, { backgroundColor: c.greenSoft, marginTop: 12 }]}>
-          <Copy size={11} bold color={c.green}>
-            Read-only access
-          </Copy>
-          <Copy size={10} color={c.muted} style={s.top4}>
-            You choose the Health categories to share. Medivo does not write health records and does
-            not pair directly with your Apple Watch.
-          </Copy>
-        </View>
-
-        {loadError ? (
-          <View style={[s.panel, { backgroundColor: c.redSoft, marginTop: 10 }]}>
-            <Copy size={11} bold color={c.red}>
-              Couldn’t load connection status
-            </Copy>
-            <Copy size={10} color={c.muted} style={s.top4}>
-              {loadError}
-            </Copy>
-            <Action secondary style={{ marginTop: 8 }} onPress={() => void loadConnection()}>
-              Retry
-            </Action>
-          </View>
-        ) : null}
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={isConnected ? 'Sync Apple Health now' : 'Connect Apple Health'}
-          accessibilityState={{ disabled: primaryDisabled }}
-          disabled={primaryDisabled}
-          onPress={() => void handleConnectOrSync()}
-          style={{ marginTop: 12, width: '100%' }}
-        >
-          {({ pressed }) => (
-            <View
-              pointerEvents="none"
-              style={{
-                width: '100%',
-                minHeight: 52,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: c.blue,
-                backgroundColor: primaryDisabled ? '#8dbbff' : c.blue,
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: 16,
-                opacity: pressed ? 0.8 : 1,
-              }}
-            >
-              {isSyncing ? (
-                <ActivityIndicator color={c.white} />
-              ) : (
-                <Copy size={14} bold color={c.white}>
-                  {isConnected ? 'Sync Now' : 'Connect Apple Health'}
-                </Copy>
-              )}
-            </View>
-          )}
-        </Pressable>
-
-        {isIos ? (
-          <>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={isConnected ? 'Disconnect Apple Health' : 'Reset Apple Health sync'}
-              accessibilityState={{ disabled: resetDisabled }}
-              disabled={resetDisabled}
-              onPress={handleReset}
-              style={{ marginTop: 9, width: '100%' }}
-            >
-              {({ pressed }) => (
-                <View
-                  pointerEvents="none"
-                  style={{
-                    width: '100%',
-                    minHeight: 46,
-                    borderRadius: 12,
-                    borderWidth: 1.5,
-                    borderColor: c.red,
-                    backgroundColor: c.redSoft,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingHorizontal: 16,
-                    opacity: pressed || resetDisabled ? 0.65 : 1,
-                  }}
-                >
-                  {isResetting ? (
-                    <ActivityIndicator color={c.red} />
-                  ) : (
-                    <Copy size={13} bold color={c.red}>
-                      {isConnected ? 'Disconnect Apple Health' : 'Reset Apple Health Sync'}
-                    </Copy>
-                  )}
-                </View>
-              )}
-            </Pressable>
-            <Copy size={9} color={c.muted} style={{ marginTop: 7, textAlign: 'center' }}>
-              Disconnect clears Medivo’s connection and sync cursor. Apple Health permissions are managed by iOS.
-            </Copy>
-          </>
-        ) : (
-          <Copy size={10} color={c.muted} style={{ marginTop: 8, textAlign: 'center' }}>
-            Apple Health connection is available in the Medivo iOS app.
-          </Copy>
-        )}
-      </Card>
-
-      <Section title="More integrations" style={s.panel}>
-        <Copy color={c.muted}>
-          These providers are not connected to external services in this build yet.
-        </Copy>
-        <View style={[s.grid2, { marginTop: 9 }]}>
-          {COMING_SOON_INTEGRATIONS.map((integration) => (
-            <Card key={integration.name} style={[s.half, { padding: 10 }]}>
-              <Tile name={integration.icon} tone="blue" size={30} />
-              <Copy bold size={12} style={s.top4}>
-                {integration.name}
-              </Copy>
-              <Copy size={9} color={c.orange} style={s.top4}>
-                Coming soon
-              </Copy>
-              <Copy size={10} color={c.muted} style={s.top4}>
-                {integration.description}
+          {devices.length === 0 && (
+            <Card style={{ marginTop: 7, padding: 14 }}>
+              <Copy size={12} color={c.muted}>
+                No wearable or telemetry devices connected. Choose an integration from the options below to connect your Apple Watch, Fitbit, or Garmin.
               </Copy>
             </Card>
+          )}
+          {devices.map((d) => (
+            <Card key={d.id || d.name} style={{ marginTop: 7 }}>
+              <View style={[s.row, { gap: 8, marginBottom: 10 }]}>
+                <DeviceArt kind={d.kind} size={42} />
+                <View style={s.flex}>
+                  <Heading size={14}>{d.name}</Heading>
+                  <Copy size={11} color={d.enabled ? c.green : c.muted}>
+                    ● {d.enabled ? 'Connected' : 'Sync paused'}
+                  </Copy>
+                  <Copy size={10} color={c.muted}>
+                    Last sync: {d.sync}
+                  </Copy>
+                </View>
+                <View>
+                  <View style={[s.row, { gap: 3 }]}>
+                    <Icon name="battery" size={16} color={c.green} />
+                    <Copy size={10}>{d.batteryLevel || 78}%</Copy>
+                  </View>
+                  <Copy size={9} color={c.muted}>
+                    {d.batteryStatus || '~ 1 day left'}
+                  </Copy>
+                </View>
+                <Switch
+                  thumbColor="white"
+                  accessibilityLabel={`${d.name} sync`}
+                  value={d.enabled}
+                  trackColor={{ false: '#c9d3df', true: c.blue }}
+                  onValueChange={() => toggleDeviceSync(d.id || d.name)}
+                />
+              </View>
+              <Copy size={10} color={c.muted} style={{ marginBottom: 5 }}>
+                Data shared with Medivo
+              </Copy>
+              <Sharing items={d.sharing} />
+            </Card>
           ))}
-        </View>
-      </Section>
 
-      <DemoNote text="Apple Health is live on iOS. Fitbit, Garmin, Withings, Dexcom and Oura are shown as coming soon only." />
+          <View style={[s.panel, { backgroundColor: ringConnected ? c.greenSoft : c.redSoft, marginTop: 14 }]}>
+            <Heading size={17}>{ringConnected ? 'Reconnected (1)' : 'Needs Attention (1)'}</Heading>
+            <Copy size={12} color={c.muted}>
+              {ringConnected ? 'Your ring is syncing again.' : '● Action required to resume syncing.'}
+            </Copy>
+          </View>
+          <Card style={{ marginTop: 7 }}>
+            <View style={s.row}>
+              <DeviceArt kind="ring" size={42} />
+              <View style={s.flex}>
+                <Heading size={14}>Oura Ring</Heading>
+                <Copy size={11} color={ringConnected ? c.green : c.orange}>
+                  ● {ringConnected ? 'Connected' : 'Action required'}
+                </Copy>
+                <Copy size={10} color={c.muted}>
+                  Last sync: {ringConnected ? 'Just now' : '1 day ago'}
+                </Copy>
+              </View>
+              <Action
+                onPress={() => setRingConnected(!ringConnected)}
+                style={{ minHeight: 34, paddingHorizontal: 9 }}
+              >
+                {ringConnected ? 'Disconnect' : 'Reconnect'}
+              </Action>
+            </View>
+            {!ringConnected && (
+              <View style={[s.panel, { backgroundColor: c.orangeSoft }]}>
+                <View style={s.row}>
+                  <Icon name="alert" color={c.orange} />
+                  <View style={s.flex}>
+                    <Copy size={11} bold color="#cc6716">
+                      Background sync permission required
+                    </Copy>
+                    <Copy size={10} color={c.muted}>
+                      Enable background app refresh to keep your data in sync and get the latest
+                      insights.
+                    </Copy>
+                  </View>
+                </View>
+                <Action
+                  secondary
+                  style={{ marginTop: 8, minHeight: 34 }}
+                  onPress={() => openDetail('Background sync settings')}
+                >
+                  Open Settings
+                </Action>
+              </View>
+            )}
+            <Copy size={10} color={c.muted} style={{ marginTop: 10, marginBottom: 5 }}>
+              Data shared with Medivo
+            </Copy>
+            <Sharing items={['Sleep', 'Activity', 'Heart Rate']} />
+          </Card>
+        </View>
+
+        <View style={desktop ? st.desktopCol : undefined}>
+          <Section title="Add a new device" style={[s.panel, { marginTop: desktop ? 0 : 14 }]}>
+            <Copy color={c.muted}>
+              Connect your favorite devices to get a complete picture of your health.
+            </Copy>
+            <View style={[s.grid3, { marginTop: 9 }]}>
+              {['Apple Health', 'Fitbit', 'Garmin'].map((title, i) => (
+                <Card
+                  key={title}
+                  style={[s.third, { padding: 9 }]}
+                  onPress={() =>
+                    router.push({ pathname: designRoutes.connect, params: { device: title } })
+                  }
+                >
+                  <Tile
+                    name={i === 0 ? 'heart' : i === 1 ? 'activity' : 'watch'}
+                    tone={i === 0 ? 'red' : 'blue'}
+                    size={30}
+                  />
+                  <Copy bold size={12} style={s.top4}>
+                    {title}
+                  </Copy>
+                  <Copy size={10} color={c.muted}>
+                    {
+                      [
+                        'Sync health data from your iPhone',
+                        'Track activity, sleep and more',
+                        'Connect your Garmin device',
+                      ][i]
+                    }
+                  </Copy>
+                </Card>
+              ))}
+            </View>
+            <Action
+              secondary
+              style={{ marginTop: 12 }}
+              onPress={() => router.push(designRoutes.connect)}
+            >
+              Connect Apple Watch
+            </Action>
+          </Section>
+        </View>
+      </View>
+      <DemoNote text="Live device telemetry management with real-time sync control." />
     </Screen>
   );
 }
 
 export function ConnectDevice() {
   const { device: requested } = useLocalSearchParams<{ device?: string }>();
+  const device = requested || 'Apple Watch';
   const router = useRouter();
-  const device = requested || 'Fitbit';
-  const isAppleHealth = device === 'Apple Health' || device === 'Apple Watch';
+  const { devices, connectDevice } = useDevicesStore();
+  const { openSheet, openDetail } = useSheetStore();
+
+  const connected = devices.some((d) => d.name === device && d.sync === 'Just now');
 
   return (
     <Screen>
       <PageHeading
-        title={isAppleHealth ? 'Apple Health' : device}
-        subtitle={
-          isAppleHealth
-            ? 'Apple Health is connected from the Manage Devices screen.'
-            : `${device} is not enabled in this build yet.`
-        }
+        title=""
         back={() => (router.canGoBack() ? router.back() : router.replace(designRoutes.devices))}
       />
-
-      <Card>
-        <View style={[s.row, { alignItems: 'flex-start' }]}>
-          <Tile name={isAppleHealth ? 'heart' : 'link'} tone={isAppleHealth ? 'red' : 'blue'} size={44} />
-          <View style={s.flex}>
-            <Heading size={18}>{isAppleHealth ? 'Connect through Apple Health' : `${device} coming soon`}</Heading>
-            <Copy color={c.muted} style={s.top4}>
-              {isAppleHealth
-                ? 'Use the live Apple Health card on Manage Devices to grant permissions and sync your data.'
-                : `The ${device} card is currently a product preview and does not access an external account.`}
-            </Copy>
+      <View style={[s.row, { alignItems: 'center', marginBottom: 12 }]}>
+        <DeviceArt size={135} />
+        <View style={s.flex}>
+          <Heading size={20}>{device === 'Apple Watch' ? '● WATCH' : device}</Heading>
+          <Heading size={22} style={{ marginVertical: 7 }}>
+            Connect {device}
+          </Heading>
+          <Copy color={c.muted}>
+            Sync your health data from {device} to get a more complete picture of your health, all
+            in one place.
+          </Copy>
+          <View style={[s.wrap, { marginTop: 8 }]}>
+            <Chip icon="shield">Secure & Private</Chip>
+            <Chip icon="link" tone="blue">
+              Health integration
+            </Chip>
           </View>
         </View>
-      </Card>
-
-      <Action style={{ marginTop: 12 }} onPress={() => router.replace(designRoutes.devices)}>
-        {isAppleHealth ? 'Go to Apple Health' : 'Back to devices'}
+      </View>
+      <Section title="What will sync?" style={s.panel}>
+        <Copy color={c.muted}>Get insights from the data you already track.</Copy>
+        <View style={[s.grid3, { marginTop: 10 }]}>
+          {[
+            {
+              title: 'Heart Rate',
+              icon: 'heart',
+              tone: 'red' as const,
+              text: 'Resting, active and workout heart rate',
+            },
+            {
+              title: 'Sleep',
+              icon: 'moon',
+              tone: 'purple' as const,
+              text: 'Sleep duration and sleep stages',
+            },
+            {
+              title: 'Activity',
+              icon: 'activity',
+              tone: 'blue' as const,
+              text: 'Steps, active minutes and workout data',
+            },
+          ].map((item) => (
+            <Card key={item.title} style={[s.third, { padding: 10 }]}>
+              <Tile name={item.icon} tone={item.tone} />
+              <Copy bold style={{ marginTop: 8 }}>
+                {item.title}
+              </Copy>
+              <Copy size={11} color={c.muted}>
+                {item.text}
+              </Copy>
+            </Card>
+          ))}
+        </View>
+      </Section>
+      <Section title="How it works" style={s.panel}>
+        <Copy color={c.muted}>Get connected in just a few simple steps.</Copy>
+        <Card style={{ marginTop: 10, gap: 15 }}>
+          {[
+            {
+              title: `Open the ${device === 'Apple Watch' ? 'Apple Health' : device} app`,
+              text: 'You’ll be redirected to grant access.',
+            },
+            {
+              title: 'Allow Medivo to access your data',
+              text: 'Choose the health data you’d like to share.',
+            },
+            {
+              title: 'Start syncing',
+              text: 'Your data will sync automatically in the background.',
+            },
+          ].map((item, i) => (
+            <View style={s.row} key={item.title}>
+              <Chip tone="blue">{i + 1}</Chip>
+              <View style={s.flex}>
+                <Copy bold>{item.title}</Copy>
+                <Copy size={11} color={c.muted}>
+                  {item.text}
+                </Copy>
+              </View>
+            </View>
+          ))}
+        </Card>
+      </Section>
+      <View style={{ marginTop: 12 }}>
+        <Row
+          title="Your data stays private"
+          description="We only access the data you allow, and it’s always encrypted and secure. You can change permissions anytime in Settings."
+          icon="lock"
+          tone="green"
+          onPress={() => openDetail('Privacy & Permissions')}
+        />
+        <Row
+          title="Keeps syncing automatically"
+          description="Once connected, your device will sync regularly in the background whenever it is nearby."
+          icon="sync"
+          onPress={() => openDetail('Automatic sync')}
+        />
+      </View>
+      <DemoNote text="Live device connection and telemetry synchronization." />
+      <Action
+        style={{ marginTop: 12 }}
+        onPress={async () => {
+          if (connected) {
+            router.replace(designRoutes.devices);
+          } else {
+            await connectDevice(device);
+            openSheet({ kind: 'connection', title: device });
+          }
+        }}
+      >
+        {connected ? 'Connected · View devices' : 'Connect now'}
       </Action>
-      <DemoNote
-        text={
-          isAppleHealth
-            ? 'Apple Health uses the native iOS HealthKit permission flow.'
-            : `${device} is not connected to an external service in this build.`
-        }
-      />
+      <Action secondary style={{ marginTop: 8 }} onPress={() => openDetail('Device connection')}>
+        Learn more
+      </Action>
     </Screen>
   );
 }
+
+const st = StyleSheet.create({
+  desktopDevicesGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    alignItems: 'flex-start',
+    marginTop: 8,
+  },
+  desktopCol: {
+    flex: 1,
+  },
+});

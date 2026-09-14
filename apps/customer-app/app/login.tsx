@@ -1,15 +1,41 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  useWindowDimensions,
+  Platform,
+  Pressable,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Shield, Lock, Mail, ArrowRight } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../src/store/useAuthStore';
+import {
+  Action,
+  Card,
+  Chip,
+  Copy,
+  Heading,
+  Icon,
+  TextAction,
+  Tile,
+  s,
+} from '../src/features/design-preview/components/UI';
+import { colors as c } from '../src/features/design-preview/tokens';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login, isLoading, error: authError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const { width } = useWindowDimensions();
+  const desktop = Platform.OS === 'web' && width >= 900;
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -17,85 +43,311 @@ export default function LoginScreen() {
       return;
     }
     setErrorMessage('');
-    const success = await login(email, password);
+    const success = await login(email.trim(), password);
     if (success) {
-      router.replace('/design');
+      router.replace('/(tabs)');
     }
+  };
+
+  const handleFillTestCredentials = () => {
+    setEmail('test@yopmail.com');
+    setPassword('Test@123');
+    setErrorMessage('');
   };
 
   const activeError = errorMessage || authError;
 
   return (
-    <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 40, flexGrow: 1, justifyContent: 'center' }}>
-      <View className="max-w-md mx-auto w-full px-6 py-12">
-        <View className="items-center mb-8">
-          <View className="w-16 h-16 bg-sky-500/10 dark:bg-sky-500/20 rounded-2xl items-center justify-center mb-4 border border-sky-500/30">
-            <Shield size={32} color="#1F7FC4" />
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={st.safe}>
+      <ScrollView
+        contentContainerStyle={[st.scrollContent, desktop && st.desktopScroll]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[st.cardContainer, desktop && st.desktopCard]}>
+          {/* Brand Header */}
+          <View style={st.brandSection}>
+            <View style={st.logoRow}>
+              <Text style={st.logo}>medivo</Text>
+              <Chip tone="green" icon="shield">
+                HIPAA Certified
+              </Chip>
+            </View>
+            <Copy size={11} color={c.muted} style={s.top4}>
+              Health Intelligence for a Better You
+            </Copy>
           </View>
-          <Text className="text-slate-900 dark:text-white text-3xl font-extrabold tracking-tight mb-2 text-center">Welcome Back</Text>
-          <Text className="text-slate-600 dark:text-slate-400 text-sm text-center">Sign in to access your confidential skin intelligence</Text>
+
+          {/* Greeting Header */}
+          <View style={st.headerSection}>
+            <Heading size={24}>Welcome back</Heading>
+            <Copy size={13} color={c.muted} style={s.top4}>
+              Sign in to access your personal biomarker intelligence, vital trends, and daily care plan.
+            </Copy>
+          </View>
+
+          {/* Error Banner */}
+          {activeError ? (
+            <Card style={st.errorCard}>
+              <Tile name="alert" tone="red" size={32} />
+              <View style={s.flex}>
+                <Heading size={13} style={{ color: c.red }}>
+                  Authentication Error
+                </Heading>
+                <Copy size={11} color={c.red} style={s.top4}>
+                  {activeError}
+                </Copy>
+              </View>
+            </Card>
+          ) : null}
+
+          {/* Form Card */}
+          <Card style={st.formCard}>
+            {/* Email Field */}
+            <View style={st.inputGroup}>
+              <Copy bold size={12} color={c.navy}>
+                Email address
+              </Copy>
+              <View style={st.inputWrapper}>
+                <Tile name="user" tone="blue" size={30} />
+                <TextInput
+                  value={email}
+                  onChangeText={(val) => {
+                    setEmail(val);
+                    if (errorMessage) setErrorMessage('');
+                  }}
+                  placeholder="test@yopmail.com"
+                  placeholderTextColor="#8a99ad"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  style={st.input}
+                />
+              </View>
+            </View>
+
+            {/* Password Field */}
+            <View style={[st.inputGroup, { marginTop: 14 }]}>
+              <View style={st.passwordHeader}>
+                <Copy bold size={12} color={c.navy}>
+                  Password
+                </Copy>
+                <TextAction onPress={() => router.push('/forgot-password')}>
+                  Forgot password?
+                </TextAction>
+              </View>
+              <View style={st.inputWrapper}>
+                <Tile name="lock" tone="purple" size={30} />
+                <TextInput
+                  value={password}
+                  onChangeText={(val) => {
+                    setPassword(val);
+                    if (errorMessage) setErrorMessage('');
+                  }}
+                  placeholder="••••••••••••"
+                  placeholderTextColor="#8a99ad"
+                  secureTextEntry={!showPassword}
+                  style={[st.input, { paddingRight: 40 }]}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                  onPress={() => setShowPassword((prev) => !prev)}
+                  style={st.eyeButton}
+                >
+                  <Icon name={showPassword ? 'done' : 'check'} size={16} color={c.muted} />
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Submit Action */}
+            <Action
+              onPress={handleLogin}
+              disabled={isLoading}
+              style={st.submitButton}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={c.white} size="small" />
+              ) : (
+                <>
+                  <Copy size={14} bold color={c.white}>
+                    Sign In
+                  </Copy>
+                  <Icon name="arrow" size={18} color={c.white} />
+                </>
+              )}
+            </Action>
+
+            {/* Quick-fill Dev Shortcut */}
+            <Pressable
+              onPress={handleFillTestCredentials}
+              style={st.testCreds}
+              accessibilityRole="button"
+              accessibilityLabel="Fill demo test credentials"
+            >
+              <Tile name="bulb" tone="blue" size={24} />
+              <View style={s.flex}>
+                <Copy size={10} color={c.muted}>
+                  Demo Account: <Copy bold size={10} color={c.blue}>test@yopmail.com / Test@123</Copy>
+                </Copy>
+              </View>
+            </Pressable>
+          </Card>
+
+          {/* Security & HIPAA Notice */}
+          <Card style={st.securityCard}>
+            <Tile name="shield" tone="green" size={32} />
+            <View style={s.flex}>
+              <Copy bold size={11} color={c.green}>
+                End-to-End Encrypted & Private
+              </Copy>
+              <Copy size={10} color={c.muted} style={s.top4}>
+                Your health data, telemetry records, and vitals are encrypted under Medivo Privacy Standards.
+              </Copy>
+            </View>
+          </Card>
+
+          {/* Registration Link */}
+          <View style={st.registerFooter}>
+            <Copy size={12} color={c.muted}>
+              Don't have an account?{' '}
+            </Copy>
+            <TextAction onPress={() => router.push('/register')}>
+              Create Patient Account ›
+            </TextAction>
+          </View>
         </View>
-
-        {activeError ? (
-          <View className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 mb-4">
-            <Text className="text-rose-500 text-xs text-center font-bold">{activeError}</Text>
-          </View>
-        ) : null}
-
-        <View className="gap-4">
-          <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm focus:border-brand-primary">
-            <Mail size={20} color="#1F7FC4" />
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Email address"
-              placeholderTextColor="#94A3B8"
-              style={{ outlineStyle: 'none' } as any}
-              className="flex-1 ml-3 text-slate-900 dark:text-white text-base outline-none"
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
-
-          <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm focus:border-brand-primary">
-            <Lock size={20} color="#1F7FC4" />
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password"
-              placeholderTextColor="#94A3B8"
-              secureTextEntry
-              style={{ outlineStyle: 'none' } as any}
-              className="flex-1 ml-3 text-slate-900 dark:text-white text-base outline-none"
-            />
-          </View>
-
-          <TouchableOpacity onPress={() => router.push('/forgot-password')} className="align-self-end my-1">
-            <Text className="text-right text-brand-primary text-xs font-bold">Forgot password?</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleLogin}
-            disabled={isLoading}
-            className="bg-brand-primary py-4 rounded-2xl items-center justify-center mt-2 flex-row shadow-sm active:opacity-90"
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Text className="text-white font-extrabold text-base mr-2">Sign In</Text>
-                <ArrowRight size={20} color="#FFFFFF" />
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => router.push('/register')} className="mt-4 items-center">
-            <Text className="text-slate-600 dark:text-slate-400 text-sm">
-              Don't have an account? <Text className="text-brand-primary font-bold">Register</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const st = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: '#e9eef4',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    paddingVertical: 28,
+  },
+  desktopScroll: {
+    paddingVertical: 48,
+  },
+  cardContainer: {
+    width: '100%',
+    maxWidth: 430,
+    backgroundColor: c.background,
+    borderRadius: 20,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  desktopCard: {
+    maxWidth: 480,
+    padding: 32,
+    backgroundColor: 'white',
+    shadowColor: '#0c1935',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 24,
+    elevation: 4,
+  },
+  brandSection: {
+    marginBottom: 20,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  logo: {
+    fontSize: 34,
+    lineHeight: 36,
+    fontWeight: '800',
+    letterSpacing: -1.9,
+    color: '#0d3447',
+  },
+  headerSection: {
+    marginBottom: 18,
+  },
+  errorCard: {
+    backgroundColor: c.redSoft,
+    borderColor: '#ffd5dd',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  formCard: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  passwordHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fbfdff',
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 11,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    color: c.navy,
+    paddingVertical: 8,
+    minHeight: 36,
+    // @ts-ignore
+    outlineStyle: 'none',
+  },
+  eyeButton: {
+    padding: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitButton: {
+    marginTop: 18,
+    borderRadius: 12,
+    minHeight: 46,
+    backgroundColor: c.blue,
+  },
+  testCreds: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: c.blueSoft,
+    borderRadius: 10,
+    padding: 9,
+    marginTop: 14,
+  },
+  securityCard: {
+    backgroundColor: c.greenSoft,
+    borderWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 16,
+  },
+  registerFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+});
