@@ -25,6 +25,13 @@ async function runAutoSync(userId: string): Promise<void> {
     const connection = await healthApi.getAppleHealthConnection();
     if (!connection) return;
 
+    // If this connection has never yielded a sample, re-bootstrap the 30-day lookback.
+    // This prevents an anchor created while read access was denied from hiding data after
+    // the user later enables Health permissions.
+    if (!connection.hasImportedData) {
+      await appleHealthService.resetSyncState(userId);
+    }
+
     const result = await appleHealthService.sync(userId);
     if (result.available) {
       notifyAppleHealthSyncCompleted();
