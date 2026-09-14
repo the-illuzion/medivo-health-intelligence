@@ -6,11 +6,15 @@ import Devices from '../src/features/design-preview/screens/Devices';
 import { Copy, Icon, Tile, s } from '../src/features/design-preview/components/UI';
 import { colors as c } from '../src/features/design-preview/tokens';
 import { useHealthSummary } from '../src/hooks/useHealthSummary';
-import { formatHealthLastSync } from '../src/services/health/healthDisplay';
+import {
+  appleHealthNeedsPermissionCheck,
+  formatHealthLastSync,
+} from '../src/services/health/healthDisplay';
 
 export default function DevicesScreen() {
   const router = useRouter();
   const { connection } = useHealthSummary('day');
+  const needsPermissionCheck = appleHealthNeedsPermissionCheck(connection);
 
   return (
     <DesignFrame>
@@ -19,23 +23,31 @@ export default function DevicesScreen() {
           accessibilityRole="button"
           accessibilityLabel="Manage Apple Health"
           onPress={() => router.push('/connected-devices')}
-          style={({ pressed }) => [styles.appleHealth, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.appleHealth,
+            needsPermissionCheck && styles.appleHealthWarning,
+            pressed && styles.pressed,
+          ]}
         >
           <Tile name="heart" tone="red" size={38} />
           <View style={s.flex}>
             <Copy bold size={12}>Apple Health</Copy>
-            <Copy size={10} color={connection ? c.green : c.muted}>
-              ● {connection ? 'Connected' : 'Not connected'}
+            <Copy size={10} color={needsPermissionCheck ? c.orange : connection ? c.green : c.muted}>
+              ● {needsPermissionCheck ? 'Needs attention' : connection ? 'Connected' : 'Not connected'}
             </Copy>
             <Copy size={9} color={c.muted}>
-              {connection
-                ? `Last sync: ${formatHealthLastSync(connection.lastSyncedAt)} · Syncs when you choose Sync in Medivo`
-                : 'Read-only HealthKit connection · foreground sync only'}
+              {needsPermissionCheck
+                ? 'No health data received yet · Check Apple Health permissions'
+                : connection
+                  ? `Last sync: ${formatHealthLastSync(connection.lastSyncedAt)} · Auto-syncs when Medivo opens`
+                  : 'Read-only HealthKit connection · foreground sync'}
             </Copy>
           </View>
           <View style={styles.manage}>
-            <Copy size={11} bold color={c.blue}>{connection ? 'Manage' : 'Connect'}</Copy>
-            <Icon name="chevron" size={14} color={c.blue} />
+            <Copy size={11} bold color={needsPermissionCheck ? c.orange : c.blue}>
+              {needsPermissionCheck ? 'Check' : connection ? 'Manage' : 'Connect'}
+            </Copy>
+            <Icon name="chevron" size={14} color={needsPermissionCheck ? c.orange : c.blue} />
           </View>
         </Pressable>
         <View style={s.flex}>
@@ -59,6 +71,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  appleHealthWarning: {
+    borderColor: c.orange,
+    backgroundColor: c.orangeSoft,
   },
   manage: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   pressed: { opacity: 0.72 },
