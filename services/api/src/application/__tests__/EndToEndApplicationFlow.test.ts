@@ -173,9 +173,17 @@ describe('End-to-End Application Flow — Initial Stage to Full Care Plan', () =
     });
 
     it('should submit scan with HIPAA consent, generate all 15 clinical skin biomarkers, and save scan dossier', async () => {
+      const validBuffer = Buffer.alloc(1200);
+      for (let i = 0; i < validBuffer.length; i += 3) {
+        validBuffer[i] = 160 + (i % 30);
+        validBuffer[i + 1] = 120 + ((i * 2) % 25);
+        validBuffer[i + 2] = 100 + ((i * 3) % 20);
+      }
+      const validImage = `data:image/jpeg;base64,${validBuffer.toString('base64')}`;
+
       const result = await scanUseCase.execute(
         authenticatedUserId,
-        'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...',
+        validImage,
         'v1.0',
       );
 

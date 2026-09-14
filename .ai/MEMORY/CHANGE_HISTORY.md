@@ -30,6 +30,14 @@ All entries must strictly adhere to the following block format. Do not use table
 - **High**: Cross-domain impact, significant UX updates, changes to shared core packages, new integrations. Requires extensive integration testing.
 - **Critical**: Database schema structural changes (drops, renames, complex migrations), Auth logic changes, payment flow modifications, security changes, or anything affecting core platform stability and data integrity.
 
+### 2026-09-14 - Real Image Validation & Interactive Error Popup Alerting
+- **Agent/Author**: Antigravity Digital Health & AI Engineering Agent
+- **Type**: Feature / Security / Bugfix
+- **Impact Level**: High
+- **Description**: Replaced naive checksum generation with real raw image buffer validation and feature extraction in `SubDermalTelemetryEngine` (`services/ai`) and `SimulatedAIInferenceService` (`services/api`). The pipeline now actively verifies byte distribution, mean luminance, contrast standard deviation, and dermal chrominance, actively rejecting blank, dark, over-exposed, or uniform frames with descriptive HTTP 400 clinical errors. Customer BFF was updated to strictly propagate validation errors rather than silently falling back to synthetic mock data. Built an interactive error popup modal on the frontend displaying clear failure details and lighting/camera positioning guidance.
+- **Domains Affected**: Customer App (`apps/customer-app`), Customer BFF (`apps/customer-bff`), AI Vision Microservice (`services/ai`), Domain API (`services/api`)
+- **Key Files**: `services/ai/src/domain/SubDermalTelemetryEngine.ts`, `services/api/src/infrastructure/ai/SimulatedAIInferenceService.ts`, `apps/customer-bff/src/controllers/scan.controller.ts`, `apps/customer-app/src/features/design-preview/screens/Scan.tsx`
+
 ### 2026-09-14 - Live Camera Scanner Integration & Proprietary Vendor Brand Sanitization
 - **Agent/Author**: Antigravity Digital Health & AI Engineering Agent
 - **Type**: Feature / Security / Refactor

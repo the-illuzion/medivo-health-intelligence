@@ -31,8 +31,25 @@ export const validateRequest = (schema: any) => {
 export const errorHandler = (err: any, req: Request, res: Response, _next: NextFunction) => {
   const reqId = (req as any).id || 'req-untracked';
   const path = req.originalUrl || req.url;
-  const method = req.method;
-  const status = err.status || 500;
+  let status = err.status;
+  if (!status) {
+    if (
+      err.message?.includes('Image is too dark') ||
+      err.message?.includes('severely over-exposed') ||
+      err.message?.includes('Blank or uniform') ||
+      err.message?.includes('No facial') ||
+      err.message?.includes('No human') ||
+      err.message?.includes('Invalid image') ||
+      err.message?.includes('Invalid Base64') ||
+      err.message?.includes('No image payload') ||
+      err.message?.includes('Corrupted image') ||
+      err.message?.includes('consent')
+    ) {
+      status = 400;
+    } else {
+      status = 500;
+    }
+  }
   const message = err.message || 'Internal AI Service Error';
 
   if (status >= 500) {

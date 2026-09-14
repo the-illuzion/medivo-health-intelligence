@@ -77,6 +77,15 @@
      - Replaced static placeholder buttons and mock timeouts with true camera-driven analysis: the app maintains a live camera viewfinder and only renders the 15-biomarker clinical dossier *after* an actual camera frame is captured and processed by the multi-modal AI backend.
      - Added "Take Another Scan" button that resets the viewfinder back to live camera mode, and "Inspect Full Clinical Dossier" button navigating to `/scan-report/[id]`.
      - Updated modal sheet `ScanContent` in `Sheets.tsx` to directly launch the live camera scanner route.
+   - **Real Image Validation & Clinical Rejection Pipeline**:
+     - Implemented strict raw byte distribution, mean luminance, contrast, standard deviation, and dermal chrominance validation in `SubDermalTelemetryEngine` (`services/ai`) and `SimulatedAIInferenceService` (`services/api`).
+     - Completely prevented blank, dark, over-exposed, or non-biological frames from generating valid scores:
+       - Rejects dark/covered camera frames ($\mu < 30$ or $>85\%$ dark bytes) with `"Image is too dark or under-exposed (low luminance)"`.
+       - Rejects over-exposed frames ($\mu > 240$ or $>90\%$ whiteout) with `"Image is severely over-exposed (direct glare/whiteout detected)"`.
+       - Rejects blank/solid monochromatic frames ($\sigma < 6.5$) with `"Blank or uniform frame detected. No facial biological textures or contours were identified"`.
+     - Updated `scan.controller.ts` in Customer BFF to propagate AI service errors (HTTP 400) directly to the frontend rather than silently swallowing them and falling back to synthetic data.
+   - **Frontend Interactive Error Popup Dialog**:
+     - Added high-visibility `<Modal>` error dialog in `Scan.tsx` that triggers on any backend validation failure or network exception, displaying the specific clinical error reason, helpful lighting & alignment guidance tips, and an instant "Try Again" retry action.
    - **Proprietary Vendor Brand Sanitization**:
      - Sanitized all user-facing screens, product cards, AI coach prompts, clinical disclaimers, chat handlers, and API adapter outputs to remove references to third-party vendor names ("Perfect Corp", "Perfect AI", "Shen.ai", "Shen AI").
      - Standardized all clinical AI telemetry under unified Medivo branding: *"Medivo Multi-Modal Optical Telemetry Engine"*, *"Medivo Optical AI Vision"*, *"rPPG Facial Vitals & Biomarkers (Optical AI)"*, and *"15 Clinical Skin & Cellular Attributes (Medivo AI)"*.

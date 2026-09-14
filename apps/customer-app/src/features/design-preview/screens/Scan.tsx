@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Platform, Pressable, Image, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Platform, Pressable, Image, ActivityIndicator, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen, useDesktop } from '../components/Shell';
 import {
@@ -851,6 +851,50 @@ export default function Scan() {
           onPress={() => openDetail('Privacy & Permissions')}
         />
       </View>
+
+      {/* Interactive Error Popup Dialog */}
+      <Modal
+        visible={phase === 'error' && !!errorMessage}
+        transparent
+        animationType="fade"
+        onRequestClose={handleResetScan}
+      >
+        <View style={st.modalOverlay}>
+          <View style={st.modalCard}>
+            <View style={{ alignItems: 'center', marginBottom: 12 }}>
+              <Tile name="alert" tone="red" size={44} />
+            </View>
+            <Heading size={18} style={{ textAlign: 'center', color: c.navy, marginBottom: 8 }}>
+              Biometric Scan Failed
+            </Heading>
+            <Copy size={13} color={c.navy} style={{ textAlign: 'center', lineHeight: 19, marginBottom: 16 }}>
+              {errorMessage}
+            </Copy>
+
+            <View style={st.errorTipsCard}>
+              <Copy bold size={11} color={c.navy} style={{ marginBottom: 4 }}>
+                Tips for a successful scan:
+              </Copy>
+              <Copy size={10} color={c.muted}>
+                • Ensure your face is evenly illuminated with natural or bright ambient light.
+              </Copy>
+              <Copy size={10} color={c.muted}>
+                • Avoid dark environments, direct glare, or strong backlighting.
+              </Copy>
+              <Copy size={10} color={c.muted}>
+                • Align your face steadily inside the oval reticle guide.
+              </Copy>
+            </View>
+
+            <View style={{ marginTop: 16, width: '100%' }}>
+              <Action onPress={handleResetScan}>
+                Try Again
+              </Action>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <DemoNote text="Live optical vital scan and biomarker analysis with real-time biometric consent." />
     </Screen>
   );
@@ -973,5 +1017,33 @@ const st = StyleSheet.create({
   desktopLowerCard: {
     flex: 1,
     marginTop: 0,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    zIndex: 999,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  errorTipsCard: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 4,
   },
 });

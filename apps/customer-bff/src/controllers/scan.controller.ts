@@ -54,33 +54,52 @@ export const analyzeScan = async (req: AuthenticatedRequest, res: Response, next
       );
       clearTimeout(timeoutId);
 
-      if (aiResponse.ok) {
-        const aiJson: any = await aiResponse.json();
-        if (aiJson && aiJson.data) {
-          const aiData = aiJson.data;
-          const scan = new SkinScan({
-            id: aiData.scanId || `scn-${Date.now()}`,
-            userId,
-            overallScore: aiData.overallScore,
-            grade: aiData.grade,
-            metrics: aiData.metrics,
-            recommendations: aiData.recommendations,
-            riskLevel: aiData.riskLevel || 'LOW',
-            consentVersion,
-            scannedAt: new Date(aiData.timestamp || Date.now()),
-          });
-          await scanRepo.save(scan);
-          result = scan.toDTO();
-        }
+      if (!aiResponse.ok) {
+        const errJson: any = await aiResponse.json().catch(() => ({}));
+        const errorMessage = errJson?.error || errJson?.message || `Optical AI processing error (${aiResponse.status})`;
+        scanLogger.warn('[ScanController] AI Microservice rejected image payload:', { status: aiResponse.status, error: errorMessage });
+        return res.status(aiResponse.status).json({
+          success: false,
+          error: errorMessage,
+        });
+      }
+
+      const aiJson: any = await aiResponse.json();
+      if (aiJson && aiJson.data) {
+        const aiData = aiJson.data;
+        const scan = new SkinScan({
+          id: aiData.scanId || `scn-${Date.now()}`,
+          userId,
+          overallScore: aiData.overallScore,
+          grade: aiData.grade,
+          metrics: aiData.metrics,
+          recommendations: aiData.recommendations,
+          riskLevel: aiData.riskLevel || 'LOW',
+          consentVersion,
+          scannedAt: new Date(aiData.timestamp || Date.now()),
+        });
+        await scanRepo.save(scan);
+        result = scan.toDTO();
       }
     } catch (rpcErr: any) {
-      // Graceful fallback to local domain use-case if microservice is offline
+      // Graceful fallback to local domain use-case ONLY if microservice is physically offline/unreached
       scanLogger.warn('[ScanController] AI Microservice RPC unreached, using domain fallback:', { error: rpcErr.message });
+      try {
+        result = await submitSkinScanUseCase.execute(userId, imageBase64 || '', consentVersion);
+      } catch (domainErr: any) {
+        scanLogger.warn('[ScanController] Domain fallback validation error:', { error: domainErr.message });
+        return res.status(400).json({
+          success: false,
+          error: domainErr.message || 'Image validation failed',
+        });
+      }
     }
 
-    // 2. Fallback to domain use case if not handled by remote microservice
     if (!result) {
-      result = await submitSkinScanUseCase.execute(userId, imageBase64 || '', consentVersion);
+      return res.status(400).json({
+        success: false,
+        error: 'Unable to extract biometric telemetry from the provided frame.',
+      });
     }
 
     // 3. Update Vitals and Care schedule dynamically upon successful scan
