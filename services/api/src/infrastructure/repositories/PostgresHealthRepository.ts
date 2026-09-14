@@ -19,6 +19,7 @@ interface HealthConnectionRow {
   requested_metrics: HealthMetricType[];
   connected_at: Date;
   last_synced_at: Date | null;
+  has_imported_data: boolean;
 }
 
 interface HealthSummaryRow {
@@ -172,12 +173,21 @@ export class PostgresHealthRepository implements IHealthRepository {
     provider: HealthDataProvider,
   ): Promise<HealthConnection | null> {
     const result = await DatabasePool.query(
-      `SELECT provider, requested_metrics, connected_at, last_synced_at
-       FROM health_schema.health_connections
-       WHERE user_id = $1
-         AND provider = $2
-         AND status = 'CONNECTED'
-         AND deleted_at IS NULL
+      `SELECT hc.provider,
+              hc.requested_metrics,
+              hc.connected_at,
+              hc.last_synced_at,
+              EXISTS (
+                SELECT 1
+                FROM health_schema.health_samples hs
+                WHERE hs.user_id = hc.user_id
+                  AND hs.provider = hc.provider
+              ) AS has_imported_data
+       FROM health_schema.health_connections hc
+       WHERE hc.user_id = $1
+         AND hc.provider = $2
+         AND hc.status = 'CONNECTED'
+         AND hc.deleted_at IS NULL
        LIMIT 1`,
       [userId, provider],
     );
@@ -193,6 +203,7 @@ export class PostgresHealthRepository implements IHealthRepository {
       requestedMetrics: row.requested_metrics ?? [],
       connectedAt: new Date(row.connected_at),
       lastSyncedAt: row.last_synced_at ? new Date(row.last_synced_at) : null,
+      hasImportedData: row.has_imported_data,
     };
   }
 
