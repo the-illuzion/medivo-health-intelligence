@@ -63,7 +63,7 @@ export default function Devices() {
 
   useEffect(() => {
     fetchDevices();
-  }, []);
+  }, [fetchDevices]);
 
   const activeCount = devices.filter((d) => d.enabled).length + (ringConnected ? 1 : 0);
 
@@ -71,21 +71,21 @@ export default function Devices() {
     <Screen>
       <PageHeading
         title="Manage Devices"
-        subtitle="Connect and manage your health devices in one place. Keep your data synced for better insights."
+        subtitle="Connect and manage your health devices in one place. Keep your data available for better insights."
         back={() => (router.canGoBack() ? router.back() : router.replace(designRoutes.profile))}
       />
       <Card style={[s.row, { backgroundColor: c.blueSoft }]}>
         <Tile name="phone" size={48} />
         <View style={s.flex}>
-          <Heading size={19}>{activeCount} device{activeCount === 1 ? '' : 's'} connected</Heading>
+          <Heading size={19}>{activeCount} additional device{activeCount === 1 ? '' : 's'} connected</Heading>
           <Copy color={c.muted} style={s.top4}>
-            {activeCount > 0 ? '↻ Live continuous background sync active' : '○ Background sync standby'}
+            {activeCount > 0 ? 'Connected integrations ready' : 'No additional devices connected'}
           </Copy>
           <Copy color={activeCount > 0 ? c.green : c.muted}>
-            {activeCount > 0 ? '✓ All critical telemetry sources active' : 'Pair a device below to stream live vitals'}
+            {activeCount > 0 ? '✓ Connected sources are available to Medivo' : 'Connect another supported source below'}
           </Copy>
           <Copy size={11} color={c.muted}>
-            Your devices stream vital signs securely to your encrypted Medivo clinical vault.
+            Sync timing depends on each integration. Apple Health syncs when Medivo opens or returns to the foreground.
           </Copy>
         </View>
       </Card>
@@ -95,13 +95,13 @@ export default function Devices() {
           <View style={[s.panel, { backgroundColor: activeCount > 0 ? c.greenSoft : '#f6f8fc' }]}>
             <Heading size={17}>Connected Devices ({devices.filter((d) => d.enabled).length})</Heading>
             <Copy size={12} color={c.muted}>
-              {devices.length > 0 ? '● Devices are syncing and working properly.' : 'No devices connected yet.'}
+              {devices.length > 0 ? '● Connected devices are available. Sync behavior depends on the integration.' : 'No additional devices connected yet.'}
             </Copy>
           </View>
           {devices.length === 0 && (
             <Card style={{ marginTop: 7, padding: 14 }}>
               <Copy size={12} color={c.muted}>
-                No wearable or telemetry devices connected. Choose an integration from the options below to connect your Apple Watch, Fitbit, or Garmin.
+                No wearable or telemetry devices connected. Choose an integration from the options below to connect a supported source.
               </Copy>
             </Card>
           )}
@@ -145,7 +145,7 @@ export default function Devices() {
           <View style={[s.panel, { backgroundColor: ringConnected ? c.greenSoft : c.redSoft, marginTop: 14 }]}>
             <Heading size={17}>{ringConnected ? 'Reconnected (1)' : 'Needs Attention (1)'}</Heading>
             <Copy size={12} color={c.muted}>
-              {ringConnected ? 'Your ring is syncing again.' : '● Action required to resume syncing.'}
+              {ringConnected ? 'Your ring is connected again.' : '● Action required to resume updates.'}
             </Copy>
           </View>
           <Card style={{ marginTop: 7 }}>
@@ -173,20 +173,19 @@ export default function Devices() {
                   <Icon name="alert" color={c.orange} />
                   <View style={s.flex}>
                     <Copy size={11} bold color="#cc6716">
-                      Background sync permission required
+                      Connection needs attention
                     </Copy>
                     <Copy size={10} color={c.muted}>
-                      Enable background app refresh to keep your data in sync and get the latest
-                      insights.
+                      Reconnect this integration to resume its supported data updates.
                     </Copy>
                   </View>
                 </View>
                 <Action
                   secondary
                   style={{ marginTop: 8, minHeight: 34 }}
-                  onPress={() => openDetail('Background sync settings')}
+                  onPress={() => openDetail('Device connection settings')}
                 >
-                  Open Settings
+                  Connection help
                 </Action>
               </View>
             )}
@@ -208,7 +207,9 @@ export default function Devices() {
                   key={title}
                   style={[s.third, { padding: 9 }]}
                   onPress={() =>
-                    router.push({ pathname: designRoutes.connect, params: { device: title } })
+                    title === 'Apple Health'
+                      ? router.push('/connected-devices')
+                      : router.push({ pathname: designRoutes.connect, params: { device: title } })
                   }
                 >
                   <Tile
@@ -222,7 +223,7 @@ export default function Devices() {
                   <Copy size={10} color={c.muted}>
                     {
                       [
-                        'Sync health data from your iPhone',
+                        'Read supported health data from your iPhone',
                         'Track activity, sleep and more',
                         'Connect your Garmin device',
                       ][i]
@@ -234,14 +235,14 @@ export default function Devices() {
             <Action
               secondary
               style={{ marginTop: 12 }}
-              onPress={() => router.push(designRoutes.connect)}
+              onPress={() => router.push('/connected-devices')}
             >
-              Connect Apple Watch
+              Connect Apple Watch via Apple Health
             </Action>
           </Section>
         </View>
       </View>
-      <DemoNote text="Live device telemetry management with real-time sync control." />
+      <DemoNote text="Device and health integration management." />
     </Screen>
   );
 }
@@ -252,8 +253,29 @@ export function ConnectDevice() {
   const router = useRouter();
   const { devices, connectDevice } = useDevicesStore();
   const { openSheet, openDetail } = useSheetStore();
+  const isAppleHealthDevice = device === 'Apple Health' || device === 'Apple Watch';
+
+  useEffect(() => {
+    if (isAppleHealthDevice) {
+      router.replace('/connected-devices');
+    }
+  }, [isAppleHealthDevice, router]);
 
   const connected = devices.some((d) => d.name === device && d.sync === 'Just now');
+
+  if (isAppleHealthDevice) {
+    return (
+      <Screen>
+        <PageHeading
+          title="Apple Health"
+          back={() => (router.canGoBack() ? router.back() : router.replace(designRoutes.devices))}
+        />
+        <Card>
+          <Copy color={c.muted}>Opening the Apple Health connection screen…</Copy>
+        </Card>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -264,13 +286,12 @@ export function ConnectDevice() {
       <View style={[s.row, { alignItems: 'center', marginBottom: 12 }]}>
         <DeviceArt size={135} />
         <View style={s.flex}>
-          <Heading size={20}>{device === 'Apple Watch' ? '● WATCH' : device}</Heading>
+          <Heading size={20}>{device}</Heading>
           <Heading size={22} style={{ marginVertical: 7 }}>
             Connect {device}
           </Heading>
           <Copy color={c.muted}>
-            Sync your health data from {device} to get a more complete picture of your health, all
-            in one place.
+            Connect {device} to bring supported health data into Medivo.
           </Copy>
           <View style={[s.wrap, { marginTop: 8 }]}>
             <Chip icon="shield">Secure & Private</Chip>
@@ -288,19 +309,19 @@ export function ConnectDevice() {
               title: 'Heart Rate',
               icon: 'heart',
               tone: 'red' as const,
-              text: 'Resting, active and workout heart rate',
+              text: 'Supported heart-rate measurements',
             },
             {
               title: 'Sleep',
               icon: 'moon',
               tone: 'purple' as const,
-              text: 'Sleep duration and sleep stages',
+              text: 'Supported sleep measurements',
             },
             {
               title: 'Activity',
               icon: 'activity',
               tone: 'blue' as const,
-              text: 'Steps, active minutes and workout data',
+              text: 'Supported activity measurements',
             },
           ].map((item) => (
             <Card key={item.title} style={[s.third, { padding: 10 }]}>
@@ -320,16 +341,16 @@ export function ConnectDevice() {
         <Card style={{ marginTop: 10, gap: 15 }}>
           {[
             {
-              title: `Open the ${device === 'Apple Watch' ? 'Apple Health' : device} app`,
-              text: 'You’ll be redirected to grant access.',
+              title: `Open the ${device} connection flow`,
+              text: 'Follow the provider flow to authorize the integration.',
             },
             {
-              title: 'Allow Medivo to access your data',
-              text: 'Choose the health data you’d like to share.',
+              title: 'Choose what to share',
+              text: 'Grant only the supported data access you want to provide.',
             },
             {
-              title: 'Start syncing',
-              text: 'Your data will sync automatically in the background.',
+              title: 'Refresh your data',
+              text: 'Sync timing depends on the provider and the permissions you grant.',
             },
           ].map((item, i) => (
             <View style={s.row} key={item.title}>
@@ -347,19 +368,19 @@ export function ConnectDevice() {
       <View style={{ marginTop: 12 }}>
         <Row
           title="Your data stays private"
-          description="We only access the data you allow, and it’s always encrypted and secure. You can change permissions anytime in Settings."
+          description="We only access the data you allow, and it’s always encrypted and secure. You can change permissions through the connected provider."
           icon="lock"
           tone="green"
           onPress={() => openDetail('Privacy & Permissions')}
         />
         <Row
-          title="Keeps syncing automatically"
-          description="Once connected, your device will sync regularly in the background whenever it is nearby."
+          title="Sync behavior"
+          description="Sync timing and background behavior depend on the connected provider and the permissions it supports."
           icon="sync"
-          onPress={() => openDetail('Automatic sync')}
+          onPress={() => openDetail('Sync behavior')}
         />
       </View>
-      <DemoNote text="Live device connection and telemetry synchronization." />
+      <DemoNote text="Device connection flow for supported non-Apple integrations." />
       <Action
         style={{ marginTop: 12 }}
         onPress={async () => {
