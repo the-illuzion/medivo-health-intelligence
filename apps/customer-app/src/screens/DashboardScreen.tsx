@@ -9,6 +9,13 @@ interface DashboardScreenProps {
   onNavigate: (screen: ScreenKey) => void;
 }
 
+type TrendInfo = {
+  icon: React.ComponentProps<typeof Feather>['name'];
+  color: string;
+  bg: string;
+  text: string;
+};
+
 export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
   const { user } = useAuthStore();
   const { activeScan, scanHistory, fetchScanHistory } = useScanStore();
@@ -67,8 +74,8 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
     : 'Baseline Needed';
 
   // Dynamic Trend calculation based on previous scans
-  let trendInfo = {
-    icon: 'camera' as const,
+  let trendInfo: TrendInfo = {
+    icon: 'camera',
     color: '#4338CA',
     bg: '#EEF2FF',
     text: 'Tap to Scan',
@@ -283,12 +290,10 @@ export function DashboardScreen({ onNavigate }: DashboardScreenProps) {
           <Feather name="sun" size={18} color="#D97706" />
           <Text style={styles.metricLabel}>Melanin / Spots</Text>
           <Text style={styles.metricVal}>
-            {hasScans && (metrics?.pigmentation != null || metrics?.spots != null)
-              ? `${metrics.pigmentation ?? metrics.spots}/100`
-              : '--'}
+            {hasScans && metrics?.pigmentation != null ? `${metrics.pigmentation}/100` : '--'}
           </Text>
           <Text style={styles.metricSub}>
-            {hasScans && (metrics?.pigmentation != null || metrics?.spots != null) ? 'Uniformity Index' : 'Awaiting Scan'}
+            {hasScans && metrics?.pigmentation != null ? 'Uniformity Index' : 'Awaiting Scan'}
           </Text>
         </View>
 
