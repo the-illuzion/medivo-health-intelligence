@@ -16,6 +16,7 @@ import type { AppleHealthSyncResult } from './appleHealth';
 const PAGE_SIZE = 1000;
 const INITIAL_LOOKBACK_DAYS = 30;
 const ANCHOR_KEY_PREFIX = 'medivo.apple-health.anchors.v1';
+const ANCHOR_CHUNK_SIZE = 1800;
 
 type AnchorState = Partial<Record<HealthMetricType, string>>;
 
@@ -35,23 +36,106 @@ const QUANTITY_DEFINITIONS: readonly QuantityDefinition[] = [
   },
 ];
 
-function anchorStorageKey(userId: string): string {
+function legacyAnchorStorageKey(userId: string): string {
   return `${ANCHOR_KEY_PREFIX}.${userId}`;
 }
 
-async function readAnchors(userId: string): Promise<AnchorState> {
-  const raw = await storageAdapter.getItem(anchorStorageKey(userId));
-  if (!raw) return {};
-
-  try {
-    return JSON.parse(raw) as AnchorState;
-  } catch {
-    return {};
-  }
+function metricAnchorStorageKey(userId: string, metricType: HealthMetricType): string {
+  return `${ANCHOR_KEY_PREFIX}.${userId}.${metricType}`;
 }
 
-async function writeAnchors(userId: string, anchors: AnchorState): Promise<void> {
-  await storageAdapter.setItem(anchorStorageKey(userId), JSON.stringify(anchors));
+async function readMetricAnchor(
+  userId: string,
+  metricType: HealthMetricType,
+): Promise<string | undefined> {
+  const baseKey = metricAnchorStorageKey(userId, metricType);
+  const partCountRaw = await storageAdapter.getItem(`${baseKey}.parts`);
+  const partCount = partCountRaw ? Number.parseInt(partCountRaw, 10) : 0;
+
+  if (Number.isFinite(partCount) && partCount > 0) {
+    const parts = await Promise.all(
+      Array.from({ length: partCount }, (_, index) => storageAdapter.getItem(`${baseKey}.${index}`)),
+    );
+
+    if (parts.every((part): part is string => typeof part === 'string')) {
+      return parts.join('');
+    }
+  }
+
+  const directValue = await storageAdapter.getItem(baseKey);
+  return directValue ?? undefined;
+}
+
+async function removeMetricAnchor(userId: string, metricType: HealthMetricType): Promise<void> {
+  const baseKey = metricAnchorStorageKey(userId, metricType);
+  const partCountRaw = await storageAdapter.getItem(`${baseKey}.parts`);
+  const partCount = partCountRaw ? Number.parseInt(partCountRaw, 10) : 0;
+
+  if (Number.isFinite(partCount) && partCount > 0) {
+    await Promise.all(
+      Array.from({ length: partCount }, (_, index) => storageAdapter.removeItem(`${baseKey}.${index}`)),
+    );
+  }
+
+  await Promise.all([
+    storageAdapter.removeItem(`${baseKey}.parts`),
+    storageAdapter.removeItem(baseKey),
+  ]);
+}
+
+async function writeMetricAnchor(
+  userId: string,
+  metricType: HealthMetricType,
+  anchor: string,
+): Promise<void> {
+  const baseKey = metricAnchorStorageKey(userId, metricType);
+  const previousPartCountRaw = await storageAdapter.getItem(`${baseKey}.parts`);
+  const previousPartCount = previousPartCountRaw
+    ? Number.parseInt(previousPartCountRaw, 10)
+    : 0;
+
+  if (Number.isFinite(previousPartCount) && previousPartCount > 0) {
+    await Promise.all(
+      Array.from({ length: previousPartCount }, (_, index) =>
+        storageAdapter.removeItem(`${baseKey}.${index}`),
+      ),
+    );
+  }
+
+  const chunks = Array.from(
+    { length: Math.max(1, Math.ceil(anchor.length / ANCHOR_CHUNK_SIZE)) },
+    (_, index) => anchor.slice(index * ANCHOR_CHUNK_SIZE, (index + 1) * ANCHOR_CHUNK_SIZE),
+  );
+
+  await Promise.all(
+    chunks.map((chunk, index) => storageAdapter.setItem(`${baseKey}.${index}`, chunk)),
+  );
+  await storageAdapter.setItem(`${baseKey}.parts`, String(chunks.length));
+  await storageAdapter.removeItem(baseKey);
+}
+
+async function readAnchors(userId: string): Promise<AnchorState> {
+  const anchors: AnchorState = {};
+
+  // Read the old combined value only as a migration fallback. New writes are chunked per metric
+  // so no single SecureStore value grows beyond the practical iOS size limit.
+  const legacyRaw = await storageAdapter.getItem(legacyAnchorStorageKey(userId));
+  if (legacyRaw) {
+    try {
+      Object.assign(anchors, JSON.parse(legacyRaw) as AnchorState);
+    } catch {
+      // Ignore malformed legacy sync state and start fresh for missing metrics.
+    }
+  }
+
+  await Promise.all(
+    HEALTH_METRIC_TYPES.map(async (metricType) => {
+      const anchor = await readMetricAnchor(userId, metricType);
+      if (anchor) anchors[metricType] = anchor;
+    }),
+  );
+
+  return anchors;
 }
 
 function initialFromDate(): Date {
@@ -122,7 +206,7 @@ async function syncQuantityMetric(
     anchor = result.newAnchor;
     from = undefined;
     anchors[definition.metricType] = result.newAnchor;
-    await writeAnchors(userId, anchors);
+    await writeMetricAnchor(userId, definition.metricType, result.newAnchor);
 
     if (result.samples.length + result.deletedSamples.length < PAGE_SIZE) break;
   }
@@ -160,7 +244,7 @@ async function syncSleepMetric(
     anchor = result.newAnchor;
     from = undefined;
     anchors[metricType] = result.newAnchor;
-    await writeAnchors(userId, anchors);
+    await writeMetricAnchor(userId, metricType, result.newAnchor);
 
     if (result.samples.length + result.deletedSamples.length < PAGE_SIZE) break;
   }
@@ -174,7 +258,10 @@ export const appleHealthService = {
   },
 
   async resetSyncState(userId: string): Promise<void> {
-    await storageAdapter.removeItem(anchorStorageKey(userId));
+    await Promise.all([
+      storageAdapter.removeItem(legacyAnchorStorageKey(userId)),
+      ...HEALTH_METRIC_TYPES.map((metricType) => removeMetricAnchor(userId, metricType)),
+    ]);
   },
 
   async connectAndSync(userId: string): Promise<AppleHealthSyncResult> {
