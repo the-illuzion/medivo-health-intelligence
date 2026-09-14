@@ -44,6 +44,10 @@ export interface HealthConnection {
   lastSyncedAt: string | null;
 }
 
+export interface HealthDisconnectResponse {
+  disconnected: boolean;
+}
+
 interface ApiEnvelope<T> {
   success: boolean;
   data?: T;
@@ -67,7 +71,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers,
   });
 
-  const body = (await response.json()) as ApiEnvelope<T>;
+  const rawBody = await response.text();
+  let body: ApiEnvelope<T>;
+
+  try {
+    body = rawBody ? (JSON.parse(rawBody) as ApiEnvelope<T>) : ({ success: response.ok } as ApiEnvelope<T>);
+  } catch {
+    throw new Error(`Health API returned an unexpected response (${response.status}).`);
+  }
+
   if (!response.ok || !body.success) {
     throw new Error(body.error || 'Unable to sync Apple Health data.');
   }
@@ -85,5 +97,11 @@ export const healthApi = {
 
   getAppleHealthConnection(): Promise<HealthConnection | null> {
     return request<HealthConnection | null>('/api/mobile-bff/health/connection');
+  },
+
+  disconnectAppleHealth(): Promise<HealthDisconnectResponse> {
+    return request<HealthDisconnectResponse>('/api/mobile-bff/health/connection', {
+      method: 'DELETE',
+    });
   },
 };

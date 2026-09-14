@@ -27,6 +27,8 @@ export interface IHealthRepository {
     requestedMetrics: readonly HealthMetricType[],
   ): Promise<HealthSyncResult>;
 
+  disconnect(userId: string, provider: HealthDataProvider): Promise<void>;
+
   findConnection(
     userId: string,
     provider: HealthDataProvider,

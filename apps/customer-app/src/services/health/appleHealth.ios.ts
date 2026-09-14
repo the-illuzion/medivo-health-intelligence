@@ -173,6 +173,10 @@ export const appleHealthService = {
     return HealthKit.isHealthDataAvailable();
   },
 
+  async resetSyncState(userId: string): Promise<void> {
+    await storageAdapter.removeItem(anchorStorageKey(userId));
+  },
+
   async connectAndSync(userId: string): Promise<AppleHealthSyncResult> {
     const available = await HealthKit.isHealthDataAvailable();
     if (!available) {

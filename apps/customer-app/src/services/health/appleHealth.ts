@@ -10,6 +10,10 @@ export const appleHealthService = {
     return false;
   },
 
+  async resetSyncState(_userId: string): Promise<void> {
+    return;
+  },
+
   async connectAndSync(_userId: string): Promise<AppleHealthSyncResult> {
     throw new Error('Apple Health is only available in the iOS app.');
   },

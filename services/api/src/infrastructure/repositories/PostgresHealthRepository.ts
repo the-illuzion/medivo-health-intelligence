@@ -138,6 +138,20 @@ export class PostgresHealthRepository implements IHealthRepository {
     }
   }
 
+  async disconnect(userId: string, provider: HealthDataProvider): Promise<void> {
+    await DatabasePool.query(
+      `UPDATE health_schema.health_connections
+       SET status = 'DISCONNECTED',
+           requested_metrics = ARRAY[]::text[],
+           last_synced_at = NULL,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE user_id = $1
+         AND provider = $2
+         AND deleted_at IS NULL`,
+      [userId, provider],
+    );
+  }
+
   async findConnection(
     userId: string,
     provider: HealthDataProvider,

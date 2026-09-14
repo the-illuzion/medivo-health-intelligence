@@ -1,5 +1,6 @@
 import type { NextFunction, Response } from 'express';
 import {
+  DisconnectHealthConnectionUseCase,
   GetHealthConnectionUseCase,
   HealthSyncBatchTooLargeError,
   InvalidHealthSampleError,
@@ -12,6 +13,7 @@ import { healthSyncSchema } from '../schemas/health.schemas.js';
 const healthRepository = new PostgresHealthRepository();
 const syncHealthDataUseCase = new SyncHealthDataUseCase(healthRepository);
 const getHealthConnectionUseCase = new GetHealthConnectionUseCase(healthRepository);
+const disconnectHealthConnectionUseCase = new DisconnectHealthConnectionUseCase(healthRepository);
 
 export async function syncHealthData(
   req: AuthenticatedRequest,
@@ -52,6 +54,25 @@ export async function getAppleHealthConnection(
 
     const connection = await getHealthConnectionUseCase.execute(userId, 'apple_health');
     res.status(200).json({ success: true, data: connection });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function disconnectAppleHealthConnection(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
+      return;
+    }
+
+    await disconnectHealthConnectionUseCase.execute(userId, 'apple_health');
+    res.status(200).json({ success: true, data: { disconnected: true } });
   } catch (error) {
     next(error);
   }
