@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Screen, useCompact, useDesktop } from '../components/Shell';
@@ -39,7 +39,7 @@ export default function Home() {
   const { carePlan, fetchCarePlan } = useCareStore();
   const { devices, fetchDevices } = useDevicesStore();
   const { profile, fetchProfile } = useHealthProfileStore();
-  const { metrics: medivoMetrics, fetchVitals, fetchInsights, fetchAlerts } = useVitalsStore();
+  const { fetchVitals, fetchInsights, fetchAlerts } = useVitalsStore();
 
   useFocusEffect(
     useCallback(() => {
@@ -53,12 +53,6 @@ export default function Home() {
       ]);
     }, [fetchCarePlan, fetchDevices, fetchProfile, fetchVitals, fetchInsights, fetchAlerts]),
   );
-
-  useEffect(() => {
-    // Keep the Nitin-backed stores warm even when Apple Health is the primary
-    // presentation source on this screen. Scan/care/profile updates then remain
-    // immediately available across the app without changing the approved UI.
-  }, [medivoMetrics.length]);
 
   const firstName = (user?.name || profile.name || 'there').trim().split(/\s+/)[0] || 'there';
   const hour = new Date().getHours();
