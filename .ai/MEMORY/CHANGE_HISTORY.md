@@ -151,3 +151,10 @@ All entries must strictly adhere to the following block format. Do not use table
 - **Description**: Created the root directory structure (`apps/`, `packages/`, `services/`, `docs/`) and initialized basic tooling configurations to support the monorepo setup.
 - **Domains Affected**: Infrastructure
 - **Key Files**: `package.json`, `turbo.json`
+### 2026-09-14 - Native Medivo Design Preview and Desktop Presentation
+- **Agent/Author**: Codex
+- **Type**: Frontend feature
+- **Impact Level**: Medium
+- **Description**: Added an isolated Expo Router `/design` preview area with mobile-first Medivo health screens, local mock interaction state, sheets, carousels, and bidirectional entry points from the existing Profile. Added a web-only desktop presentation at 900px and wider with a dedicated desktop shell and centered dialog treatment; native and mobile-web render the existing mobile tree unchanged.
+- **Domains Affected**: Customer App UI only
+- **Key Files**: `apps/customer-app/app/design/*`, `apps/customer-app/src/features/design-preview/*`, `apps/customer-app/tests/design-preview/*`

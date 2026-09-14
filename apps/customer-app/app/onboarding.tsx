@@ -29,7 +29,7 @@ export default function OnboardingScreen() {
 
   const handleFinish = async () => {
     await completeOnboarding(selectedSkinType, selectedGoals);
-    router.replace('/(tabs)');
+    router.replace('/design');
   };
 
   return (
