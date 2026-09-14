@@ -1,61 +1,53 @@
 # Agent Handoff
 
-## Latest Session: Medivo Design Preview
+## Latest Session: Elevation of New Design System as Primary Application
 
-- Added `/design` routes in `apps/customer-app` and a `src/features/design-preview` native feature.
-- Mobile/native and web below 900px retain the mobile design. Expo Web at 900px and above uses `components/DesktopShell.tsx` with desktop navigation, top bar, wider content canvas, desktop dashboard grouping, and centered dialogs.
-- Preview state is local to `PreviewProvider`; it does not call APIs, persist fixtures, request permissions, or modify existing integrations.
-- Existing Profile includes **Open new design** and preview Profile includes **Open existing app**.
-- Validation completed: Expo export for web/iOS/Android and 11 Playwright browser journeys.
-- Local Docker image rebuild may need to be rerun before port 8081 displays the final desktop shell; source verification is complete.
-
----
-
-## Last Session Details
-
-- **Agent**: Antigravity Health Intelligence & Security Agent
-- **Completed**: 2026-09-08T22:50:00Z
 - **Branch**: `main`
+- **Completed**: 2026-09-14
+- **Summary**: The modern, clinical health intelligence design previously located under `/design` has been promoted to become the official primary version of `apps/customer-app`. All legacy designs, mock contexts, and zero-API stubs were removed in favor of dynamic Zustand stores, PostgreSQL schema migrations, customer-bff endpoints, and the `@medivo/api-client` SDK.
 
-## Summary of Work Completed
+### Architecture & Routing Map
+1. **Primary Tabs (`app/(tabs)/`)**:
+   - `index.tsx`: Official Home Dashboard (Live telemetry overview, health status score, key metrics grid, alerts, today's care plan preview, connected devices).
+   - `insights.tsx`: Official Key Metrics & Biomarker Intelligence (Day/Week/Month segmented periods, health score delta, clinical trends, changes summary).
+   - `scan.tsx`: Face Camera AI Scanner & auxiliary vitals check/photo upload/manual entry modal actions.
+   - `care.tsx`: Daily Care Plan & Task Execution (Date picker/switcher, Morning/Afternoon/Evening timeline, adherence calculation, task completion toggles).
+   - `profile.tsx`: Comprehensive Health Profile & Settings (Patient demographics, medical records, medications, care network, connected device shortcuts).
+   - `_layout.tsx`: Configured for 5 official tabs, hiding bottom tab bar in favor of `DesignFrame` responsive navigation.
 
-1. **Critical Password Security Remediation (OWASP-compliant `scrypt`)**:
-   - **`PasswordService` (`services/api/src/infrastructure/security/PasswordService.ts`)**:
-     - Engineered standard password hashing utilizing Node.js native `crypto.scrypt` with a 16-byte cryptographically secure random salt, memory cost `N=16384`, block size `r=8`, and parallelization `p=1`.
-     - Output format: `$scrypt$N=16384,r=8,p=1$<salt_hex>$<derived_key_hex>`.
-     - Constant-time verification using `crypto.timingSafeEqual` preventing side-channel timing attacks.
-     - Transparent auto-upgrading of legacy hashes upon successful authentication.
-     - Full synchronous and asynchronous API support (`hash`, `verify`, `hashSync`, `verifySync`, `needsRehash`).
-   - **Domain & Application Integration**:
-     - `UserEntity` (`services/api/src/domain/auth/UserEntity.ts`): Replaced plain text check with `PasswordService.verify()`.
-     - `AuthenticateUserUseCase` (`services/api/src/application/auth/AuthenticateUserUseCase.ts`): Async verification with automatic legacy password rehash upon authentication.
-     - `auth.controller.ts` (`apps/customer-bff`): Always hashes passwords with `PasswordService.hash()` prior to database persistence.
-   - **Database Migration 005 & Seeder Updates**:
-     - Added `005_secure_password_hashing_and_cleanup.sql` to sanitize legacy user credentials and enforce security check constraints.
-     - Updated `user.seeder.ts` to hash initial accounts using `PasswordService.hashSync('password123')`.
-   - **Test Suite**:
-     - Created `PasswordService.test.ts` in `services/api/src/infrastructure/security/__tests__/` with 6 dedicated test cases (100% passing).
+2. **Standalone Core App Routes (`app/`)**:
+   - `app/metric-details.tsx`: Detailed biomarker drill-downs and clinical reference ranges.
+   - `app/devices.tsx`: Wearable and telemetry device management (battery telemetry, data scopes, sync toggles).
+   - `app/connect-device.tsx`: Device pairing flow with real-time feedback.
+   - `app/health-status.tsx`: 4-slide wellness carousel with habit checklist.
+   - `app/design/`: Backward-compatible redirect route forwarding directly to `/(tabs)`.
 
-2. **100% Dynamic Past Scan Records & History Flow (`apps/customer-app`)**:
-   - **`apps/customer-app/app/history.tsx` (Expo Router Route)**:
-     - Eliminated hardcoded mock data (`pastScans = [{ id: 'rep_1092', ... }]`, static `historyTrendData`).
-     - Connected directly to `useScanStore` (`scanHistory`, `isLoadingHistory`, `fetchScanHistory`, `setActiveScan`).
-     - Dynamic empty state for new users (0 scans) with "Take First AI Scan" CTA.
-     - Dynamic chronological LineChart representing actual scan progression over time.
-     - Dynamic trajectory insights comparing initial baseline against latest scan.
-     - Dynamic Past Scan Records list with navigation to `/scan-report/${scan.id}`.
-   - **`apps/customer-app/app/scan-report/[id].tsx` (Expo Router Route)**:
-     - Dynamic scan data loading via `useScanStore` and fallback to `apiClient.scans.getDetails(id)`.
-     - Full diagnostic dossier rendering all 15 clinical skin attributes with progress indicators, vitals telemetry, recommendations, and disclaimer.
-   - **`apps/customer-app/app/(tabs)/index.tsx` (Dashboard)**:
-     - Fully dynamic handling of both 0-scan (new) and multi-scan (existing) users with clean placeholders and accurate score sublabels.
+3. **Responsive Presentation**:
+   - Mobile/Tablet: Native Mobile Tab Bar + Top Header with Medivo branding, notifications badge, and avatar.
+   - Web Desktop ($\ge 900\text{px}$): Persistent Left Sidebar + Top Bar with notifications, live telemetry status, and centered $1180\text{px}$ dashboard.
+   - Global Modal System: `<SheetHost />` mounted globally in root `_layout.tsx` for bottom sheets on mobile and centered modal dialogs on desktop.
 
-3. **Verification & Quality**:
-   - Monorepo test suite: `pnpm -r test` exited with code 0 (14/14 tests in `services/api`, 7/7 tests in `packages/utils`).
-   - TypeScript compilation verified across all workspaces.
+4. **Live Stores & Backend Connectivity**:
+   - Stores: `useVitalsStore`, `useCareStore`, `useDevicesStore`, `useHealthProfileStore`, `useSheetStore`, `useAuthStore`.
+   - BFF Endpoints: `/api/mobile-bff/vitals`, `/api/mobile-bff/care`, `/api/mobile-bff/devices`, `/api/mobile-bff/health-profile`.
+   - PostgreSQL: Migration `006_vitals_care_devices_health_profile.sql` in `services/api` embedding schema tables and demo data seeder for `usr-101`.
 
-## Next Steps for Future Agents
+### Verification Status
+- `pnpm -r type-check`: 18/18 workspace packages passed with 0 TypeScript errors.
+- `pnpm -r test`: 25/25 unit & integration tests in `services/api` and `packages/utils` passed with 0 errors.
+- `pnpm --filter @medivo/customer-app build:web`: Exported all 53 static routes and assets successfully.
+- `pnpm --filter @medivo/customer-bff build`: Built with 0 errors.
+- `pnpm --filter @medivo/service-api build`: Built with 0 errors.
+- `pnpm --filter @medivo/api-client build`: Built with 0 errors.
+- Live API mutation and query verification: 100% passing against running Customer BFF on port 4000 (Auth, Vitals, Care, Devices, Health Profile).
 
-- The authentication pipeline is fully secured with OWASP `scrypt` hashing.
-- All customer app dashboards, scan capture, history, and report flows are 100% dynamic and bound to live API/store state.
-- Next priority domains: Doctor Portal consultation workflows, Telehealth WebRTC synchronization, and Appointments scheduling engine.
+### Flow Reviews Completed
+- **Flow 1: Authentication & Onboarding**: Complete (Branded clinical screens, zero hardcoded credentials, test user `test@yopmail.com` / `Test@123`).
+- **Flow 2: Home Dashboard**: Complete (Dynamic score ring, time-of-day greeting, live telemetry, key metrics, care plan preview, connected devices).
+- **Flow 3: Key Metrics & Insights**: Complete (`(tabs)/insights.tsx`, `Metrics.tsx`, `MetricDetails.tsx` with Day/Week/Month period switching, live health score delta, dynamic alert banner, period-aware changes summary, desktop 2-column grid, and metric drill-down with clinical baseline comparison).
+- **Flow 4: Optical AI Scan & Data Capture**: Complete (`(tabs)/scan.tsx`, `Sheets.tsx` [ScanContent, DetailContent] with live `apiClient.scans.analyze` execution, HIPAA consent verification, real-time optical biomarker inference, vital telemetry recording, and 2-column desktop grid).
+- **Flow 5: Daily Care Plan & Adherence**: Complete (`(tabs)/care.tsx`, `useCareStore.ts` with dynamic date switching [Today/relative navigation], live adherence percentage calculation, task status toggling [Pending/Completed], collapsible period timelines, Care Team notes, and 2-column desktop layout).
+- **Flow 6: Health Profile & Settings**: Complete (`(tabs)/profile.tsx`, `useHealthProfileStore.ts` with live demographic sync [Alex Morgan / test@yopmail.com], patient identity verification, active medication CRUD, care network management, HIPAA security banner, device shortcuts, and 2-column desktop grid).
+- **Flow 7: Devices & Wearables Management**: Complete (`app/devices.tsx`, `app/connect-device.tsx`, `useDevicesStore.ts` with live battery telemetry, background sync toggling, attention alerts, device pairing simulation [Apple Watch, Fitbit, Garmin], and 2-column desktop grid).
+- **Flow 8: Health Status Wellness Carousel**: Complete (`app/health-status.tsx`, `HealthStatus.tsx` with 4-slide carousel, habit checklist, score binding, and desktop frame).
+- **Navigation & Active Menu Highlight**: Fixed `isRouteActive` helper in `tokens.ts`, `Shell.tsx`, `DesktopShell.tsx`, and `WebSidebar.tsx` ensuring active highlight is always applied to the matching menu item across both mobile tab bar and desktop sidebar.

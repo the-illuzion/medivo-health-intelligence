@@ -306,7 +306,7 @@ export function GeneralSheet({
   onSettings: () => void;
 }) {
   const [saved, setSaved] = useState(false);
-  const [value, setValue] = useState(title === 'Edit Profile' ? 'Prateek Gautam' : '');
+  const [value, setValue] = useState(title === 'Edit Profile' ? 'Alex Morgan' : '');
   const [enabled, setEnabled] = useState(true);
   const isForm = [
     'Edit Profile',

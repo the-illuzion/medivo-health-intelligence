@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { View, ScrollView, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Action,
   Card,
@@ -14,22 +15,30 @@ import {
   s,
 } from '../components/UI';
 import { WellnessIllustration } from '../components/Illustrations';
+import { useVitalsStore } from '../../../store/useVitalsStore';
 import { statusSlides } from '../data/mock';
 import { colors as c, designRoutes } from '../tokens';
+
 export default function HealthStatus() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { healthScore } = useVitalsStore();
   const { width: windowWidth } = useWindowDimensions();
   const desktop = Platform.OS === 'web' && windowWidth >= 900;
   const [width, setWidth] = useState(Math.min(windowWidth, desktop ? 760 : 430));
   const [index, setIndex] = useState(0);
   const ref = useRef<ScrollView>(null);
+
   const go = (i: number) => {
     setIndex(i);
     ref.current?.scrollTo({ x: i * width, animated: true });
   };
+
+  const isHealthy = (healthScore?.score || 85) >= 80;
+
   return (
     <View
-      style={st.root}
+      style={[st.root, { paddingTop: Math.max(12, insets.top) }]}
       onLayout={(e) => setWidth(Math.min(e.nativeEvent.layout.width, desktop ? 760 : 430))}
     >
       <View style={st.header}>
@@ -64,10 +73,14 @@ export default function HealthStatus() {
             </View>
             <WellnessIllustration kind={slide.art} />
             <Heading size={i === 0 ? 38 : 29} style={st.title}>
-              {slide.title}
+              {i === 0 ? (isHealthy ? 'All good!' : 'Optimal') : slide.title}
             </Heading>
             <Copy size={17} color={c.muted} style={st.description}>
-              {slide.description}
+              {i === 0
+                ? isHealthy
+                  ? 'Your vital signs are within your normal range. Keep up the good work!'
+                  : 'Biomarker trends detected. Review your daily plan for recommendations.'
+                : slide.description}
             </Copy>
             {i < 3 ? (
               <View style={st.quote}>

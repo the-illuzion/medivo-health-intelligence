@@ -12,6 +12,9 @@ export interface UserProfile {
   score?: number;
   hipaaConsent: boolean;
   registered?: string;
+  phone?: string;
+  allergies?: string;
+  goals?: string[];
 }
 
 interface AuthState {

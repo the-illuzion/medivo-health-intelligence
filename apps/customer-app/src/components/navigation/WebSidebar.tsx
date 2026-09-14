@@ -13,11 +13,11 @@ export const WebSidebar: React.FC = () => {
   const { isDark } = useTheme();
 
   const navItems = [
-    { label: 'Dashboard', icon: Home, route: '/(tabs)', match: (p: string) => p === '/' || p === '/(tabs)' },
-    { label: 'Routines', icon: Sparkles, route: '/(tabs)/routines', match: (p: string) => p.includes('routine') },
+    { label: 'Dashboard', icon: Home, route: '/(tabs)', match: (p: string) => p === '/' || p === '/(tabs)' || p === '/(tabs)/index' },
+    { label: 'Insights', icon: Sparkles, route: '/(tabs)/insights', match: (p: string) => p.includes('insight') || p.includes('metric') },
     { label: 'AI Scan', icon: Camera, route: '/(tabs)/scan', match: (p: string) => p.includes('scan') },
-    { label: 'Marketplace', icon: ShoppingBag, route: '/(tabs)/products', match: (p: string) => p.includes('product') || p.includes('cart') || p.includes('checkout') },
-    { label: 'Profile', icon: User, route: '/(tabs)/profile', match: (p: string) => p.includes('profile') },
+    { label: 'Care Plan', icon: Sparkles, route: '/(tabs)/care', match: (p: string) => p.includes('care') || p.includes('routine') },
+    { label: 'Profile', icon: User, route: '/(tabs)/profile', match: (p: string) => p.includes('profile') || p.includes('device') },
     { label: 'AI Coach', icon: MessageSquare, route: '/coach', match: (p: string) => p.includes('coach') },
   ];
 

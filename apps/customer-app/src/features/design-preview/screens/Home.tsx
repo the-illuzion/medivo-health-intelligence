@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen, useCompact, useDesktop } from '../components/Shell';
@@ -7,7 +7,6 @@ import {
   Card,
   Chip,
   Copy,
-  DemoNote,
   Heading,
   Icon,
   Ring,
@@ -16,27 +15,66 @@ import {
   s,
 } from '../components/UI';
 import { DeviceArt } from '../components/Illustrations';
-import { usePreview } from '../PreviewContext';
-import { metrics } from '../data/mock';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { useVitalsStore } from '../../../store/useVitalsStore';
+import { useCareStore } from '../../../store/useCareStore';
+import { useDevicesStore } from '../../../store/useDevicesStore';
+import { useHealthProfileStore } from '../../../store/useHealthProfileStore';
+import { useSheetStore } from '../../../store/useSheetStore';
 import { colors as c, designRoutes } from '../tokens';
+
 export default function Home() {
   const router = useRouter();
-  const p = usePreview();
   const compact = useCompact();
   const desktop = useDesktop();
+
+  const { user } = useAuthStore();
+  const { profile, fetchProfile } = useHealthProfileStore();
+  const { metrics, insights, alerts, healthScore, fetchVitals, fetchInsights, fetchAlerts } = useVitalsStore();
+  const { carePlan, fetchCarePlan } = useCareStore();
+  const { devices, fetchDevices } = useDevicesStore();
+  const { openSheet } = useSheetStore();
+
+  useEffect(() => {
+    fetchProfile();
+    fetchVitals();
+    fetchInsights();
+    fetchAlerts();
+    fetchCarePlan();
+    fetchDevices();
+  }, []);
+
+  const displayName = user?.name || profile?.name || 'Alex';
+  const currentHour = new Date().getHours();
+  const timeGreeting = currentHour < 12 ? 'Good morning' : currentHour < 17 ? 'Good afternoon' : 'Good evening';
+  const todayDateFormatted = new Date().toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
   const goMetric = (name: string) =>
     router.push({ pathname: designRoutes.metric, params: { name } });
+
+  const activeAlert = alerts[0];
+  const primaryInsight = insights[0];
+  const scoreValue = healthScore?.score || 85;
+  const isHealthy = scoreValue >= 80;
+  const statusLabel = isHealthy ? 'All good' : scoreValue >= 65 ? 'Optimal' : 'Needs attention';
+  const statusColor = isHealthy ? c.green : scoreValue >= 65 ? c.blue : c.orange;
+
   return (
     <Screen>
       <View style={st.greeting}>
-        <Heading size={19}>Good morning, Aanya</Heading>
+        <Heading size={19}>{timeGreeting}, {displayName}</Heading>
         <Copy size={10} color={c.muted}>
-          Tue, 12 Nov 2024
+          {todayDateFormatted}
         </Copy>
       </View>
       <Copy color={c.muted}>Here’s your health overview for today.</Copy>
-      <Copy size={9} color={c.muted} style={s.top4}>
-        Design preview · Sample profile and readings
+      <Copy size={9} color={c.green} style={s.top4}>
+        ● Live Telemetry & Biomarker Intelligence Active
       </Copy>
       <View style={desktop && st.desktopHero}>
         <Card
@@ -44,23 +82,25 @@ export default function Home() {
           label="Your Health Status"
           style={[st.health, desktop && st.desktopHeroCard]}
         >
-          <Ring />
+          <Ring value={scoreValue} />
           <View style={s.flex}>
             <Copy>Your Health Status</Copy>
             <View style={[s.row, { marginVertical: 5 }]}>
-              <Heading size={25} style={{ color: c.green }}>
-                All good
+              <Heading size={25} style={{ color: statusColor }}>
+                {statusLabel}
               </Heading>
-              <Icon name="done" size={23} color={c.green} />
+              <Icon name="done" size={23} color={statusColor} />
             </View>
             <Copy size={11} color={c.muted}>
-              Your vital signs are within your normal range. Keep up the good work!
+              {isHealthy
+                ? 'Your vital signs are within your normal range. Keep up the good work!'
+                : 'Biomarker trends detected. Review your daily plan for recommendations.'}
             </Copy>
           </View>
           <Icon name="chevron" size={17} />
         </Card>
         <Card
-          onPress={() => p.setSheet({ kind: 'insights' })}
+          onPress={() => openSheet({ kind: 'insights' })}
           label="Insight for You"
           style={[st.insight, desktop && st.desktopHeroCard]}
         >
@@ -70,8 +110,8 @@ export default function Home() {
               Insight for You
             </Copy>
             <Copy size={11} color={c.muted} style={s.top4}>
-              Your sleep duration has improved by 12% this week, which is positively impacting your
-              recovery.
+              {primaryInsight?.text ||
+                'Your sleep duration has improved by 12% this week, which is positively impacting your recovery.'}
             </Copy>
           </View>
           <Icon name="chevron" size={16} />
@@ -83,8 +123,7 @@ export default function Home() {
         onAction={() => router.navigate(designRoutes.metrics)}
       >
         <View style={st.metrics}>
-          {[0, 2, 5, 1, 3, 4].map((i) => {
-            const m = metrics[i];
+          {metrics.slice(0, 6).map((m) => {
             return (
               <Card
                 key={m.name}
@@ -93,38 +132,20 @@ export default function Home() {
                 style={[st.mini, compact && { width: '48%' }]}
               >
                 <Tile
-                  name={i === 2 ? 'lungs' : i === 1 ? 'drop' : m.icon}
-                  tone={
-                    i === 5
-                      ? 'purple'
-                      : i === 3
-                        ? 'orange'
-                        : i === 1
-                          ? 'green'
-                          : i === 2
-                            ? 'blue'
-                            : m.tone
-                  }
+                  name={m.name === 'SpO₂' ? 'lungs' : m.name === 'Blood Pressure' ? 'pressure' : m.icon}
+                  tone={m.tone}
                   size={27}
                 />
                 <View style={s.flex}>
                   <Copy size={9} color={c.muted}>
-                    {i === 5 ? 'Body Temp' : m.name}
+                    {m.name}
                   </Copy>
                   <Copy size={13} bold>
-                    {m.home}
+                    {m.home || m.value}
                     <Copy size={8}> {m.unit}</Copy>
                   </Copy>
-                  <Copy size={8} color={i === 2 || i === 5 ? c.muted : c.green}>
-                    {i === 0
-                      ? '↓ 2% from baseline'
-                      : i === 1
-                        ? '↓ 5% from baseline'
-                        : i === 3
-                          ? '↑ 12% from last week'
-                          : i === 4
-                            ? '↑ 8% from last week'
-                            : '→ No change'}
+                  <Copy size={8} color={m.tone === 'red' ? c.red : c.green}>
+                    {m.change}
                   </Copy>
                 </View>
               </Card>
@@ -132,20 +153,22 @@ export default function Home() {
           })}
         </View>
       </Section>
-      <Card style={st.alert}>
-        <View style={s.row}>
-          <Tile name="up" tone="orange" />
-          <View style={s.flex}>
-            <Heading size={13}>Resting Heart Rate is higher than usual</Heading>
-            <Copy size={11} color={c.muted} style={s.top4}>
-              Your resting heart rate is 18% above your personal baseline for the past 3 days.
-            </Copy>
+      {activeAlert && (
+        <Card style={st.alert}>
+          <View style={s.row}>
+            <Tile name="up" tone="orange" />
+            <View style={s.flex}>
+              <Heading size={13}>{activeAlert.title}</Heading>
+              <Copy size={11} color={c.muted} style={s.top4}>
+                {activeAlert.subtitle}
+              </Copy>
+            </View>
           </View>
-        </View>
-        <Action secondary style={st.alertAction} onPress={() => p.setSheet({ kind: 'alert' })}>
-          View details
-        </Action>
-      </Card>
+          <Action secondary style={st.alertAction} onPress={() => openSheet({ kind: 'alert' })}>
+            View details
+          </Action>
+        </Card>
+      )}
       <View style={desktop && st.desktopLower}>
         <Section
           title="Today’s Care Plan"
@@ -154,25 +177,37 @@ export default function Home() {
           style={[st.white, desktop && st.desktopLowerCard]}
         >
           <View style={compact ? s.grid2 : s.grid3}>
-            {[p.tasks[0], p.tasks[2], p.tasks[4]].map((t, i) => (
-              <Card key={t.id} onPress={() => router.navigate(designRoutes.care)} style={s.third}>
-                <Tile name={t.icon} size={32} />
-                <Copy bold size={11} style={{ marginTop: 7 }}>
-                  {['Take Medication', 'Light Activity', 'Recheck Vitals'][i]}
+            {carePlan.tasks.length > 0 ? (
+              carePlan.tasks.slice(0, 3).map((t) => (
+                <Card key={t.id} onPress={() => router.navigate(designRoutes.care)} style={s.third}>
+                  <Tile name={t.icon} size={32} tone={t.tone} />
+                  <Copy bold size={11} style={{ marginTop: 7 }}>
+                    {t.name}
+                  </Copy>
+                  <Copy size={10} color={c.muted} style={s.top4}>
+                    {t.time}
+                  </Copy>
+                  <View style={{ marginTop: 7 }}>
+                    <Chip
+                      tone={t.status === 'Completed' ? 'green' : t.status === 'Pending' ? 'orange' : 'blue'}
+                      icon={t.status === 'Completed' ? 'done' : 'clock'}
+                    >
+                      {t.status}
+                    </Chip>
+                  </View>
+                </Card>
+              ))
+            ) : (
+              <Card onPress={() => router.navigate(designRoutes.care)} style={[s.third, s.center, { padding: 14 }]}>
+                <Tile name="heart" tone="blue" size={32} />
+                <Copy bold size={11} style={s.top4}>
+                  Care plan ready
                 </Copy>
                 <Copy size={10} color={c.muted} style={s.top4}>
-                  {['8:00 AM', '30 min walk', 'Around 6:00 PM'][i]}
+                  View today's schedule ›
                 </Copy>
-                <View style={{ marginTop: 7 }}>
-                  <Chip
-                    tone={t.status === 'Completed' ? 'green' : 'blue'}
-                    icon={t.status === 'Completed' ? 'done' : 'clock'}
-                  >
-                    {t.status}
-                  </Chip>
-                </View>
               </Card>
-            ))}
+            )}
           </View>
         </Section>
         <Section
@@ -182,31 +217,47 @@ export default function Home() {
           style={[st.white, desktop && st.desktopLowerCard]}
         >
           <View style={s.grid3}>
-            {p.devices.slice(0, 3).map((d) => (
-              <Card
-                key={d.name}
-                onPress={() => router.push(designRoutes.devices)}
-                style={[s.third, { padding: 6 }]}
-              >
-                <View style={[s.row, { gap: 4 }]}>
-                  <DeviceArt kind={d.kind} size={25} />
-                  <View style={s.flex}>
-                    <Copy bold size={8}>
-                      {d.name}
-                    </Copy>
-                    <Copy size={8} color={c.muted}>
-                      ● {d.enabled ? `Synced ${d.sync}` : 'Sync paused'}
-                    </Copy>
+            {devices.length > 0 ? (
+              devices.slice(0, 3).map((d) => (
+                <Card
+                  key={d.name}
+                  onPress={() => router.push(designRoutes.devices)}
+                  style={[s.third, { padding: 6 }]}
+                >
+                  <View style={[s.row, { gap: 4 }]}>
+                    <DeviceArt kind={d.kind} size={25} />
+                    <View style={s.flex}>
+                      <Copy bold size={8}>
+                        {d.name}
+                      </Copy>
+                      <Copy size={8} color={d.enabled ? c.green : c.muted}>
+                        ● {d.enabled ? `Synced ${d.sync}` : 'Sync paused'}
+                      </Copy>
+                    </View>
                   </View>
-                </View>
+                </Card>
+              ))
+            ) : (
+              <Card
+                onPress={() => router.push(designRoutes.connect)}
+                style={[s.third, s.center, { padding: 14 }]}
+              >
+                <Tile name="watch" tone="purple" size={32} />
+                <Copy bold size={11} style={s.top4}>
+                  Pair a device
+                </Copy>
+                <Copy size={10} color={c.muted} style={s.top4}>
+                  Sync vitals automatically ›
+                </Copy>
               </Card>
-            ))}
+            )}
           </View>
         </Section>
       </View>
     </Screen>
   );
 }
+
 const st = StyleSheet.create({
   greeting: {
     flexDirection: 'row',

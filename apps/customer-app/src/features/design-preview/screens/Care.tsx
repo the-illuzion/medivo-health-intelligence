@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
-import { Screen, useCompact } from '../components/Shell';
+import { Screen, useCompact, useDesktop } from '../components/Shell';
 import {
   Action,
   Card,
@@ -10,7 +10,6 @@ import {
   Heading,
   Icon,
   IconButton,
-  PageHeading,
   Ring,
   Section,
   TextAction,
@@ -18,47 +17,74 @@ import {
   s,
 } from '../components/UI';
 import { Avatar } from '../components/Illustrations';
-import { usePreview } from '../PreviewContext';
+import { useCareStore } from '../../../store/useCareStore';
+import { useSheetStore } from '../../../store/useSheetStore';
 import { colors as c } from '../tokens';
+
 export default function Care() {
-  const p = usePreview();
+  const {
+    carePlan,
+    selectedDate,
+    shiftDate,
+    toggleTask,
+    markAllCompleted,
+    collapsedPeriods,
+    togglePeriodCollapse,
+    fetchCarePlan,
+  } = useCareStore();
+  const { openDetail } = useSheetStore();
+
   const [dateExpanded, setDateExpanded] = useState(false);
-  const completed = p.tasks.filter((t) => t.status === 'Completed').length;
-  const next = p.tasks.find((t) => t.status !== 'Completed');
   const large = useCompact();
-  const shiftDate = (delta: number) => {
-    const d = new Date(`${p.careDate}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + delta);
-    p.setCareDate(d.toISOString().slice(0, 10));
-  };
+  const desktop = useDesktop();
+
+  useEffect(() => {
+    fetchCarePlan(selectedDate);
+  }, [selectedDate]);
+
+  const completed = carePlan.tasks.filter((t) => t.status === 'Completed').length;
+  const totalTasks = carePlan.tasks.length;
+  const next = carePlan.tasks.find((t) => t.status !== 'Completed');
+
+  const isToday = selectedDate === new Date().toISOString().slice(0, 10);
+  const formattedDateLabel = isToday
+    ? 'Today'
+    : new Date(`${selectedDate}T12:00:00Z`).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      });
+
   return (
     <Screen>
       <View style={[s.row, { justifyContent: 'space-between' }]}>
         <Heading size={25}>Care Plan</Heading>
         <TextAction onPress={() => setDateExpanded((v) => !v)} label="Choose care plan date">
-          ▣ {p.careDate} ⌄
+          ▣ {formattedDateLabel} ⌄
         </TextAction>
       </View>
       <Copy color={c.muted} style={{ marginVertical: 5 }}>
-        Your plan for today and what’s coming next.
+        Your personalized clinical plan for {formattedDateLabel.toLowerCase()} and upcoming activities.
       </Copy>
       {dateExpanded && (
-        <Card style={s.row}>
+        <Card style={[s.row, { marginVertical: 6 }]}>
           <IconButton label="Previous day" name="back" onPress={() => shiftDate(-1)} />
-          <Copy style={s.flex}>{p.careDate}</Copy>
+          <Copy bold style={[s.flex, { textAlign: 'center' }]}>
+            {formattedDateLabel} ({selectedDate})
+          </Copy>
           <IconButton label="Next day" name="arrow" onPress={() => shiftDate(1)} />
           <TextAction onPress={() => setDateExpanded(false)}>Done</TextAction>
         </Card>
       )}
       <Card style={[s.grid3, { marginVertical: 12 }]}>
         <View style={[s.third, s.row, { gap: 5 }]}>
-          <Ring value={Math.round((completed / p.tasks.length) * 100)} percent size={43} />
+          <Ring value={totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0} percent size={43} />
           <View style={s.flex}>
             <Copy size={9} bold>
               Adherence
             </Copy>
             <Copy size={9} color={c.muted}>
-              {completed} of {p.tasks.length} tasks completed
+              {completed} of {totalTasks} tasks completed
             </Copy>
           </View>
         </View>
@@ -78,16 +104,16 @@ export default function Care() {
             Overall status
           </Copy>
           <Copy bold size={12} color={c.green}>
-            ☺ On track
+            ☺ {carePlan.overallStatus || 'On track'}
           </Copy>
           <Copy size={9} color={c.muted}>
             Keep it up!
           </Copy>
         </View>
       </Card>
-      {['Morning', 'Afternoon', 'Evening'].map((period, i) => {
-        const items = p.tasks.filter((t) => t.period === period);
-        const hidden = p.collapsed.includes(period);
+      {(['Morning', 'Afternoon', 'Evening'] as const).map((period, i) => {
+        const items = carePlan.tasks.filter((t) => t.period === period);
+        const hidden = collapsedPeriods.includes(period);
         return (
           <View key={period} style={{ marginBottom: 14 }}>
             <Pressable
@@ -95,11 +121,7 @@ export default function Care() {
               accessibilityLabel={`${period} tasks`}
               accessibilityState={{ expanded: !hidden }}
               aria-expanded={!hidden}
-              onPress={() =>
-                p.setCollapsed(
-                  hidden ? p.collapsed.filter((t) => t !== period) : [...p.collapsed, period],
-                )
-              }
+              onPress={() => togglePeriodCollapse(period)}
               style={[s.row, { marginBottom: 8 }]}
             >
               <Tile
@@ -144,7 +166,7 @@ export default function Care() {
                   </View>
                   <Card
                     label={`${t.status === 'Completed' ? 'Undo completion of' : 'Complete'} ${t.name}`}
-                    onPress={() => p.toggleTask(t.id)}
+                    onPress={() => toggleTask(t.id)}
                     style={[st.task, large && { flexWrap: 'wrap' }]}
                   >
                     <Tile name={t.icon} tone={t.tone} size={29} />
@@ -174,57 +196,62 @@ export default function Care() {
           </View>
         );
       })}
-      <Section
-        title="Care team notes"
-        action="See all"
-        onAction={() => p.openDetail('Care team notes')}
-        style={s.card}
-      >
-        <View style={s.row}>
-          <View style={[s.row, { gap: 0 }]}>
-            <Avatar size={24} />
-            <Avatar male size={24} />
-            <Avatar size={24} />
+      <View style={desktop ? st.desktopBottomGrid : undefined}>
+        <Section
+          title="Care team notes"
+          action="See all"
+          onAction={() => openDetail('Care team notes')}
+          style={[s.card, desktop && st.desktopBottomCard]}
+        >
+          <View style={s.row}>
+            <View style={[s.row, { gap: 0 }]}>
+              <Avatar size={24} />
+              <Avatar male size={24} />
+              <Avatar size={24} />
+            </View>
+            <View style={s.flex}>
+              <Copy size={10} color={c.muted}>
+                {carePlan.careTeamNotes[0]?.note ||
+                  'You’re doing great! Your blood pressure has been steady this week. Keep up the good work.'}
+              </Copy>
+              <Copy size={9} color={c.muted} style={s.top4}>
+                — {carePlan.careTeamNotes[0]?.doctor || 'Sarah Kim, NP'} · {carePlan.careTeamNotes[0]?.date || 'Today'}
+              </Copy>
+            </View>
           </View>
+        </Section>
+        <Card
+          onPress={() => openDetail('Why this matters')}
+          style={[s.panel, s.row, desktop && st.desktopBottomCard]}
+        >
+          <Tile name="bulb" />
           <View style={s.flex}>
-            <Copy size={10} color={c.muted}>
-              You’re doing great! Your blood pressure has been steady this week. Keep up the good
-              work.
-            </Copy>
-            <Copy size={9} color={c.muted} style={s.top4}>
-              — Sarah Kim, NP · Apr 28, 2025
+            <Heading size={15}>{carePlan.whyItMatters?.title || 'Why this matters'}</Heading>
+            <Copy size={11} color={c.muted} style={s.top4}>
+              {carePlan.whyItMatters?.description ||
+                'Today’s plan is based on your hypertension care plan and recent readings. These activities help keep your blood pressure stable, support your heart health, and track your progress.'}
             </Copy>
           </View>
-        </View>
-      </Section>
-      <Card onPress={() => p.openDetail('Why this matters')} style={[s.panel, s.row]}>
-        <Tile name="bulb" />
-        <View style={s.flex}>
-          <Heading size={15}>Why this matters</Heading>
-          <Copy size={11} color={c.muted} style={s.top4}>
-            Today’s plan is based on your hypertension care plan and recent readings. These
-            activities help keep your blood pressure stable, support your heart health, and track
-            your progress.
-          </Copy>
-        </View>
-        <Icon name="chevron" />
-      </Card>
+          <Icon name="chevron" />
+        </Card>
+      </View>
       <View style={[s.grid3, { marginTop: 12 }]}>
         <Action
           style={s.third}
-          disabled={completed === p.tasks.length}
-          onPress={() => p.setTasks(p.tasks.map((t) => ({ ...t, status: 'Completed' })))}
+          disabled={completed === totalTasks && totalTasks > 0}
+          onPress={markAllCompleted}
         >
-          {completed === p.tasks.length ? 'All tasks completed' : 'Mark all done'}
+          {completed === totalTasks && totalTasks > 0 ? 'All tasks completed' : 'Mark all done'}
         </Action>
-        <Action style={s.third} secondary onPress={() => p.openDetail('Full care plan')}>
+        <Action style={s.third} secondary onPress={() => openDetail('Full care plan')}>
           View full care plan
         </Action>
       </View>
-      <DemoNote text="Demo care plan. Tap a task to complete or undo. Dates use the same sample plan." />
+      <DemoNote text="Interactive care plan. Tap a task to toggle completion. Synchronized with live health schedule." />
     </Screen>
   );
 }
+
 const st = StyleSheet.create({
   timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   markerColumn: { width: 12, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
@@ -246,5 +273,14 @@ const st = StyleSheet.create({
     gap: 6,
     padding: 7,
     borderRadius: 10,
+  },
+  desktopBottomGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 8,
+  },
+  desktopBottomCard: {
+    flex: 1,
+    marginTop: 0,
   },
 });

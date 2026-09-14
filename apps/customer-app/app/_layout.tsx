@@ -1,14 +1,12 @@
 import React from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, Platform, LogBox, useWindowDimensions } from 'react-native';
+import { View, Platform, LogBox } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, useTheme } from '../src/theme/ThemeProvider';
-import { WebSidebar } from '../src/components/navigation/WebSidebar';
-import { Header } from '../src/components/ui/Header';
 import { ServerDownScreen } from '../src/screens/ServerDownScreen';
-import { useAuthStore } from '../src/store/useAuthStore';
 import { GestureRoot } from '../src/components/navigation/GestureRoot';
+import { SheetHost } from '../src/features/design-preview/components/Sheets';
 
 import '../global.css';
 
@@ -41,6 +39,10 @@ function StackNavigator() {
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="privacy-policy" />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="metric-details" options={{ headerShown: false }} />
+        <Stack.Screen name="devices" options={{ headerShown: false }} />
+        <Stack.Screen name="connect-device" options={{ headerShown: false }} />
+        <Stack.Screen name="health-status" options={{ headerShown: false }} />
         <Stack.Screen name="design" options={{ headerShown: false }} />
         <Stack.Screen name="scan-report/[id]" />
         <Stack.Screen name="coach" />
@@ -60,9 +62,7 @@ function StackNavigator() {
 }
 
 function MainAppShell() {
-  const { width } = useWindowDimensions();
   const pathname = usePathname();
-  const { isAuthenticated } = useAuthStore();
   const { isDark, colors } = useTheme();
 
   const isAuthRoute =
@@ -73,24 +73,19 @@ function MainAppShell() {
     pathname === '/otp-verify' ||
     pathname === '/onboarding';
 
-  const isDesignRoute = pathname === '/design' || pathname.startsWith('/design/');
-  const showHeader = isAuthenticated && !isAuthRoute && !isDesignRoute;
-  const showSidebar = Platform.OS === 'web' && width >= 1024 && isAuthenticated && !isAuthRoute && !isDesignRoute;
-
   return (
     <View
-      className={`flex-1 flex-row ${isDark ? 'bg-[#090D16]' : 'bg-white'}`}
+      className={`flex-1 ${isDark ? 'bg-[#090D16]' : 'bg-white'}`}
       style={{ flex: 1, height: '100%', backgroundColor: colors.background }}
     >
-      {!isDesignRoute && <ServerDownScreen />}
-      {showSidebar && <WebSidebar />}
+      {!isAuthRoute && <ServerDownScreen />}
       <View
         className="flex-1 h-full"
         style={{ flex: 1, height: '100%', backgroundColor: colors.background }}
       >
-        {showHeader && <Header />}
         <StackNavigator />
       </View>
+      <SheetHost />
     </View>
   );
 }

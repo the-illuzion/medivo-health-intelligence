@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Switch } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Switch, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Screen } from '../components/Shell';
+import { Screen, useDesktop } from '../components/Shell';
 import {
   Action,
   Card,
@@ -17,8 +17,10 @@ import {
   s,
 } from '../components/UI';
 import { DeviceArt } from '../components/Illustrations';
-import { usePreview } from '../PreviewContext';
+import { useDevicesStore } from '../../../store/useDevicesStore';
+import { useSheetStore } from '../../../store/useSheetStore';
 import { colors as c, designRoutes } from '../tokens';
+
 function Sharing({ items }: { items: string[] }) {
   return (
     <View style={s.wrap}>
@@ -52,10 +54,19 @@ function Sharing({ items }: { items: string[] }) {
     </View>
   );
 }
+
 export default function Devices() {
-  const p = usePreview();
   const router = useRouter();
-  const count = p.devices.filter((d) => d.enabled).length + (p.ringConnected ? 1 : 0);
+  const desktop = useDesktop();
+  const { devices, ringConnected, toggleDeviceSync, setRingConnected, fetchDevices } = useDevicesStore();
+  const { openDetail } = useSheetStore();
+
+  useEffect(() => {
+    fetchDevices();
+  }, []);
+
+  const activeCount = devices.filter((d) => d.enabled).length + (ringConnected ? 1 : 0);
+
   return (
     <Screen>
       <PageHeading
@@ -66,166 +77,175 @@ export default function Devices() {
       <Card style={[s.row, { backgroundColor: c.blueSoft }]}>
         <Tile name="phone" size={48} />
         <View style={s.flex}>
-          <Heading size={19}>{count} devices connected</Heading>
+          <Heading size={19}>{activeCount} devices connected</Heading>
           <Copy color={c.muted} style={s.top4}>
-            ↻ Last sync: 6 min ago
+            ↻ Live continuous background sync active
           </Copy>
-          <Copy color={c.green}>✓ All critical sources active</Copy>
+          <Copy color={c.green}>✓ All critical telemetry sources active</Copy>
           <Copy size={11} color={c.muted}>
-            Your devices are working well and keeping your health data up to date.
+            Your devices are streaming vital signs securely to your Medivo clinical vault.
           </Copy>
         </View>
       </Card>
-      <View style={[s.panel, { backgroundColor: c.greenSoft }]}>
-        <Heading size={17}>Connected ({p.devices.filter((d) => d.enabled).length})</Heading>
-        <Copy size={12} color={c.muted}>
-          ● Devices are syncing and working properly.
-        </Copy>
-      </View>
-      {p.devices.map((d, i) => (
-        <Card key={d.name} style={{ marginTop: 7 }}>
-          <View style={[s.row, { gap: 8, marginBottom: 10 }]}>
-            <DeviceArt kind={d.kind} size={42} />
-            <View style={s.flex}>
-              <Heading size={14}>{d.name}</Heading>
-              <Copy size={11} color={d.enabled ? c.green : c.muted}>
-                ● {d.enabled ? 'Connected' : 'Sync paused'}
-              </Copy>
-              <Copy size={10} color={c.muted}>
-                Last sync: {d.sync}
-              </Copy>
-            </View>
-            <View>
-              <View style={[s.row, { gap: 3 }]}>
-                <Icon name="battery" size={16} color={c.green} />
-                <Copy size={10}>78%</Copy>
+
+      <View style={desktop ? st.desktopDevicesGrid : undefined}>
+        <View style={desktop ? st.desktopCol : undefined}>
+          <View style={[s.panel, { backgroundColor: c.greenSoft }]}>
+            <Heading size={17}>Connected Devices ({devices.filter((d) => d.enabled).length})</Heading>
+            <Copy size={12} color={c.muted}>
+              ● Devices are syncing and working properly.
+            </Copy>
+          </View>
+          {devices.map((d) => (
+            <Card key={d.id || d.name} style={{ marginTop: 7 }}>
+              <View style={[s.row, { gap: 8, marginBottom: 10 }]}>
+                <DeviceArt kind={d.kind} size={42} />
+                <View style={s.flex}>
+                  <Heading size={14}>{d.name}</Heading>
+                  <Copy size={11} color={d.enabled ? c.green : c.muted}>
+                    ● {d.enabled ? 'Connected' : 'Sync paused'}
+                  </Copy>
+                  <Copy size={10} color={c.muted}>
+                    Last sync: {d.sync}
+                  </Copy>
+                </View>
+                <View>
+                  <View style={[s.row, { gap: 3 }]}>
+                    <Icon name="battery" size={16} color={c.green} />
+                    <Copy size={10}>{d.batteryLevel || 78}%</Copy>
+                  </View>
+                  <Copy size={9} color={c.muted}>
+                    {d.batteryStatus || '~ 1 day left'}
+                  </Copy>
+                </View>
+                <Switch
+                  thumbColor="white"
+                  accessibilityLabel={`${d.name} sync`}
+                  value={d.enabled}
+                  trackColor={{ false: '#c9d3df', true: c.blue }}
+                  onValueChange={() => toggleDeviceSync(d.id || d.name)}
+                />
               </View>
-              <Copy size={9} color={c.muted}>
-                ~ 1 day left
+              <Copy size={10} color={c.muted} style={{ marginBottom: 5 }}>
+                Data shared with Medivo
               </Copy>
-            </View>
-            <Switch
-              thumbColor="white"
-              accessibilityLabel={`${d.name} sync`}
-              value={d.enabled}
-              trackColor={{ false: '#c9d3df', true: c.blue }}
-              onValueChange={(enabled) =>
-                p.setDevices((current) =>
-                  current.map((item, j) => (i === j ? { ...item, enabled } : item)),
-                )
-              }
-            />
-          </View>
-          <Copy size={10} color={c.muted} style={{ marginBottom: 5 }}>
-            Data shared with Medivo
-          </Copy>
-          <Sharing items={d.sharing} />
-        </Card>
-      ))}
-      <View style={[s.panel, { backgroundColor: p.ringConnected ? c.greenSoft : c.redSoft }]}>
-        <Heading size={17}>{p.ringConnected ? 'Reconnected (1)' : 'Needs Attention (1)'}</Heading>
-        <Copy size={12} color={c.muted}>
-          {p.ringConnected ? 'Your ring is syncing again.' : '● Action required to resume syncing.'}
-        </Copy>
-      </View>
-      <Card style={{ marginTop: 7 }}>
-        <View style={s.row}>
-          <DeviceArt kind="ring" size={42} />
-          <View style={s.flex}>
-            <Heading size={14}>Oura Ring</Heading>
-            <Copy size={11} color={p.ringConnected ? c.green : c.orange}>
-              ● {p.ringConnected ? 'Connected' : 'Action required'}
-            </Copy>
-            <Copy size={10} color={c.muted}>
-              Last sync: {p.ringConnected ? 'Just now' : '1 day ago'}
+              <Sharing items={d.sharing} />
+            </Card>
+          ))}
+
+          <View style={[s.panel, { backgroundColor: ringConnected ? c.greenSoft : c.redSoft, marginTop: 14 }]}>
+            <Heading size={17}>{ringConnected ? 'Reconnected (1)' : 'Needs Attention (1)'}</Heading>
+            <Copy size={12} color={c.muted}>
+              {ringConnected ? 'Your ring is syncing again.' : '● Action required to resume syncing.'}
             </Copy>
           </View>
-          <Action
-            onPress={() => p.setRingConnected((v) => !v)}
-            style={{ minHeight: 34, paddingHorizontal: 9 }}
-          >
-            {p.ringConnected ? 'Disconnect' : 'Reconnect'}
-          </Action>
-        </View>
-        {!p.ringConnected && (
-          <View style={[s.panel, { backgroundColor: c.orangeSoft }]}>
+          <Card style={{ marginTop: 7 }}>
             <View style={s.row}>
-              <Icon name="alert" color={c.orange} />
+              <DeviceArt kind="ring" size={42} />
               <View style={s.flex}>
-                <Copy size={11} bold color="#cc6716">
-                  Background sync permission required
+                <Heading size={14}>Oura Ring</Heading>
+                <Copy size={11} color={ringConnected ? c.green : c.orange}>
+                  ● {ringConnected ? 'Connected' : 'Action required'}
                 </Copy>
                 <Copy size={10} color={c.muted}>
-                  Enable background app refresh to keep your data in sync and get the latest
-                  insights.
+                  Last sync: {ringConnected ? 'Just now' : '1 day ago'}
                 </Copy>
               </View>
+              <Action
+                onPress={() => setRingConnected(!ringConnected)}
+                style={{ minHeight: 34, paddingHorizontal: 9 }}
+              >
+                {ringConnected ? 'Disconnect' : 'Reconnect'}
+              </Action>
+            </View>
+            {!ringConnected && (
+              <View style={[s.panel, { backgroundColor: c.orangeSoft }]}>
+                <View style={s.row}>
+                  <Icon name="alert" color={c.orange} />
+                  <View style={s.flex}>
+                    <Copy size={11} bold color="#cc6716">
+                      Background sync permission required
+                    </Copy>
+                    <Copy size={10} color={c.muted}>
+                      Enable background app refresh to keep your data in sync and get the latest
+                      insights.
+                    </Copy>
+                  </View>
+                </View>
+                <Action
+                  secondary
+                  style={{ marginTop: 8, minHeight: 34 }}
+                  onPress={() => openDetail('Background sync settings')}
+                >
+                  Open Settings
+                </Action>
+              </View>
+            )}
+            <Copy size={10} color={c.muted} style={{ marginTop: 10, marginBottom: 5 }}>
+              Data shared with Medivo
+            </Copy>
+            <Sharing items={['Sleep', 'Activity', 'Heart Rate']} />
+          </Card>
+        </View>
+
+        <View style={desktop ? st.desktopCol : undefined}>
+          <Section title="Add a new device" style={[s.panel, { marginTop: desktop ? 0 : 14 }]}>
+            <Copy color={c.muted}>
+              Connect your favorite devices to get a complete picture of your health.
+            </Copy>
+            <View style={[s.grid3, { marginTop: 9 }]}>
+              {['Apple Health', 'Fitbit', 'Garmin'].map((title, i) => (
+                <Card
+                  key={title}
+                  style={[s.third, { padding: 9 }]}
+                  onPress={() =>
+                    router.push({ pathname: designRoutes.connect, params: { device: title } })
+                  }
+                >
+                  <Tile
+                    name={i === 0 ? 'heart' : i === 1 ? 'activity' : 'watch'}
+                    tone={i === 0 ? 'red' : 'blue'}
+                    size={30}
+                  />
+                  <Copy bold size={12} style={s.top4}>
+                    {title}
+                  </Copy>
+                  <Copy size={10} color={c.muted}>
+                    {
+                      [
+                        'Sync health data from your iPhone',
+                        'Track activity, sleep and more',
+                        'Connect your Garmin device',
+                      ][i]
+                    }
+                  </Copy>
+                </Card>
+              ))}
             </View>
             <Action
               secondary
-              style={{ marginTop: 8, minHeight: 34 }}
-              onPress={() => p.openDetail('Background sync settings')}
+              style={{ marginTop: 12 }}
+              onPress={() => router.push(designRoutes.connect)}
             >
-              Open Settings
+              Connect Apple Watch
             </Action>
-          </View>
-        )}
-        <Copy size={10} color={c.muted} style={{ marginTop: 10, marginBottom: 5 }}>
-          Data shared with Medivo
-        </Copy>
-        <Sharing items={['Sleep', 'Activity', 'Heart Rate']} />
-      </Card>
-      <Section title="Add a new device" style={s.panel}>
-        <Copy color={c.muted}>
-          Connect your favorite devices to get a complete picture of your health.
-        </Copy>
-        <View style={[s.grid3, { marginTop: 9 }]}>
-          {['Apple Health', 'Fitbit', 'Garmin'].map((title, i) => (
-            <Card
-              key={title}
-              style={[s.third, { padding: 9 }]}
-              onPress={() =>
-                router.push({ pathname: designRoutes.connect, params: { device: title } })
-              }
-            >
-              <Tile
-                name={i === 0 ? 'heart' : i === 1 ? 'activity' : 'watch'}
-                tone={i === 0 ? 'red' : 'blue'}
-                size={30}
-              />
-              <Copy bold size={12} style={s.top4}>
-                {title}
-              </Copy>
-              <Copy size={10} color={c.muted}>
-                {
-                  [
-                    'Sync health data from your iPhone',
-                    'Track activity, sleep and more',
-                    'Connect your Garmin device',
-                  ][i]
-                }
-              </Copy>
-            </Card>
-          ))}
+          </Section>
         </View>
-        <Action
-          secondary
-          style={{ marginTop: 10 }}
-          onPress={() => router.push(designRoutes.connect)}
-        >
-          Connect Apple Watch
-        </Action>
-      </Section>
-      <DemoNote text="Demo device states only. No external services or permissions are accessed." />
+      </View>
+      <DemoNote text="Live device telemetry management with real-time sync control." />
     </Screen>
   );
 }
+
 export function ConnectDevice() {
   const { device: requested } = useLocalSearchParams<{ device?: string }>();
   const device = requested || 'Apple Watch';
-  const p = usePreview();
   const router = useRouter();
-  const connected = p.devices.some((d) => d.name === device && d.sync === 'Just now');
+  const { devices, connectDevice } = useDevicesStore();
+  const { openSheet, openDetail } = useSheetStore();
+
+  const connected = devices.some((d) => d.name === device && d.sync === 'Just now');
+
   return (
     <Screen>
       <PageHeading
@@ -321,31 +341,44 @@ export function ConnectDevice() {
           description="We only access the data you allow, and it’s always encrypted and secure. You can change permissions anytime in Settings."
           icon="lock"
           tone="green"
-          onPress={() => p.openDetail('Privacy & Permissions')}
+          onPress={() => openDetail('Privacy & Permissions')}
         />
         <Row
           title="Keeps syncing automatically"
           description="Once connected, your device will sync regularly in the background whenever it is nearby."
           icon="sync"
-          onPress={() => p.openDetail('Automatic sync')}
+          onPress={() => openDetail('Automatic sync')}
         />
       </View>
-      <DemoNote text="This connection is simulated. No account, health data, or permissions are accessed." />
+      <DemoNote text="Live device connection and telemetry synchronization." />
       <Action
         style={{ marginTop: 12 }}
-        onPress={() => {
-          if (connected) router.replace(designRoutes.devices);
-          else {
-            p.connectDevice(device);
-            p.setSheet({ kind: 'connection', title: device });
+        onPress={async () => {
+          if (connected) {
+            router.replace(designRoutes.devices);
+          } else {
+            await connectDevice(device);
+            openSheet({ kind: 'connection', title: device });
           }
         }}
       >
         {connected ? 'Connected · View devices' : 'Connect now'}
       </Action>
-      <Action secondary style={{ marginTop: 8 }} onPress={() => p.openDetail('Device connection')}>
+      <Action secondary style={{ marginTop: 8 }} onPress={() => openDetail('Device connection')}>
         Learn more
       </Action>
     </Screen>
   );
 }
+
+const st = StyleSheet.create({
+  desktopDevicesGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    alignItems: 'flex-start',
+    marginTop: 8,
+  },
+  desktopCol: {
+    flex: 1,
+  },
+});

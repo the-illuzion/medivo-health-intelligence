@@ -60,7 +60,7 @@ export default function ScanReportScreen() {
   }
 
   const score = scan?.overallScore || 0;
-  const metrics = scan?.metrics || {};
+  const metrics: Record<string, any> = scan?.metrics || {};
   const formattedDate = scan?.scannedAt
     ? new Date(scan.scannedAt).toLocaleDateString('en-US', {
         month: 'short',

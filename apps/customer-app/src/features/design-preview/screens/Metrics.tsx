@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Screen, useCompact } from '../components/Shell';
+import { Screen, useCompact, useDesktop } from '../components/Shell';
 import {
   Action,
   Card,
@@ -17,172 +17,226 @@ import {
   Trend,
   s,
 } from '../components/UI';
-import { usePreview } from '../PreviewContext';
-import { metrics } from '../data/mock';
+import { useVitalsStore } from '../../../store/useVitalsStore';
+import { useSheetStore } from '../../../store/useSheetStore';
 import { colors as c, designRoutes } from '../tokens';
+
 export default function Metrics() {
-  const p = usePreview();
   const router = useRouter();
   const large = useCompact();
-  const n = ['Day', 'Week', 'Month'].indexOf(p.period);
-  const values = [
-    ['76', '118/76', '98', '7h 24m', '8,421', '36.8', 'Low'],
-    ['74', '119/77', '98', '7h 12m', '8,320', '36.6', 'Low'],
-    ['72', '120/78', '97', '7h 02m', '7,984', '36.7', 'Moderate'],
-  ];
+  const desktop = useDesktop();
+  const { metrics, period, setPeriod, healthScore, changesSummary, alerts, fetchVitals, fetchAlerts } = useVitalsStore();
+  const { openSheet } = useSheetStore();
+
+  useEffect(() => {
+    fetchVitals(period);
+    fetchAlerts();
+  }, [period]);
+
+  const activeAlertCount = alerts.length;
+  const periodTitle = period === 'Day' ? 'today' : period === 'Week' ? 'this week' : 'this month';
+
   return (
     <Screen>
       <PageHeading title="Key Metrics" subtitle="Track vital signs, trends, and what changed." />
       <View accessibilityRole="tablist" style={st.segmented}>
-        {(['Day', 'Week', 'Month'] as const).map((period) => (
+        {(['Day', 'Week', 'Month'] as const).map((p) => (
           <Pressable
-            key={period}
+            key={p}
             accessibilityRole="tab"
-            accessibilityLabel={period}
-            accessibilityState={{ selected: period === p.period }}
-            aria-selected={period === p.period}
-            onPress={() => p.setPeriod(period)}
-            style={[st.segment, period === p.period && { backgroundColor: c.blue }]}
+            accessibilityLabel={p}
+            accessibilityState={{ selected: p === period }}
+            aria-selected={p === period}
+            onPress={() => setPeriod(p)}
+            style={[st.segment, p === period && { backgroundColor: c.blue }]}
           >
-            <Copy size={13} color={period === p.period ? 'white' : c.muted}>
-              {period}
+            <Copy size={13} bold={p === period} color={p === period ? 'white' : c.muted}>
+              {p}
             </Copy>
           </Pressable>
         ))}
       </View>
       <Card style={[s.row, { marginVertical: 10 }]}>
-        <Ring value={[78, 82, 85][n]} size={45} />
+        <Ring value={healthScore.score} size={45} />
         <View style={s.flex}>
           <Copy bold size={11}>
             Health Score
           </Copy>
           <Copy size={10} color={c.muted}>
-            ▲ Up {6 + n} pts from {n === 0 ? 'yesterday' : n === 1 ? 'last week' : 'last month'}
+            ▲ Up {healthScore.deltaPts} pts from {healthScore.comparisonPeriod}
           </Copy>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="2 items to watch"
-          onPress={() => p.setSheet({ kind: 'alert' })}
+          accessibilityLabel={activeAlertCount > 0 ? `${activeAlertCount} items to watch` : 'All metrics clear'}
+          onPress={() => openSheet({ kind: 'alert' })}
           style={[s.row, { flex: 1, gap: 7 }]}
         >
-          <Tile name="alert" tone="orange" size={29} />
+          <Tile name="alert" tone={activeAlertCount > 0 ? 'orange' : 'green'} size={29} />
           <View style={s.flex}>
             <Copy size={11} bold>
-              2 items to watch
+              {activeAlertCount > 0 ? `${activeAlertCount} item${activeAlertCount > 1 ? 's' : ''} to watch` : 'All metrics clear'}
             </Copy>
             <Copy size={10} color={c.muted}>
-              See details
+              {activeAlertCount > 0 ? 'See details' : 'No active alerts'}
             </Copy>
           </View>
         </Pressable>
       </Card>
-      {metrics.map((m, i) => (
-        <Card
-          key={m.name}
-          onPress={() => router.push({ pathname: designRoutes.metric, params: { name: m.name } })}
-          label={`${m.name} details`}
-          style={[st.metric, large && { flexWrap: 'wrap' }]}
-        >
-          <Tile name={m.icon} tone={m.tone} />
-          <View style={{ flex: 1.2 }}>
-            <Copy size={12}>{m.name}</Copy>
-            <Copy size={16} bold>
-              {values[n][i]} <Copy size={11}>{m.unit}</Copy>
-            </Copy>
-          </View>
-          <View style={s.flex}>
-            <Copy size={11} color={i === 0 ? c.red : c.green}>
-              {i === 0 ? ['+8% above', '+5% above', 'Within'][n] : m.change}
-            </Copy>
-            <Copy size={10} color={c.muted}>
-              your usual range
-            </Copy>
-          </View>
-          <Trend tone={m.tone} variant={i + n} />
-          <Icon name="chevron" size={13} color={c.muted} />
-        </Card>
-      ))}
+      <View style={desktop ? st.desktopMetricsGrid : undefined}>
+        {metrics.map((m, i) => (
+          <Card
+            key={m.name}
+            onPress={() => router.push({ pathname: designRoutes.metric, params: { name: m.name } })}
+            label={`${m.name} details`}
+            style={[st.metric, desktop && st.desktopMetricCard, large && { flexWrap: 'wrap' }]}
+          >
+            <Tile name={m.name === 'SpO₂' ? 'lungs' : m.name === 'Blood Pressure' ? 'pressure' : m.icon} tone={m.tone} />
+            <View style={{ flex: 1.2 }}>
+              <Copy size={12}>{m.name}</Copy>
+              <Copy size={16} bold>
+                {m.value} <Copy size={11}>{m.unit}</Copy>
+              </Copy>
+            </View>
+            <View style={s.flex}>
+              <Copy size={11} color={m.tone === 'red' ? c.red : c.green}>
+                {m.change}
+              </Copy>
+              <Copy size={10} color={c.muted}>
+                your usual range
+              </Copy>
+            </View>
+            <Trend tone={m.tone} variant={i + (period === 'Day' ? 0 : period === 'Week' ? 1 : 2)} />
+            <Icon name="chevron" size={13} color={c.muted} />
+          </Card>
+        ))}
+      </View>
       <Section
-        title={`What changed this ${p.period === 'Day' ? 'month' : p.period.toLowerCase()}`}
+        title={`What changed ${periodTitle}`}
         style={s.card}
       >
-        <View style={s.grid3}>
-          {[
-            {
-              title: 'Activity',
-              change: 'Biggest improvement',
-              text: '28% higher than your baseline. You took an average of 1,841 more steps per day this month.',
-              tone: 'green' as const,
-              icon: 'up',
-            },
-            {
-              title: 'Heart Rate',
-              change: 'Biggest decline',
-              text: '8% lower than your baseline. Your average resting heart rate decreased from 74 to 68 bpm.',
-              tone: 'red' as const,
-              icon: 'down',
-            },
-          ].map((item) => (
-            <View key={item.title} style={[s.third, s.row, { alignItems: 'flex-start', gap: 7 }]}>
-              <Tile name={item.icon} tone={item.tone} size={26} />
-              <View style={s.flex}>
-                <Copy size={9} color={c.muted}>
-                  {item.change}
-                </Copy>
-                <Copy size={12} bold>
-                  {item.title}
-                </Copy>
-                <Copy size={10} color={c.muted}>
-                  {item.text}
-                </Copy>
+        <View style={desktop ? s.grid3 : s.grid2}>
+          {changesSummary.length > 0 ? (
+            changesSummary.map((item) => (
+              <View key={item.title} style={[desktop ? s.third : s.half, s.row, { alignItems: 'flex-start', gap: 7 }]}>
+                <Tile name={item.icon} tone={item.tone} size={26} />
+                <View style={s.flex}>
+                  <Copy size={9} color={c.muted}>
+                    {item.change}
+                  </Copy>
+                  <Copy size={12} bold>
+                    {item.title}
+                  </Copy>
+                  <Copy size={10} color={c.muted} style={s.top4}>
+                    {item.text}
+                  </Copy>
+                </View>
               </View>
+            ))
+          ) : (
+            <View style={[s.flex, s.center, { padding: 12 }]}>
+              <Copy size={11} color={c.muted}>
+                No significant baseline variations detected for this period.
+              </Copy>
             </View>
-          ))}
+          )}
         </View>
       </Section>
-      <DemoNote />
+      <DemoNote text="Clinical telemetry recorded via Medivo AI Engine. Consult your physician for medical advice." />
     </Screen>
   );
 }
+
 export function MetricDetails() {
   const { name } = useLocalSearchParams<{ name?: string }>();
   const router = useRouter();
-  const metric = metrics.find((m) => m.name === name) || metrics[0];
+  const { metrics, fetchVitals } = useVitalsStore();
+
+  useEffect(() => {
+    if (!metrics || metrics.length === 0) {
+      fetchVitals();
+    }
+  }, []);
+
+  const metric =
+    metrics.find((m) => m.name.toLowerCase() === (name || '').toLowerCase()) ||
+    metrics.find((m) => m.name === name) ||
+    metrics[0];
+
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace(designRoutes.metrics));
+
   return (
     <Screen>
       <PageHeading
         title={metric.name}
-        subtitle="Sample reading and personal baseline"
-        back={() => (router.canGoBack() ? router.back() : router.replace(designRoutes.metrics))}
+        subtitle="Personal baseline and clinical telemetry"
+        back={goBack}
       />
-      <Card style={s.center}>
-        <Tile name={metric.icon} tone={metric.tone} size={48} />
-        <Copy size={32} bold style={{ marginVertical: 12 }}>
+      <Card style={[s.center, { paddingVertical: 20 }]}>
+        <Tile
+          name={metric.name === 'SpO₂' ? 'lungs' : metric.name === 'Blood Pressure' ? 'pressure' : metric.icon}
+          tone={metric.tone}
+          size={52}
+        />
+        <Copy size={34} bold style={{ marginVertical: 12 }}>
           {metric.value} <Copy size={18}>{metric.unit}</Copy>
         </Copy>
         <Trend large tone={metric.tone} />
-        <Chip tone={metric.name === 'Heart Rate' ? 'orange' : 'green'}>
-          {metric.change} your usual range
-        </Chip>
+        <View style={{ marginTop: 12 }}>
+          <Chip tone={metric.tone === 'red' ? 'red' : metric.tone === 'orange' ? 'orange' : 'green'}>
+            {metric.change} your usual range
+          </Chip>
+        </View>
       </Card>
+      <Section title="Personal Baseline & Reference">
+        <Card style={[s.row, { justifyContent: 'space-between', padding: 14 }]}>
+          <View>
+            <Copy size={10} color={c.muted}>
+              Personal Baseline
+            </Copy>
+            <Copy size={14} bold style={s.top4}>
+              {metric.baseline || 'Normal Range'}
+            </Copy>
+          </View>
+          <View>
+            <Copy size={10} color={c.muted}>
+              Current Reading
+            </Copy>
+            <Copy size={14} bold style={s.top4}>
+              {metric.value} {metric.unit}
+            </Copy>
+          </View>
+          <View>
+            <Copy size={10} color={c.muted}>
+              Status
+            </Copy>
+            <Copy size={14} bold color={metric.tone === 'red' ? c.red : c.green} style={s.top4}>
+              {metric.change}
+            </Copy>
+          </View>
+        </Card>
+      </Section>
       <Section title="About this reading">
-        <Copy color={c.muted}>
-          {metric.name === 'Heart Rate'
-            ? 'Your resting heart rate has been above your personal baseline for 3 days. Keep track of changes and share persistent changes with your care team.'
-            : `Your ${metric.name.toLowerCase()} readings help you follow patterns over time. Compare your daily readings with your usual range.`}
-        </Copy>
+        <Card>
+          <Copy color={c.navy} style={{ lineHeight: 18 }}>
+            {metric.description ||
+              (metric.name === 'Heart Rate'
+                ? 'Your resting heart rate has been above your personal baseline for 3 days. Keep track of changes and share persistent changes with your care team.'
+                : `Your ${metric.name.toLowerCase()} readings help you follow patterns over time. Compare your daily readings with your usual range.`)}
+          </Copy>
+        </Card>
       </Section>
       <DemoNote text="Illustrative data only. This is not medical advice." />
       <Action
         style={{ marginTop: 20 }}
-        onPress={() => (router.canGoBack() ? router.back() : router.replace(designRoutes.metrics))}
+        onPress={goBack}
       >
         Done
       </Action>
     </Screen>
   );
 }
+
 const st = StyleSheet.create({
   segmented: { flexDirection: 'row', backgroundColor: '#edf2f8', borderRadius: 13, padding: 2 },
   segment: { flex: 1, borderRadius: 11, paddingVertical: 8, alignItems: 'center' },
@@ -194,5 +248,15 @@ const st = StyleSheet.create({
     marginBottom: 7,
     minHeight: 60,
     borderWidth: 0,
+  },
+  desktopMetricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  desktopMetricCard: {
+    width: '49%',
+    marginBottom: 0,
+    padding: 14,
   },
 });

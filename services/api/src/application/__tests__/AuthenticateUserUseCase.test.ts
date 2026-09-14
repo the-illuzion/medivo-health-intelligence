@@ -9,9 +9,10 @@ describe('AuthenticateUserUseCase', () => {
   const useCase = new AuthenticateUserUseCase(authRepo, jwtService);
 
   it('should authenticate user and return user DTO + valid JWT token', async () => {
-    const result = await useCase.execute('sarah.j@example.com', 'hashed_password_123');
+    const result = await useCase.execute('test@yopmail.com', 'Test@123');
 
-    expect(result.user.name).toBe('Sarah Jenkins');
+    expect(result.user.name).toBe('Alex Morgan');
+    expect(result.user.email).toBe('test@yopmail.com');
     expect(result.token).toBeDefined();
     expect(typeof result.token).toBe('string');
   });

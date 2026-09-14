@@ -1,8 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  useWindowDimensions,
+  Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Shield, Mail, ArrowLeft, CheckCircle } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../src/store/useAuthStore';
+import {
+  Action,
+  Card,
+  Chip,
+  Copy,
+  Heading,
+  Icon,
+  IconButton,
+  TextAction,
+  Tile,
+  s,
+} from '../src/features/design-preview/components/UI';
+import { colors as c } from '../src/features/design-preview/tokens';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -11,76 +33,238 @@ export default function ForgotPasswordScreen() {
   const [isSent, setIsSent] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const { width } = useWindowDimensions();
+  const desktop = Platform.OS === 'web' && width >= 900;
+
   const handleReset = async () => {
     if (!email) {
       setErrorMessage('Please enter your email address.');
       return;
     }
     setErrorMessage('');
-    const success = await resetPassword(email);
+    const success = await resetPassword(email.trim());
     if (success) {
       setIsSent(true);
+    } else {
+      setErrorMessage('Failed to send reset link. Please check your email.');
     }
   };
 
   return (
-    <ScrollView className="flex-1 bg-white dark:bg-[#090D16]" contentContainerStyle={{ paddingBottom: 40, flexGrow: 1, justifyContent: 'center' }}>
-      <View className="max-w-md mx-auto w-full px-6 py-12">
-        <TouchableOpacity onPress={() => router.back()} className="flex-row items-center mb-6">
-          <ArrowLeft size={20} color="#1F7FC4" />
-          <Text className="text-brand-primary font-bold text-sm ml-2">Back to Login</Text>
-        </TouchableOpacity>
-
-        <View className="items-center mb-8">
-          <View className="w-16 h-16 bg-sky-500/10 dark:bg-sky-500/20 rounded-2xl items-center justify-center mb-4 border border-sky-500/30">
-            <Shield size={32} color="#1F7FC4" />
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={st.safe}>
+      <ScrollView
+        contentContainerStyle={[st.scrollContent, desktop && st.desktopScroll]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[st.cardContainer, desktop && st.desktopCard]}>
+          {/* Back Action & Brand Header */}
+          <View style={st.topNav}>
+            <IconButton
+              name="back"
+              label="Back to Login"
+              onPress={() => router.back()}
+            />
+            <Text style={st.logo}>medivo</Text>
+            <Chip tone="green" icon="shield">
+              Secure
+            </Chip>
           </View>
-          <Text className="text-slate-900 dark:text-white text-3xl font-extrabold tracking-tight mb-2 text-center">Reset Password</Text>
-          <Text className="text-slate-600 dark:text-slate-400 text-sm text-center">Enter your email to receive a secure password reset link</Text>
+
+          {/* Heading */}
+          <View style={st.headerSection}>
+            <Heading size={24}>Reset password</Heading>
+            <Copy size={13} color={c.muted} style={s.top4}>
+              Enter your registered email address to receive secure recovery instructions.
+            </Copy>
+          </View>
+
+          {isSent ? (
+            <Card style={st.successCard}>
+              <Tile name="done" tone="green" size={48} />
+              <Heading size={18} style={{ color: c.green, marginTop: 12 }}>
+                Recovery Link Dispatched
+              </Heading>
+              <Copy size={12} color={c.muted} style={{ textAlign: 'center', marginTop: 6, marginBottom: 16 }}>
+                We have sent password reset instructions to <Copy bold size={12}>{email}</Copy>.
+              </Copy>
+              <Action onPress={() => router.replace('/login')} style={{ width: '100%' }}>
+                Return to Sign In
+              </Action>
+            </Card>
+          ) : (
+            <>
+              {errorMessage ? (
+                <Card style={st.errorCard}>
+                  <Tile name="alert" tone="red" size={32} />
+                  <View style={s.flex}>
+                    <Heading size={13} style={{ color: c.red }}>
+                      Error
+                    </Heading>
+                    <Copy size={11} color={c.red} style={s.top4}>
+                      {errorMessage}
+                    </Copy>
+                  </View>
+                </Card>
+              ) : null}
+
+              <Card style={st.formCard}>
+                <View style={st.inputGroup}>
+                  <Copy bold size={12} color={c.navy}>
+                    Registered Email
+                  </Copy>
+                  <View style={st.inputWrapper}>
+                    <Tile name="file" tone="blue" size={30} />
+                    <TextInput
+                      value={email}
+                      onChangeText={(val) => {
+                        setEmail(val);
+                        if (errorMessage) setErrorMessage('');
+                      }}
+                      placeholder="test@yopmail.com"
+                      placeholderTextColor="#8a99ad"
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      style={st.input}
+                    />
+                  </View>
+                </View>
+
+                <Action
+                  onPress={handleReset}
+                  disabled={isLoading}
+                  style={st.submitButton}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color={c.white} size="small" />
+                  ) : (
+                    <>
+                      <Copy size={14} bold color={c.white}>
+                        Send Reset Link
+                      </Copy>
+                      <Icon name="arrow" size={18} color={c.white} />
+                    </>
+                  )}
+                </Action>
+              </Card>
+            </>
+          )}
+
+          {/* Footer */}
+          <View style={st.footer}>
+            <TextAction onPress={() => router.replace('/login')}>
+              ‹ Back to Sign In
+            </TextAction>
+          </View>
         </View>
-
-        {isSent ? (
-          <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-6 items-center">
-            <CheckCircle size={40} color="#10B981" className="mb-3" />
-            <Text className="text-emerald-500 font-extrabold text-base mb-1">Reset Link Sent!</Text>
-            <Text className="text-slate-600 dark:text-slate-400 text-xs text-center mb-4">
-              We've dispatched password reset instructions to <Text className="font-bold text-slate-900 dark:text-white">{email}</Text>.
-            </Text>
-            <TouchableOpacity onPress={() => router.push('/login')} className="bg-brand-primary px-6 py-3 rounded-xl">
-              <Text className="text-white font-bold text-sm">Return to Sign In</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View className="gap-4">
-            {errorMessage ? (
-              <View className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 mb-2">
-                <Text className="text-rose-500 text-xs text-center font-bold">{errorMessage}</Text>
-              </View>
-            ) : null}
-
-            <View className="bg-slate-50 dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] flex-row items-center shadow-sm">
-              <Mail size={20} color="#1F7FC4" />
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Registered email address"
-                placeholderTextColor="#94A3B8"
-                className="flex-1 ml-3 text-slate-900 dark:text-white text-base"
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-            </View>
-
-            <TouchableOpacity
-              onPress={handleReset}
-              disabled={isLoading}
-              className="bg-brand-primary py-4 rounded-2xl items-center justify-center mt-2 shadow-sm"
-            >
-              {isLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text className="text-white font-extrabold text-base">Send Reset Link</Text>}
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+const st = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: '#e9eef4',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    paddingVertical: 28,
+  },
+  desktopScroll: {
+    paddingVertical: 48,
+  },
+  cardContainer: {
+    width: '100%',
+    maxWidth: 430,
+    backgroundColor: c.background,
+    borderRadius: 20,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  desktopCard: {
+    maxWidth: 480,
+    padding: 32,
+    backgroundColor: 'white',
+    shadowColor: '#0c1935',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 24,
+    elevation: 4,
+  },
+  topNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  logo: {
+    fontSize: 28,
+    lineHeight: 30,
+    fontWeight: '800',
+    letterSpacing: -1.5,
+    color: '#0d3447',
+  },
+  headerSection: {
+    marginBottom: 18,
+  },
+  errorCard: {
+    backgroundColor: c.redSoft,
+    borderColor: '#ffd5dd',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  successCard: {
+    backgroundColor: c.greenSoft,
+    borderColor: '#d2f3e4',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 16,
+  },
+  formCard: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fbfdff',
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 11,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    color: c.navy,
+    paddingVertical: 8,
+    minHeight: 36,
+    // @ts-ignore
+    outlineStyle: 'none',
+  },
+  submitButton: {
+    marginTop: 18,
+    borderRadius: 12,
+    minHeight: 46,
+    backgroundColor: c.blue,
+  },
+  footer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+});

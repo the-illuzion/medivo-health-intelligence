@@ -30,7 +30,29 @@ All entries must strictly adhere to the following block format. Do not use table
 - **High**: Cross-domain impact, significant UX updates, changes to shared core packages, new integrations. Requires extensive integration testing.
 - **Critical**: Database schema structural changes (drops, renames, complex migrations), Auth logic changes, payment flow modifications, security changes, or anything affecting core platform stability and data integrity.
 
----
+### 2026-09-14 - Navigation Active Menu State & Route Resolution Hardening
+- **Agent/Author**: Antigravity Digital Health & Experience Agent
+- **Type**: Bugfix / Refactor
+- **Impact Level**: Low
+- **Description**: Resolved an issue where only the Home menu item displayed the active state upon click by implementing a robust, centralized `isRouteActive` route matcher in `tokens.ts`. Fixed pathname comparisons across Expo Router route groups and nested tabs (`/insights`, `/scan`, `/care`, `/profile`, `/metric-details`, `/devices`) for both the mobile bottom navigation bar and desktop sidebar.
+- **Domains Affected**: Customer App (`apps/customer-app`), Navigation Components
+- **Key Files**: `apps/customer-app/src/features/design-preview/tokens.ts`, `apps/customer-app/src/features/design-preview/components/Shell.tsx`, `apps/customer-app/src/features/design-preview/components/DesktopShell.tsx`, `apps/customer-app/src/components/navigation/WebSidebar.tsx`
+
+### 2026-09-14 - Authentication & Onboarding Design System Harmonization
+- **Agent/Author**: Antigravity Digital Health & Experience Agent
+- **Type**: Feature / Refactor
+- **Impact Level**: Medium
+- **Description**: Redesigned all pre-login and onboarding authentication routes (`app/login.tsx`, `app/register.tsx`, `app/forgot-password.tsx`, `app/otp-verify.tsx`, `app/onboarding.tsx`) to strictly align with the new Medivo clinical design system. Integrated official Medivo brand typography, HIPAA certified chips, custom input groups with colored tile icons, password visibility toggles, responsive desktop card wrappers, and clinical health focus selectors.
+- **Domains Affected**: Customer App (`apps/customer-app`), Authentication UI
+- **Key Files**: `apps/customer-app/app/login.tsx`, `apps/customer-app/app/register.tsx`, `apps/customer-app/app/forgot-password.tsx`, `apps/customer-app/app/otp-verify.tsx`, `apps/customer-app/app/onboarding.tsx`
+
+### 2026-09-14 - Elevation of Modern Health Intelligence Design as Primary Application
+- **Agent/Author**: Antigravity Digital Health & Architecture Agent
+- **Type**: Architecture / Feature / Refactor
+- **Impact Level**: Critical
+- **Description**: Promoted the modern, clinical health intelligence design previously under `/design` to become the official primary application in `apps/customer-app`. Overhauled `app/(tabs)/` with 5 primary routes (`index`, `insights`, `scan`, `care`, `profile`) and standalone routes (`metric-details`, `devices`, `connect-device`, `health-status`). Replaced mock stubs with live Zustand stores (`useVitalsStore`, `useCareStore`, `useDevicesStore`, `useHealthProfileStore`, `useSheetStore`), PostgreSQL migration `006_vitals_care_devices_health_profile.sql`, customer-bff endpoints (`/api/mobile-bff/vitals`, `/care`, `/devices`, `/health-profile`), and `@medivo/api-client` SDK. Unified mobile (bottom tab bar + mobile header) and desktop web (left sidebar + topbar + 1180px canvas) responsiveness.
+- **Domains Affected**: Customer App (`apps/customer-app`), Customer BFF (`apps/customer-bff`), API Client (`@medivo/api-client`), Database Migrations & Seeders (`services/api`)
+- **Key Files**: `apps/customer-app/app/(tabs)/_layout.tsx`, `apps/customer-app/app/(tabs)/*`, `apps/customer-app/app/_layout.tsx`, `apps/customer-app/src/features/design-preview/screens/*`, `apps/customer-app/src/store/*`, `apps/customer-bff/src/routes/*`, `services/api/src/infrastructure/db/migrations/006_vitals_care_devices_health_profile.sql`
 
 ### 2026-09-08 - Critical Password Security Remediation (OWASP scrypt standard) & Dynamic Past Scan Records
 - **Agent/Author**: Antigravity Health Intelligence & Security Agent
