@@ -9,14 +9,31 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, CheckCircle2, HeartPulse, RefreshCw, ShieldCheck } from 'lucide-react-native';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle2,
+  HeartPulse,
+  RefreshCw,
+  ShieldCheck,
+} from 'lucide-react-native';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { appleHealthService } from '../src/services/health/appleHealth';
 import { healthApi, type HealthConnection } from '../src/services/health/healthApi';
+import { appleHealthNeedsPermissionCheck } from '../src/services/health/healthDisplay';
+import { notifyAppleHealthSyncCompleted } from '../src/services/health/appleHealthSyncEvents';
 
 function formatLastSync(value: string | null | undefined): string {
   if (!value) return 'Not synced yet';
   return new Date(value).toLocaleString();
+}
+
+function showPermissionInstructions(): void {
+  Alert.alert(
+    'Check Apple Health permissions',
+    'Medivo has not received any Apple Health data yet. Open the Health app on your iPhone, tap your profile picture, open Apps and Services, select Medivo, and enable the health categories you want to share. Then return to Medivo and tap Sync Now.',
+    [{ text: 'Got it' }],
+  );
 }
 
 export default function ConnectedDevicesScreen() {
@@ -49,15 +66,23 @@ export default function ConnectedDevicesScreen() {
 
     setIsSyncing(true);
     try {
-      const result = await appleHealthService.connectAndSync(user.id);
+      const wasConnected = Boolean(connection);
+      const result = wasConnected
+        ? await appleHealthService.sync(user.id)
+        : await appleHealthService.connectAndSync(user.id);
+
       if (!result.available) {
         Alert.alert('Apple Health unavailable', 'Apple Health is not available on this device.');
         return;
       }
+
       await loadConnection();
+      notifyAppleHealthSyncCompleted();
       Alert.alert(
-        connection ? 'Apple Health synced' : 'Apple Health connected',
-        `Synced ${result.syncedSamples} health samples.`,
+        wasConnected ? 'Apple Health synced' : 'Apple Health connected',
+        result.syncedSamples > 0
+          ? `Synced ${result.syncedSamples} health samples.`
+          : 'Sync completed. No new Apple Health samples were available.',
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to sync Apple Health.';
@@ -68,6 +93,7 @@ export default function ConnectedDevicesScreen() {
   };
 
   const isIos = Platform.OS === 'ios';
+  const needsPermissionCheck = appleHealthNeedsPermissionCheck(connection);
 
   return (
     <ScrollView
@@ -107,7 +133,11 @@ export default function ConnectedDevicesScreen() {
                 </Text>
               </View>
             </View>
-            {connection ? <CheckCircle2 size={22} color="#059669" /> : null}
+            {needsPermissionCheck ? (
+              <AlertTriangle size={22} color="#D97706" />
+            ) : connection ? (
+              <CheckCircle2 size={22} color="#059669" />
+            ) : null}
           </View>
 
           <View className="h-px bg-slate-200 dark:bg-slate-800 my-4" />
@@ -120,8 +150,16 @@ export default function ConnectedDevicesScreen() {
             <>
               <View className="flex-row justify-between mb-2">
                 <Text className="text-slate-500 dark:text-slate-400 text-xs font-semibold">Status</Text>
-                <Text className={`text-xs font-bold ${connection ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-300'}`}>
-                  {connection ? 'Connected' : 'Not connected'}
+                <Text
+                  className={`text-xs font-bold ${
+                    needsPermissionCheck
+                      ? 'text-amber-600'
+                      : connection
+                        ? 'text-emerald-600'
+                        : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  {needsPermissionCheck ? 'Needs attention' : connection ? 'Connected' : 'Not connected'}
                 </Text>
               </View>
               <View className="flex-row justify-between mb-5">
@@ -130,6 +168,29 @@ export default function ConnectedDevicesScreen() {
                   {formatLastSync(connection?.lastSyncedAt)}
                 </Text>
               </View>
+
+              {needsPermissionCheck ? (
+                <View className="bg-amber-50 dark:bg-amber-500/10 rounded-2xl border border-amber-200 dark:border-amber-500/20 p-4 mb-4">
+                  <View className="flex-row">
+                    <AlertTriangle size={19} color="#D97706" />
+                    <View className="flex-1 ml-3">
+                      <Text className="text-amber-900 dark:text-amber-200 text-sm font-extrabold">
+                        No Apple Health data received yet
+                      </Text>
+                      <Text className="text-amber-800 dark:text-amber-300 text-xs leading-5 mt-1">
+                        Medivo cannot tell whether HealthKit read access was denied or whether there is simply no data. Please check that Medivo is allowed to read the health categories you want to share.
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={showPermissionInstructions}
+                    className="rounded-xl bg-amber-600 p-3 mt-3 items-center"
+                  >
+                    <Text className="text-white text-xs font-extrabold">Check permissions</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
 
               <TouchableOpacity
                 accessibilityRole="button"
@@ -150,6 +211,12 @@ export default function ConnectedDevicesScreen() {
                   </>
                 )}
               </TouchableOpacity>
+
+              {connection ? (
+                <Text className="text-slate-500 dark:text-slate-400 text-xs mt-3 text-center">
+                  Medivo syncs automatically when the app opens or returns to the foreground. You can also sync manually here.
+                </Text>
+              ) : null}
 
               {!isIos ? (
                 <Text className="text-slate-500 dark:text-slate-400 text-xs mt-3 text-center">
