@@ -36,6 +36,24 @@ const QUANTITY_DEFINITIONS: readonly QuantityDefinition[] = [
   },
 ];
 
+const READ_AUTHORIZATIONS = [
+  HKQuantityTypeIdentifier.stepCount,
+  HKQuantityTypeIdentifier.heartRate,
+  HKQuantityTypeIdentifier.restingHeartRate,
+  HKQuantityTypeIdentifier.activeEnergyBurned,
+  HKQuantityTypeIdentifier.heartRateVariabilitySDNN,
+  HKCategoryTypeIdentifier.sleepAnalysis,
+] as const;
+
+function unavailableResult(): AppleHealthSyncResult {
+  return {
+    available: false,
+    syncedSamples: 0,
+    deletedSamples: 0,
+    lastSyncedAt: null,
+  };
+}
+
 function legacyAnchorStorageKey(userId: string): string {
   return `${ANCHOR_KEY_PREFIX}.${userId}`;
 }
@@ -252,6 +270,35 @@ async function syncSleepMetric(
   return { synced, deleted, lastSyncedAt };
 }
 
+async function performSync(userId: string): Promise<AppleHealthSyncResult> {
+  const available = await HealthKit.isHealthDataAvailable();
+  if (!available) return unavailableResult();
+
+  const anchors = await readAnchors(userId);
+  let syncedSamples = 0;
+  let deletedSamples = 0;
+  let lastSyncedAt: string | null = null;
+
+  for (const definition of QUANTITY_DEFINITIONS) {
+    const result = await syncQuantityMetric(userId, anchors, definition);
+    syncedSamples += result.synced;
+    deletedSamples += result.deleted;
+    lastSyncedAt = result.lastSyncedAt ?? lastSyncedAt;
+  }
+
+  const sleepResult = await syncSleepMetric(userId, anchors);
+  syncedSamples += sleepResult.synced;
+  deletedSamples += sleepResult.deleted;
+  lastSyncedAt = sleepResult.lastSyncedAt ?? lastSyncedAt;
+
+  return {
+    available: true,
+    syncedSamples,
+    deletedSamples,
+    lastSyncedAt,
+  };
+}
+
 export const appleHealthService = {
   async isAvailable(): Promise<boolean> {
     return HealthKit.isHealthDataAvailable();
@@ -264,48 +311,17 @@ export const appleHealthService = {
     ]);
   },
 
+  // Silent incremental sync for an already-connected account. This never requests authorization.
+  async sync(userId: string): Promise<AppleHealthSyncResult> {
+    return performSync(userId);
+  },
+
+  // Explicit user action only: request HealthKit read authorization, then perform the initial sync.
   async connectAndSync(userId: string): Promise<AppleHealthSyncResult> {
     const available = await HealthKit.isHealthDataAvailable();
-    if (!available) {
-      return {
-        available: false,
-        syncedSamples: 0,
-        deletedSamples: 0,
-        lastSyncedAt: null,
-      };
-    }
+    if (!available) return unavailableResult();
 
-    await HealthKit.requestAuthorization([
-      HKQuantityTypeIdentifier.stepCount,
-      HKQuantityTypeIdentifier.heartRate,
-      HKQuantityTypeIdentifier.restingHeartRate,
-      HKQuantityTypeIdentifier.activeEnergyBurned,
-      HKQuantityTypeIdentifier.heartRateVariabilitySDNN,
-      HKCategoryTypeIdentifier.sleepAnalysis,
-    ]);
-
-    const anchors = await readAnchors(userId);
-    let syncedSamples = 0;
-    let deletedSamples = 0;
-    let lastSyncedAt: string | null = null;
-
-    for (const definition of QUANTITY_DEFINITIONS) {
-      const result = await syncQuantityMetric(userId, anchors, definition);
-      syncedSamples += result.synced;
-      deletedSamples += result.deleted;
-      lastSyncedAt = result.lastSyncedAt ?? lastSyncedAt;
-    }
-
-    const sleepResult = await syncSleepMetric(userId, anchors);
-    syncedSamples += sleepResult.synced;
-    deletedSamples += sleepResult.deleted;
-    lastSyncedAt = sleepResult.lastSyncedAt ?? lastSyncedAt;
-
-    return {
-      available: true,
-      syncedSamples,
-      deletedSamples,
-      lastSyncedAt,
-    };
+    await HealthKit.requestAuthorization([...READ_AUTHORIZATIONS]);
+    return performSync(userId);
   },
 };
