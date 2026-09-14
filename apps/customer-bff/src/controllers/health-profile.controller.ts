@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { healthProfileService } from '../services/health-profile.service.js';
+import { careService } from '../services/care.service.js';
 import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 
 export const getHealthProfile = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -28,6 +29,7 @@ export const addMedication = (req: AuthenticatedRequest, res: Response, next: Ne
   try {
     const userId = req.user?.userId || 'usr-101';
     const data = healthProfileService.addMedication(userId, req.body);
+    careService.addMedicationTask(userId, req.body.name, req.body.dosage, req.body.frequency);
     res.json({ success: true, data });
   } catch (err) {
     next(err);

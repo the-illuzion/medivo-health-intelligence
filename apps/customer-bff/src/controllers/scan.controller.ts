@@ -2,6 +2,8 @@ import { Response, NextFunction } from 'express';
 import { PostgresSkinScanRepository, SimulatedAIInferenceService, SubmitSkinScanUseCase, SkinScan } from '@medivo/service-api';
 import { auditService } from '../services/audit.service.js';
 import { notificationService } from '../services/notification.service.js';
+import { vitalsService } from '../services/vitals.service.js';
+import { careService } from '../services/care.service.js';
 import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 import { env } from '../config/env.js';
 import { trackedFetch, createLogger } from '@medivo/utils';
@@ -81,7 +83,11 @@ export const analyzeScan = async (req: AuthenticatedRequest, res: Response, next
       result = await submitSkinScanUseCase.execute(userId, imageBase64 || '', consentVersion);
     }
 
-    // 3. Log HIPAA audit event & push notification
+    // 3. Update Vitals and Care schedule dynamically upon successful scan
+    vitalsService.recordScanTelemetry(userId, result);
+    careService.recordScanAction(userId);
+
+    // 4. Log HIPAA audit event & push notification
     auditService.logEvent('SCAN_DATA_ENCRYPTED_AES256', userId, 'AI_SCAN_VAULT_S3');
     notificationService.push(
       'AI Skin Telemetry Complete',

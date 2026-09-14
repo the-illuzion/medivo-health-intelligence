@@ -59,10 +59,22 @@ export default function Home() {
 
   const activeAlert = alerts[0];
   const primaryInsight = insights[0];
-  const scoreValue = healthScore?.score || 85;
-  const isHealthy = scoreValue >= 80;
-  const statusLabel = isHealthy ? 'All good' : scoreValue >= 65 ? 'Optimal' : 'Needs attention';
-  const statusColor = isHealthy ? c.green : scoreValue >= 65 ? c.blue : c.orange;
+  const hasScore = typeof healthScore?.score === 'number' && healthScore.score > 0;
+  const scoreValue = hasScore ? healthScore.score : null;
+  const isHealthy = hasScore && scoreValue! >= 80;
+  const statusLabel = hasScore
+    ? scoreValue! >= 80
+      ? 'All good'
+      : scoreValue! >= 65
+        ? 'Optimal'
+        : 'Needs attention'
+    : 'Awaiting baseline';
+  const statusColor = hasScore ? (isHealthy ? c.green : scoreValue! >= 65 ? c.blue : c.orange) : c.blue;
+  const statusSubtitle = hasScore
+    ? isHealthy
+      ? 'Your vital signs are within your normal range. Keep up the good work!'
+      : 'Biomarker trends detected. Review your daily plan for recommendations.'
+    : 'Complete your first face scan or pair a device to establish your health baseline score.';
 
   return (
     <Screen>
@@ -89,12 +101,10 @@ export default function Home() {
               <Heading size={25} style={{ color: statusColor }}>
                 {statusLabel}
               </Heading>
-              <Icon name="done" size={23} color={statusColor} />
+              <Icon name={hasScore ? 'done' : 'heart'} size={23} color={statusColor} />
             </View>
             <Copy size={11} color={c.muted}>
-              {isHealthy
-                ? 'Your vital signs are within your normal range. Keep up the good work!'
-                : 'Biomarker trends detected. Review your daily plan for recommendations.'}
+              {statusSubtitle}
             </Copy>
           </View>
           <Icon name="chevron" size={17} />
@@ -111,7 +121,7 @@ export default function Home() {
             </Copy>
             <Copy size={11} color={c.muted} style={s.top4}>
               {primaryInsight?.text ||
-                'Your sleep duration has improved by 12% this week, which is positively impacting your recovery.'}
+                'Perform an optical AI face scan or pair a health device to generate personalized biomarker insights.'}
             </Copy>
           </View>
           <Icon name="chevron" size={16} />

@@ -36,16 +36,16 @@ export default function Profile() {
     fetchDevices();
   }, []);
 
-  const displayName = user?.name || profile.name || 'Alex Morgan';
-  const displayEmail = user?.email || profile.email || 'alex.morgan@example.com';
+  const displayName = user?.name || profile.name || 'New Member';
+  const displayEmail = user?.email || profile.email || 'user@example.com';
 
   const healthSections: [string, string, string, Tone][] = [
     ['Personal Information', 'Age, gender, location, etc.', 'user', 'blue'],
-    ['Health Conditions', profile.healthConditions[0] || 'Managed with care team', 'heartpulse', 'red'],
+    ['Health Conditions', profile.healthConditions[0] || 'No conditions recorded', 'heartpulse', 'red'],
     ['Medications', `${profile.medications.length} active medications`, 'pill', 'green'],
-    ['Allergies', profile.allergies[0] || 'No known allergies', 'file', 'blue'],
+    ['Allergies', profile.allergies[0] || 'No known allergies recorded', 'file', 'blue'],
     ['Health Goals', `${profile.healthGoals.length} personalized goals`, 'target', 'red'],
-    ['Lifestyle', `${profile.lifestyle.sleep} · ${profile.lifestyle.activity}`, 'user', 'purple'],
+    ['Lifestyle', profile.lifestyle.sleep !== 'Not specified' ? `${profile.lifestyle.sleep} · ${profile.lifestyle.activity}` : 'Not configured yet', 'user', 'purple'],
   ];
 
   return (
@@ -54,11 +54,11 @@ export default function Profile() {
         <View style={desktop ? st.desktopCol : undefined}>
           <Card>
             <View style={s.row}>
-              <Avatar male size={65} />
+              <Avatar male={profile.gender === 'Male'} size={65} />
               <View style={s.flex}>
                 <Heading size={16}>{displayName}</Heading>
                 <Copy size={11} color={c.muted}>
-                  {profile.age || 32} years · {profile.gender || 'Male'}
+                  {profile.age > 0 ? `${profile.age} years` : 'Age not set'} · {profile.gender || 'Not specified'}
                 </Copy>
                 <Copy size={10} color={c.muted}>
                   {displayEmail}
@@ -71,10 +71,10 @@ export default function Profile() {
             </View>
             <View style={[s.grid3, { marginTop: 10 }]}>
               {[
-                ['user', profile.gender || 'Male', 'Gender'],
-                ['calendar', profile.dateOfBirth || 'Jan 12, 1992', 'Date of birth'],
-                ['drop', profile.bloodGroup || 'O+', 'Blood group'],
-                ['pin', profile.location || 'San Francisco, CA', 'Location'],
+                ['user', profile.gender || 'Not specified', 'Gender'],
+                ['calendar', profile.dateOfBirth || 'Not specified', 'Date of birth'],
+                ['drop', profile.bloodGroup || 'Not specified', 'Blood group'],
+                ['pin', profile.location || 'Not specified', 'Location'],
               ].map(([icon, value, label]) => (
                 <View
                   key={label}
@@ -136,24 +136,39 @@ export default function Profile() {
               Manage your wearables and health devices.
             </Copy>
             <View style={[s.grid3, { marginTop: 8 }]}>
-              {devices.slice(0, 3).map((d) => (
+              {devices.length > 0 ? (
+                devices.slice(0, 3).map((d) => (
+                  <Card
+                    key={d.id || d.name}
+                    style={[s.third, { padding: 6 }]}
+                    onPress={() => router.push(designRoutes.devices)}
+                  >
+                    <DeviceArt kind={d.kind} size={32} />
+                    <Copy size={9} bold style={s.top4}>
+                      {d.name}
+                    </Copy>
+                    <Copy size={8} color={d.enabled ? c.green : c.muted}>
+                      ● {d.enabled ? 'Connected' : 'Paused'}
+                    </Copy>
+                    <Copy size={8} color={c.muted}>
+                      Last sync: {d.sync}
+                    </Copy>
+                  </Card>
+                ))
+              ) : (
                 <Card
-                  key={d.id || d.name}
-                  style={[s.third, { padding: 6 }]}
-                  onPress={() => router.push(designRoutes.devices)}
+                  style={[s.third, s.center, { padding: 8 }]}
+                  onPress={() => router.push(designRoutes.connect)}
                 >
-                  <DeviceArt kind={d.kind} size={32} />
+                  <Tile name="watch" size={26} tone="purple" />
                   <Copy size={9} bold style={s.top4}>
-                    {d.name}
+                    No devices
                   </Copy>
-                  <Copy size={8} color={d.enabled ? c.green : c.muted}>
-                    ● {d.enabled ? 'Connected' : 'Paused'}
-                  </Copy>
-                  <Copy size={8} color={c.muted}>
-                    Last sync: {d.sync}
+                  <Copy size={8} color={c.blue}>
+                    + Pair device
                   </Copy>
                 </Card>
-              ))}
+              )}
             </View>
           </Section>
           <Section title="Health Records" style={s.card}>
@@ -162,9 +177,9 @@ export default function Profile() {
             </Copy>
             <View style={[s.grid3, { marginTop: 8 }]}>
               {[
-                ['Lab Reports', 'lab', `${profile.healthRecords.filter((r) => r.recordType === 'lab').length || 2} connected`],
-                ['Medical Records', 'file', `${profile.healthRecords.filter((r) => r.recordType === 'medical').length || 1} connected`],
-                ['Prescriptions', 'pill', `${profile.healthRecords.filter((r) => r.recordType === 'prescription').length || 1} connected`],
+                ['Lab Reports', 'lab', `${profile.healthRecords.filter((r) => r.recordType === 'lab').length} connected`],
+                ['Medical Records', 'file', `${profile.healthRecords.filter((r) => r.recordType === 'medical').length} connected`],
+                ['Prescriptions', 'pill', `${profile.healthRecords.filter((r) => r.recordType === 'prescription').length} connected`],
               ].map(([title, icon, sub]) => (
                 <Card style={[s.third, { padding: 7 }]} key={title} onPress={() => openDetail(title)}>
                   <Tile name={icon} size={25} />

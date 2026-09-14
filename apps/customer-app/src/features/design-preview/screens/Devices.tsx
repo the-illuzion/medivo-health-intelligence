@@ -77,25 +77,34 @@ export default function Devices() {
       <Card style={[s.row, { backgroundColor: c.blueSoft }]}>
         <Tile name="phone" size={48} />
         <View style={s.flex}>
-          <Heading size={19}>{activeCount} devices connected</Heading>
+          <Heading size={19}>{activeCount} device{activeCount === 1 ? '' : 's'} connected</Heading>
           <Copy color={c.muted} style={s.top4}>
-            ↻ Live continuous background sync active
+            {activeCount > 0 ? '↻ Live continuous background sync active' : '○ Background sync standby'}
           </Copy>
-          <Copy color={c.green}>✓ All critical telemetry sources active</Copy>
+          <Copy color={activeCount > 0 ? c.green : c.muted}>
+            {activeCount > 0 ? '✓ All critical telemetry sources active' : 'Pair a device below to stream live vitals'}
+          </Copy>
           <Copy size={11} color={c.muted}>
-            Your devices are streaming vital signs securely to your Medivo clinical vault.
+            Your devices stream vital signs securely to your encrypted Medivo clinical vault.
           </Copy>
         </View>
       </Card>
 
       <View style={desktop ? st.desktopDevicesGrid : undefined}>
         <View style={desktop ? st.desktopCol : undefined}>
-          <View style={[s.panel, { backgroundColor: c.greenSoft }]}>
+          <View style={[s.panel, { backgroundColor: activeCount > 0 ? c.greenSoft : '#f6f8fc' }]}>
             <Heading size={17}>Connected Devices ({devices.filter((d) => d.enabled).length})</Heading>
             <Copy size={12} color={c.muted}>
-              ● Devices are syncing and working properly.
+              {devices.length > 0 ? '● Devices are syncing and working properly.' : 'No devices connected yet.'}
             </Copy>
           </View>
+          {devices.length === 0 && (
+            <Card style={{ marginTop: 7, padding: 14 }}>
+              <Copy size={12} color={c.muted}>
+                No wearable or telemetry devices connected. Choose an integration from the options below to connect your Apple Watch, Fitbit, or Garmin.
+              </Copy>
+            </Card>
+          )}
           {devices.map((d) => (
             <Card key={d.id || d.name} style={{ marginTop: 7 }}>
               <View style={[s.row, { gap: 8, marginBottom: 10 }]}>

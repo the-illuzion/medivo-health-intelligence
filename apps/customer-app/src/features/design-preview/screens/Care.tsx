@@ -144,6 +144,13 @@ export default function Care() {
               </Copy>
               <Icon name="down" size={15} />
             </Pressable>
+            {!hidden && items.length === 0 && (
+              <View style={[s.card, { padding: 10, marginVertical: 4, backgroundColor: '#f7faff', borderColor: '#e6edf5' }]}>
+                <Copy size={10} color={c.muted}>
+                  No {period.toLowerCase()} tasks scheduled. Your plan adapts automatically as health readings are logged.
+                </Copy>
+              </View>
+            )}
             {!hidden &&
               items.map((t, j) => (
                 <View key={t.id} style={st.timelineRow}>
@@ -212,10 +219,10 @@ export default function Care() {
             <View style={s.flex}>
               <Copy size={10} color={c.muted}>
                 {carePlan.careTeamNotes[0]?.note ||
-                  'You’re doing great! Your blood pressure has been steady this week. Keep up the good work.'}
+                  'No notes from your care team yet. Your care team will share notes here after reviewing your health trends.'}
               </Copy>
               <Copy size={9} color={c.muted} style={s.top4}>
-                — {carePlan.careTeamNotes[0]?.doctor || 'Sarah Kim, NP'} · {carePlan.careTeamNotes[0]?.date || 'Today'}
+                — {carePlan.careTeamNotes[0]?.doctor || 'Care Team'} · {carePlan.careTeamNotes[0]?.date || 'Today'}
               </Copy>
             </View>
           </View>

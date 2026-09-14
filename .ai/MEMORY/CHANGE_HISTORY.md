@@ -30,6 +30,14 @@ All entries must strictly adhere to the following block format. Do not use table
 - **High**: Cross-domain impact, significant UX updates, changes to shared core packages, new integrations. Requires extensive integration testing.
 - **Critical**: Database schema structural changes (drops, renames, complex migrations), Auth logic changes, payment flow modifications, security changes, or anything affecting core platform stability and data integrity.
 
+### 2026-09-14 - Multi-Tenant Zero-Data Baseline Isolation for New User Accounts
+- **Agent/Author**: Antigravity Digital Health & Architecture Agent
+- **Type**: Architecture / Feature / Security
+- **Impact Level**: High
+- **Description**: Enforced strict multi-tenant data isolation across Customer BFF services and customer app state stores. Brand new registered users now start with a completely unrecorded health baseline (`Score: --`, `Vitals: --`, `Tasks: 0`, `Devices: 0`, `Records: 0`, `Medications: 0`) with zero mock or seeded telemetry displayed until a scan or action is initiated. Added bi-directional action triggering (optical face scan, manual vital entry, device pairing, or medication scheduling) to dynamically activate baseline telemetry and care plans. Pre-populated demo data is strictly confined to demo user `usr-101`.
+- **Domains Affected**: Customer App (`apps/customer-app`), Customer BFF (`apps/customer-bff`), State Management (`useVitalsStore`, `useCareStore`, `useDevicesStore`, `useHealthProfileStore`)
+- **Key Files**: `apps/customer-bff/src/services/vitals.service.ts`, `apps/customer-bff/src/services/care.service.ts`, `apps/customer-app/src/store/useVitalsStore.ts`, `apps/customer-app/src/features/design-preview/screens/Home.tsx`
+
 ### 2026-09-14 - Navigation Active Menu State & Route Resolution Hardening
 - **Agent/Author**: Antigravity Digital Health & Experience Agent
 - **Type**: Bugfix / Refactor

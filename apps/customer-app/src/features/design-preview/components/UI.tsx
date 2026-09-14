@@ -386,43 +386,48 @@ export function PageHeading({
   );
 }
 export function Ring({
-  value = 85,
+  value,
   size = 90,
   percent = false,
 }: {
-  value?: number;
+  value?: number | null;
   size?: number;
   percent?: boolean;
 }) {
+  const hasValue = typeof value === 'number' && !isNaN(value) && (percent ? true : value > 0);
+  const numericValue = hasValue ? value : 0;
+  const display = hasValue ? `${value}${percent ? '%' : ''}` : '--';
+
   return (
     <View
       style={{ width: size, height: size }}
       accessible
-      accessibilityLabel={`Health score ${value}${percent ? ' percent' : ' out of 100'}`}
+      accessibilityLabel={hasValue ? `Health score ${value}${percent ? ' percent' : ' out of 100'}` : 'No score recorded yet'}
     >
       <Svg width={size} height={size} viewBox="0 0 100 100">
         <Circle cx={50} cy={50} r={42} fill="none" stroke="#dcefe6" strokeWidth={8} />
-        <Circle
-          cx={50}
-          cy={50}
-          r={42}
-          fill="none"
-          stroke="#26b46e"
-          strokeWidth={8}
-          strokeDasharray={`${Math.min(value, 100) * 2.64} 264`}
-          strokeLinecap="round"
-          rotation={-90}
-          origin="50,50"
-        />
+        {hasValue && (
+          <Circle
+            cx={50}
+            cy={50}
+            r={42}
+            fill="none"
+            stroke="#26b46e"
+            strokeWidth={8}
+            strokeDasharray={`${Math.min(numericValue, 100) * 2.64} 264`}
+            strokeLinecap="round"
+            rotation={-90}
+            origin="50,50"
+          />
+        )}
       </Svg>
       <View style={[StyleSheet.absoluteFill, s.center]}>
-        <Copy size={size > 60 ? 30 : 14} bold>
-          {value}
-          {percent ? '%' : ''}
+        <Copy size={size > 60 ? (hasValue ? 30 : 22) : 14} bold>
+          {display}
         </Copy>
         {size > 60 && !percent && (
-          <Copy size={12} color={c.muted}>
-            / 100
+          <Copy size={11} color={c.muted}>
+            {hasValue ? '/ 100' : 'No score'}
           </Copy>
         )}
       </View>

@@ -32,7 +32,7 @@ export interface CarePlanResponse {
 }
 
 class CareService {
-  private initialTasks: CareTask[] = [
+  private demoTasks: CareTask[] = [
     {
       id: 'tsk-1',
       period: 'Morning',
@@ -103,9 +103,15 @@ class CareService {
   }
 
   public getCarePlan(userId: string, date: string): CarePlanResponse {
+    const isDemo = userId === 'usr-101' || userId.toLowerCase().includes('demo');
     const key = this.getStoreKey(userId, date);
+
     if (!this.plansStore.has(key)) {
-      this.plansStore.set(key, this.initialTasks.map((t) => ({ ...t })));
+      if (isDemo) {
+        this.plansStore.set(key, this.demoTasks.map((t) => ({ ...t })));
+      } else {
+        this.plansStore.set(key, []);
+      }
     }
 
     const tasks = this.plansStore.get(key)!;
@@ -115,20 +121,31 @@ class CareService {
 
     return {
       date,
-      planTitle: 'Hypertension Care Plan',
+      planTitle: isDemo ? 'Hypertension Care Plan' : tasks.length > 0 ? 'Active Care Plan' : 'General Care Plan',
       adherencePercentage: adherence,
       completedTasksCount: completedCount,
       totalTasksCount: tasks.length,
       nextTask,
-      overallStatus: adherence >= 70 ? 'On track' : adherence >= 30 ? 'In progress' : 'Needs attention',
+      overallStatus:
+        tasks.length === 0
+          ? 'No tasks scheduled'
+          : adherence >= 70
+            ? 'On track'
+            : adherence >= 30
+              ? 'In progress'
+              : 'Needs attention',
       tasks,
-      careTeamNotes: [
-        { doctor: 'Sarah Kim, NP', date: 'Apr 28, 2025', note: 'Your blood pressure has been steady this week. Keep up the good work!' },
-        { doctor: 'Dr. Neha Verma', date: 'Apr 25, 2025', note: 'Keep recording your daily readings.' },
-      ],
+      careTeamNotes: isDemo
+        ? [
+            { doctor: 'Sarah Kim, NP', date: 'Apr 28, 2025', note: 'Your blood pressure has been steady this week. Keep up the good work!' },
+            { doctor: 'Dr. Neha Verma', date: 'Apr 25, 2025', note: 'Keep recording your daily readings.' },
+          ]
+        : [],
       whyItMatters: {
         title: 'Why this matters',
-        description: "Today's plan is based on your hypertension care plan and recent readings. These activities help keep your blood pressure stable, support your heart health, and track your progress.",
+        description: isDemo
+          ? "Today's plan is based on your hypertension care plan and recent readings. These activities help keep your blood pressure stable, support your heart health, and track your progress."
+          : 'Your care plan adapts dynamically based on your recorded scans, medications, and connected health devices.',
         points: [
           'Take medications as prescribed by your care team.',
           'Follow your personalized activity and meal plan.',
@@ -137,12 +154,14 @@ class CareService {
       },
       fullCarePlan: {
         title: 'Full care plan',
-        description: 'Hypertension care plan · Weekly overview',
-        rows: [
-          'Daily: Morning medication, meals, light activity and vital readings.',
-          'Weekly: Review your health trends with your care team.',
-          'Next review: May 5, 2025 · Dr. Neha Verma.',
-        ],
+        description: isDemo ? 'Hypertension care plan · Weekly overview' : 'Personal health schedule',
+        rows: isDemo
+          ? [
+              'Daily: Morning medication, meals, light activity and vital readings.',
+              'Weekly: Review your health trends with your care team.',
+              'Next review: May 5, 2025 · Dr. Neha Verma.',
+            ]
+          : ['No active restrictions recorded. Complete regular scans to build personalized schedules.'],
       },
     };
   }
@@ -150,10 +169,10 @@ class CareService {
   public toggleTaskStatus(userId: string, date: string, taskId: string, explicitStatus?: 'Completed' | 'Pending' | 'Upcoming') {
     const key = this.getStoreKey(userId, date);
     if (!this.plansStore.has(key)) {
-      this.plansStore.set(key, this.initialTasks.map((t) => ({ ...t })));
+      this.getCarePlan(userId, date);
     }
 
-    const tasks = this.plansStore.get(key)!;
+    const tasks = this.plansStore.get(key) || [];
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return null;
 
@@ -169,16 +188,58 @@ class CareService {
   public markAllDone(userId: string, date: string) {
     const key = this.getStoreKey(userId, date);
     if (!this.plansStore.has(key)) {
-      this.plansStore.set(key, this.initialTasks.map((t) => ({ ...t })));
+      this.getCarePlan(userId, date);
     }
 
-    const tasks = this.plansStore.get(key)!;
+    const tasks = this.plansStore.get(key) || [];
     tasks.forEach((t) => {
       t.status = 'Completed';
     });
 
     return this.getCarePlan(userId, date);
   }
+
+  public recordScanAction(userId: string) {
+    const today = new Date().toISOString().slice(0, 10);
+    const key = this.getStoreKey(userId, today);
+    if (!this.plansStore.has(key)) {
+      this.plansStore.set(key, []);
+    }
+    const tasks = this.plansStore.get(key)!;
+    const existing = tasks.find((t) => t.name === 'Optical AI Health Scan');
+    if (!existing) {
+      tasks.unshift({
+        id: `tsk-scan-${Date.now()}`,
+        period: 'Morning',
+        time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        name: 'Optical AI Health Scan',
+        description: 'Biometric facial scan completed',
+        icon: 'heart',
+        tone: 'green',
+        status: 'Completed',
+      });
+    }
+  }
+
+  public addMedicationTask(userId: string, name: string, dosage: string, frequency = 'Daily') {
+    const today = new Date().toISOString().slice(0, 10);
+    const key = this.getStoreKey(userId, today);
+    if (!this.plansStore.has(key)) {
+      this.plansStore.set(key, []);
+    }
+    const tasks = this.plansStore.get(key)!;
+    tasks.push({
+      id: `tsk-med-${Date.now()}`,
+      period: 'Morning',
+      time: '8:00 AM',
+      name: `Take ${name}`,
+      description: `${dosage} · ${frequency}`,
+      icon: 'pill',
+      tone: 'blue',
+      status: 'Pending',
+    });
+  }
 }
 
 export const careService = new CareService();
+

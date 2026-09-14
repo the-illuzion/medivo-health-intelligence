@@ -63,7 +63,9 @@ export default function Metrics() {
             Health Score
           </Copy>
           <Copy size={10} color={c.muted}>
-            ▲ Up {healthScore.deltaPts} pts from {healthScore.comparisonPeriod}
+            {typeof healthScore.score === 'number' && healthScore.score > 0
+              ? `▲ Up ${healthScore.deltaPts} pts from ${healthScore.comparisonPeriod}`
+              : 'Complete first scan for baseline'}
           </Copy>
         </View>
         <Pressable

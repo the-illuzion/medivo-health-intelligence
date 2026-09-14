@@ -62,7 +62,12 @@ class DeviceService {
 
   public getDevices(userId: string): ConnectedDevice[] {
     if (!this.userDevices.has(userId)) {
-      this.userDevices.set(userId, this.initialDevices.map((d) => ({ ...d })));
+      const isDemo = userId === 'usr-101' || userId.toLowerCase().includes('demo');
+      if (isDemo) {
+        this.userDevices.set(userId, this.initialDevices.map((d) => ({ ...d })));
+      } else {
+        this.userDevices.set(userId, []);
+      }
     }
     return this.userDevices.get(userId)!;
   }

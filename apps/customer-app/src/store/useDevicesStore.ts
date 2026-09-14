@@ -26,44 +26,8 @@ interface DevicesState {
   toggleRingConnected: () => void;
 }
 
-const defaultDevices: ConnectedDevice[] = [
-  {
-    id: 'dev-1',
-    name: 'Apple Watch',
-    kind: 'watch',
-    sync: '8 min ago',
-    sharing: ['Heart Rate', 'Sleep', 'Activity', 'Notifications'],
-    enabled: true,
-    batteryLevel: 78,
-    batteryStatus: '~ 1 day left',
-    needsAttention: false,
-  },
-  {
-    id: 'dev-2',
-    name: 'Withings BP Monitor',
-    kind: 'monitor',
-    sync: '2 hrs ago',
-    sharing: ['Blood Pressure', 'Heart Rate'],
-    enabled: true,
-    batteryLevel: 90,
-    batteryStatus: '~ 3 months left',
-    needsAttention: false,
-  },
-  {
-    id: 'dev-3',
-    name: 'Dexcom CGM',
-    kind: 'cgm',
-    sync: '15 min ago',
-    sharing: ['Glucose', 'Notifications'],
-    enabled: true,
-    batteryLevel: 65,
-    batteryStatus: '~ 6 days left',
-    needsAttention: false,
-  },
-];
-
 export const useDevicesStore = create<DevicesState>((set, get) => ({
-  devices: defaultDevices,
+  devices: [],
   ringConnected: false,
   isLoading: false,
   error: null,
