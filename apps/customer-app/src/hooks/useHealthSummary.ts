@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
   healthApi,
@@ -8,6 +8,7 @@ import {
   type HealthSummary,
   type HealthSummaryPeriod,
 } from '../services/health/healthApi';
+import { subscribeToAppleHealthSync } from '../services/health/appleHealthSyncEvents';
 import { useAuthStore } from '../store/useAuthStore';
 
 export function useHealthSummary(period: HealthSummaryPeriod = 'day') {
@@ -51,6 +52,8 @@ export function useHealthSummary(period: HealthSummaryPeriod = 'day') {
       void refresh();
     }, [refresh]),
   );
+
+  useEffect(() => subscribeToAppleHealthSync(() => void refresh()), [refresh]);
 
   const metrics = useMemo(() => {
     const byType = new Map<HealthMetricType, HealthMetricSummaryItem>();
