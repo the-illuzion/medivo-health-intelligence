@@ -30,6 +30,13 @@ class RecordingHealthRepository implements IHealthRepository {
     };
   }
 
+  async disconnect(
+    _userId: string,
+    _provider: HealthDataProvider,
+  ): Promise<void> {
+    return;
+  }
+
   async findConnection(): Promise<HealthConnection | null> {
     return null;
   }
