@@ -10,6 +10,7 @@ export interface HealthConnection {
   requestedMetrics: HealthMetricType[];
   connectedAt: Date;
   lastSyncedAt: Date | null;
+  hasImportedData: boolean;
 }
 
 export interface HealthSyncResult {
