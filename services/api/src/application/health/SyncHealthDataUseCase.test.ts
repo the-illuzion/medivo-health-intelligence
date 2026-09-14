@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { HealthSample } from '../../domain/health/HealthSampleEntity.js';
 import type {
   HealthConnection,
+  HealthSummary,
+  HealthSummaryPeriod,
   HealthSyncResult,
   IHealthRepository,
 } from '../../domain/repositories/IHealthRepository.js';
@@ -30,15 +32,22 @@ class RecordingHealthRepository implements IHealthRepository {
     };
   }
 
-  async disconnect(
-    _userId: string,
-    _provider: HealthDataProvider,
-  ): Promise<void> {
+  async disconnect(_userId: string, _provider: HealthDataProvider): Promise<void> {
     return;
   }
 
   async findConnection(): Promise<HealthConnection | null> {
     return null;
+  }
+
+  async getSummary(
+    _userId: string,
+    provider: HealthDataProvider,
+    period: HealthSummaryPeriod,
+    from: Date,
+    to: Date,
+  ): Promise<HealthSummary> {
+    return { provider, period, from, to, metrics: [] };
   }
 }
 
