@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Screen } from '../components/Shell';
 import {
@@ -8,42 +8,42 @@ import {
   Chip,
   Copy,
   DemoNote,
-  Heading,
   Icon,
   PageHeading,
   Row,
   Section,
+  Tile,
   s,
 } from '../components/UI';
-import { DeviceArt, ScanPortrait } from '../components/Illustrations';
+import { ScanPortrait } from '../components/Illustrations';
 import { usePreview } from '../PreviewContext';
 import { colors as c, designRoutes } from '../tokens';
+import { useHealthSummary } from '../../../hooks/useHealthSummary';
+import { formatHealthLastSync } from '../../../services/health/healthDisplay';
+
 export default function Scan() {
   const p = usePreview();
   const router = useRouter();
+  const { connection } = useHealthSummary('day');
+
   return (
     <Screen>
-      <PageHeading
-        title="Start a Scan"
-        subtitle="Capture a new scan or add supporting health data."
-      />
+      <PageHeading title="Start a Scan" subtitle="Capture a new scan or add supporting health data." />
+
       <View style={st.scan}>
         <ScanPortrait />
         <View style={st.label}>
-          <Chip tone="blue" icon="camera">
-            Face Scan
-          </Chip>
+          <Chip tone="blue" icon="camera">Face Scan</Chip>
         </View>
-        <Action style={st.scanButton} onPress={() => p.setSheet({ kind: 'scan' })}>
-          <Icon name="camera" color="white" />
-          <Copy bold size={15} color="white">
-            Begin Face Scan
-          </Copy>
+        <Action style={st.scanButton} onPress={() => router.push('/(tabs)/scan')}>
+          <Icon name="camera" color={c.white} />
+          <Copy bold size={15} color={c.white}>Begin Face Scan</Copy>
         </Action>
         <Copy size={10} color={c.muted} style={{ textAlign: 'center', marginVertical: 8 }}>
-          Position your face in the frame
+          Opens Medivo’s existing authenticated scan workflow.
         </Copy>
       </View>
+
       <Section title="Other ways to add health data">
         <View style={s.grid2}>
           {[
@@ -89,80 +89,62 @@ export default function Scan() {
           ))}
         </View>
       </Section>
+
       <Section
         title="Recent data sources"
-        action="See all"
-        onAction={() => p.openDetail('Recent data sources')}
+        action="Manage"
+        onAction={() => router.push(designRoutes.devices)}
       >
-        <View style={s.grid3}>
-          {['Apple Watch', 'BP Monitor', p.recentSource].map((title, i) => (
-            <Card
-              key={i}
-              style={[s.third, { padding: 8 }]}
-              onPress={() =>
-                i < 2 ? router.push(designRoutes.devices) : p.openDetail('Recent data sources')
-              }
-            >
-              <View style={[s.row, { gap: 5 }]}>
-                {i < 2 ? (
-                  <DeviceArt kind={i === 0 ? 'watch' : 'monitor'} size={25} />
-                ) : (
-                  <Icon name="file" color={c.red} />
-                )}
-                <View style={s.flex}>
-                  <Copy size={9} bold>
-                    {title}
-                  </Copy>
-                  <Copy size={8} color={c.muted}>
-                    {i === 0
-                      ? 'Last synced 2h ago'
-                      : i === 1
-                        ? 'Last synced 1d ago'
-                        : p.recentSource === 'Uploaded PDF'
-                          ? 'Added 3d ago'
-                          : 'Added just now'}
-                  </Copy>
-                </View>
-              </View>
-            </Card>
-          ))}
-        </View>
+        <Card style={{ padding: 9 }} onPress={() => router.push(designRoutes.devices)}>
+          <View style={[s.row, { gap: 8 }]}>
+            <Tile name="heart" tone="red" size={30} />
+            <View style={s.flex}>
+              <Copy size={10} bold>Apple Health</Copy>
+              <Copy size={9} color={connection ? c.green : c.muted}>
+                ● {connection ? 'Connected' : 'Not connected'}
+              </Copy>
+              <Copy size={8} color={c.muted}>
+                Last sync: {formatHealthLastSync(connection?.lastSyncedAt)}
+              </Copy>
+            </View>
+          </View>
+        </Card>
       </Section>
+
       <Section title="How it works">
         <Card style={s.grid3}>
           {[
             { title: 'Capture', sub: 'Take a quick scan', icon: 'camera' },
-            { title: 'Analyze', sub: 'AI reviews your data', icon: 'chart' },
-            { title: 'Review', sub: 'See insights in seconds', icon: 'file' },
+            { title: 'Analyze', sub: 'Existing scan service processes the capture', icon: 'chart' },
+            { title: 'Review', sub: 'Review the returned scan result', icon: 'file' },
           ].map((item, i) => (
             <View key={item.title} style={[s.third, s.center, { gap: 5 }]}>
               <View style={s.row}>
                 <Copy color={c.muted}>{i + 1}</Copy>
                 <Icon name={item.icon} />
               </View>
-              <Copy size={12} bold>
-                {item.title}
-              </Copy>
-              <Copy size={10} color={c.muted} style={{ textAlign: 'center' }}>
-                {item.sub}
-              </Copy>
+              <Copy size={12} bold>{item.title}</Copy>
+              <Copy size={10} color={c.muted} style={{ textAlign: 'center' }}>{item.sub}</Copy>
             </View>
           ))}
         </Card>
       </Section>
+
       <View style={{ marginTop: 12 }}>
         <Row
           title="Your health data stays protected"
-          description="Encrypted, private, and never shared without your consent."
+          description="Apple Health permissions stay read-only and scan requests use your authenticated Medivo session."
           icon="shield"
           tone="green"
-          onPress={() => p.openDetail('Privacy & Permissions')}
+          onPress={() => router.push(designRoutes.devices)}
         />
       </View>
-      <DemoNote text="Simulated scan and sample uploads only. No camera, files, or medical analysis are used." />
+
+      <DemoNote text="Face Scan and Connected Device now open existing integrated flows. Vitals Check, Upload Photo and Manual Entry remain preview-only until a real workflow is available." />
     </Screen>
   );
 }
+
 const st = StyleSheet.create({
   scan: {
     backgroundColor: '#e8f2ff',
