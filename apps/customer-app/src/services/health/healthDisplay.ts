@@ -1,4 +1,5 @@
 import type {
+  HealthConnection,
   HealthMetricSummaryItem,
   HealthMetricType,
   HealthSummaryPeriod,
@@ -13,6 +14,9 @@ export interface HealthMetricDisplayDefinition {
   icon: string;
   tone: HealthMetricTone;
 }
+
+// Testing threshold. Raise this to 24 hours for production once the UX is validated.
+export const APPLE_HEALTH_PERMISSION_CHECK_DELAY_MS = 60 * 60 * 1000;
 
 export const HEALTH_METRIC_DISPLAY: readonly HealthMetricDisplayDefinition[] = [
   { type: 'heart_rate', name: 'Heart Rate', shortName: 'Heart Rate', icon: 'heart', tone: 'red' },
@@ -97,4 +101,17 @@ export function formatHealthLastSync(value: string | null | undefined): string {
   if (!value) return 'Not synced yet';
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? 'Not synced yet' : parsed.toLocaleString();
+}
+
+export function appleHealthNeedsPermissionCheck(
+  connection: HealthConnection | null | undefined,
+  now = Date.now(),
+  delayMs = APPLE_HEALTH_PERMISSION_CHECK_DELAY_MS,
+): boolean {
+  if (!connection || connection.hasImportedData || !connection.lastSyncedAt) return false;
+
+  const connectedAt = new Date(connection.connectedAt).getTime();
+  if (!Number.isFinite(connectedAt)) return false;
+
+  return now - connectedAt >= delayMs;
 }
