@@ -10,6 +10,8 @@ export const HEALTH_METRIC_TYPES = [
 ] as const;
 
 export type HealthMetricType = (typeof HEALTH_METRIC_TYPES)[number];
+export type HealthSummaryPeriod = 'day' | 'week' | 'month';
+export type HealthMetricAggregation = 'latest' | 'sum' | 'duration';
 
 export interface HealthSyncSample {
   externalId: string;
@@ -44,6 +46,25 @@ export interface HealthConnection {
   lastSyncedAt: string | null;
 }
 
+export interface HealthMetricSummaryItem {
+  metricType: HealthMetricType;
+  value: number;
+  unit: string;
+  aggregation: HealthMetricAggregation;
+  sampleCount: number;
+  recordedAt: string | null;
+  sourceName?: string;
+  deviceName?: string;
+}
+
+export interface HealthSummary {
+  provider: 'apple_health';
+  period: HealthSummaryPeriod;
+  from: string;
+  to: string;
+  metrics: HealthMetricSummaryItem[];
+}
+
 export interface HealthDisconnectResponse {
   disconnected: boolean;
 }
@@ -75,7 +96,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let body: ApiEnvelope<T>;
 
   try {
-    body = rawBody ? (JSON.parse(rawBody) as ApiEnvelope<T>) : ({ success: response.ok } as ApiEnvelope<T>);
+    body = rawBody
+      ? (JSON.parse(rawBody) as ApiEnvelope<T>)
+      : ({ success: response.ok } as ApiEnvelope<T>);
   } catch {
     throw new Error(`Health API returned an unexpected response (${response.status}).`);
   }
@@ -97,6 +120,15 @@ export const healthApi = {
 
   getAppleHealthConnection(): Promise<HealthConnection | null> {
     return request<HealthConnection | null>('/api/mobile-bff/health/connection');
+  },
+
+  getAppleHealthSummary(period: HealthSummaryPeriod = 'day'): Promise<HealthSummary> {
+    const timezoneOffsetMinutes = new Date().getTimezoneOffset();
+    const query = new URLSearchParams({
+      period,
+      timezoneOffsetMinutes: String(timezoneOffsetMinutes),
+    });
+    return request<HealthSummary>(`/api/mobile-bff/health/summary?${query.toString()}`);
   },
 
   disconnectAppleHealth(): Promise<HealthDisconnectResponse> {
