@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   disconnectAppleHealthConnection,
   getAppleHealthConnection,
+  getAppleHealthSummary,
   syncHealthData,
 } from '../controllers/health.controller.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
@@ -12,6 +13,7 @@ const router = Router();
 
 router.post('/sync', authenticateToken, validateRequest(healthSyncSchema), syncHealthData);
 router.get('/connection', authenticateToken, getAppleHealthConnection);
+router.get('/summary', authenticateToken, getAppleHealthSummary);
 router.delete('/connection', authenticateToken, disconnectAppleHealthConnection);
 
 export default router;
