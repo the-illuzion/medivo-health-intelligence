@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { apiClient } from '@medivo/api-client';
 import { Screen, useCompact } from '../components/Shell';
 import {
   Action,
@@ -8,267 +9,315 @@ import {
   Copy,
   Heading,
   Icon,
-  IconButton,
   Ring,
   Tile,
   s,
 } from '../components/UI';
 import { colors as c } from '../tokens';
-import { useCareStore, type CareTask } from '../../../store/useCareStore';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { useCareStore } from '../../../store/useCareStore';
+
+interface RoutineStep {
+  id: string;
+  step?: number;
+  title: string;
+  desc: string;
+  duration?: string;
+  completed?: boolean;
+}
+
+interface Routine {
+  id: string;
+  name: string;
+  timing: 'Morning' | 'Afternoon' | 'Evening' | string;
+  duration?: string;
+  completedCount?: number;
+  totalSteps?: number;
+  steps: RoutineStep[];
+}
 
 const PERIODS = ['Morning', 'Afternoon', 'Evening'] as const;
 
 export default function Care() {
-  const {
-    carePlan,
-    selectedDate,
-    shiftDate,
-    toggleTask,
-    markAllCompleted,
-    collapsedPeriods,
-    togglePeriodCollapse,
-    fetchCarePlan,
-    isLoading,
-    error,
-  } = useCareStore();
-
+  const token = useAuthStore((state) => state.token);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
   const compact = useCompact();
   const narrow = useWindowDimensions().width < 370 || compact;
-  const [dateExpanded, setDateExpanded] = useState(false);
-  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [collapsed, setCollapsed] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [togglingStepId, setTogglingStepId] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
 
-  useEffect(() => {
-    void fetchCarePlan(selectedDate);
-  }, [selectedDate, fetchCarePlan]);
+  const carePlan = useCareStore((state) => state.carePlan);
+  const fetchCarePlan = useCareStore((state) => state.fetchCarePlan);
+  const toggleCareTask = useCareStore((state) => state.toggleTask);
+  const markAllCareCompleted = useCareStore((state) => state.markAllCompleted);
 
-  const groups = useMemo(
+  const fetchRoutines = useCallback(async () => {
+    if (!token) {
+      setRoutines([]);
+      setLoading(false);
+      return;
+    }
+
+    apiClient.setAuthToken(token);
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiClient.routines.list();
+      setRoutines((data || []) as Routine[]);
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Unable to load your care routines.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    void fetchRoutines();
+    void fetchCarePlan();
+  }, [fetchRoutines, fetchCarePlan, isHydrated]);
+
+  const fallbackRoutines = useMemo<Routine[]>(
     () =>
-      PERIODS.map((period) => ({
-        period,
-        tasks: carePlan.tasks.filter((task) => task.period === period),
-      })),
+      PERIODS.map((period) => {
+        const tasks = carePlan.tasks.filter((task) => task.period === period);
+        return {
+          id: `care-${period.toLowerCase()}`,
+          name: `${period} Care Plan`,
+          timing: period,
+          completedCount: tasks.filter((task) => task.status === 'Completed').length,
+          totalSteps: tasks.length,
+          steps: tasks.map((task, index) => ({
+            id: task.id,
+            step: index + 1,
+            title: task.name,
+            desc: task.description,
+            duration: task.time,
+            completed: task.status === 'Completed',
+          })),
+        };
+      }).filter((routine) => routine.steps.length > 0),
     [carePlan.tasks],
   );
 
-  const total = carePlan.totalTasksCount || carePlan.tasks.length;
-  const completed =
-    carePlan.completedTasksCount || carePlan.tasks.filter((task) => task.status === 'Completed').length;
-  const next = carePlan.nextTask || carePlan.tasks.find((task) => task.status !== 'Completed') || null;
-  const adherence = total ? Math.round((completed / total) * 100) : 0;
-  const selectedDateLabel = new Date(`${selectedDate}T12:00:00`).toLocaleDateString(undefined, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'short',
-  });
+  const displayRoutines = routines.length > 0 ? routines : fallbackRoutines;
+  const usingCarePlanFallback = routines.length === 0 && fallbackRoutines.length > 0;
 
-  const handleToggleTask = async (task: CareTask) => {
-    setUpdatingTaskId(task.id);
+  const allSteps = useMemo(
+    () =>
+      displayRoutines.flatMap((routine) =>
+        routine.steps.map((step) => ({ ...step, routineId: routine.id })),
+      ),
+    [displayRoutines],
+  );
+  const completed = allSteps.filter((step) => step.completed).length;
+  const total = allSteps.length;
+  const next = allSteps.find((step) => !step.completed);
+
+  const toggleStep = async (routineId: string, stepId: string, completedNow: boolean) => {
+    setTogglingStepId(stepId);
+    setError(null);
+
+    if (routineId.startsWith('care-')) {
+      try {
+        await toggleCareTask(stepId);
+      } finally {
+        setTogglingStepId(null);
+      }
+      return;
+    }
+
+    if (!token) {
+      setTogglingStepId(null);
+      return;
+    }
+
+    const nextCompleted = !completedNow;
+    setRoutines((current) =>
+      current.map((routine) => {
+        if (routine.id !== routineId) return routine;
+        const steps = routine.steps.map((step) =>
+          step.id === stepId ? { ...step, completed: nextCompleted } : step,
+        );
+        return {
+          ...routine,
+          steps,
+          completedCount: steps.filter((step) => step.completed).length,
+          totalSteps: steps.length,
+        };
+      }),
+    );
+
     try {
-      await toggleTask(task.id);
+      const updated = await apiClient.routines.toggleStep(routineId, stepId, nextCompleted);
+      if (updated) {
+        setRoutines((current) =>
+          current.map((routine) => (routine.id === routineId ? (updated as Routine) : routine)),
+        );
+      }
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Unable to update this task.');
+      await fetchRoutines();
     } finally {
-      setUpdatingTaskId(null);
+      setTogglingStepId(null);
     }
   };
 
-  const handleMarkAll = async () => {
-    if (!total || completed === total) return;
+  const markAllDone = async () => {
+    if (total === 0 || completed === total) return;
     setMarkingAll(true);
+    setError(null);
+
     try {
-      await markAllCompleted();
+      if (usingCarePlanFallback) {
+        await markAllCareCompleted();
+        return;
+      }
+
+      if (!token) return;
+      for (const routine of routines) {
+        for (const step of routine.steps) {
+          if (!step.completed) {
+            await apiClient.routines.toggleStep(routine.id, step.id, true);
+          }
+        }
+      }
+      await fetchRoutines();
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Unable to complete all tasks.');
+      if (!usingCarePlanFallback) await fetchRoutines();
     } finally {
       setMarkingAll(false);
     }
   };
 
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+  });
+
   return (
     <Screen>
       <View style={[s.row, { justifyContent: 'space-between', flexWrap: 'wrap' }]}>
         <Heading size={25}>Care Plan</Heading>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Change care plan date"
-          accessibilityState={{ expanded: dateExpanded }}
-          onPress={() => setDateExpanded((value) => !value)}
-        >
-          <Copy size={10} color={c.muted}>
-            {selectedDateLabel}
-          </Copy>
-        </Pressable>
+        <Copy size={10} color={c.muted}>{today}</Copy>
       </View>
       <Copy color={c.muted} style={{ marginVertical: 5 }}>
         Your plan for today and what’s coming next.
       </Copy>
 
-      {dateExpanded ? (
-        <Card style={[s.row, { marginTop: 8, paddingVertical: 8 }]}>
-          <IconButton label="Previous day" name="back" onPress={() => shiftDate(-1)} />
-          <Copy bold size={10} style={[s.flex, { textAlign: 'center' }]}>
-            {selectedDateLabel}
-          </Copy>
-          <IconButton label="Next day" name="arrow" onPress={() => shiftDate(1)} />
-        </Card>
-      ) : null}
-
-      {error ? (
+      {error && displayRoutines.length === 0 ? (
         <Card style={{ backgroundColor: c.redSoft, borderColor: c.red, marginTop: 8 }}>
-          <Copy bold size={11} color={c.red}>
-            Care plan update failed
-          </Copy>
-          <Copy size={10} color={c.muted} style={s.top4}>
-            {error}
-          </Copy>
-          <Action secondary style={{ marginTop: 8 }} onPress={() => void fetchCarePlan(selectedDate)}>
-            Retry
-          </Action>
+          <Copy bold size={11} color={c.red}>Care plan update failed</Copy>
+          <Copy size={10} color={c.muted} style={s.top4}>{error}</Copy>
+          <Action secondary style={{ marginTop: 8 }} onPress={() => void fetchRoutines()}>Retry</Action>
         </Card>
       ) : null}
 
-      {isLoading && carePlan.tasks.length === 0 ? (
+      {loading && displayRoutines.length === 0 ? (
         <View style={{ paddingVertical: 36, alignItems: 'center' }}>
           <ActivityIndicator />
-          <Copy size={10} color={c.muted} style={s.top4}>
-            Loading your care plan…
-          </Copy>
+          <Copy size={10} color={c.muted} style={s.top4}>Loading your routines…</Copy>
         </View>
       ) : (
         <>
           <Card style={[st.summary, { marginVertical: 18 }]}>
             <View style={[st.summaryCompletion, narrow && st.summaryFull]}>
-              <Ring value={adherence} percent size={narrow ? 54 : 40} />
+              <Ring value={total ? Math.round((completed / total) * 100) : 0} percent size={narrow ? 54 : 40} />
               <View style={s.flex}>
-                <Copy size={9} bold>
-                  Adherence
-                </Copy>
-                <Copy size={9} color={c.muted}>
-                  {completed} of {total} tasks completed
-                </Copy>
+                <Copy size={9} bold>Adherence</Copy>
+                <Copy size={9} color={c.muted}>{completed} of {total} tasks completed</Copy>
               </View>
             </View>
             <View style={st.summaryItem}>
-              <Copy size={9} bold>
-                Next task
-              </Copy>
+              <Copy size={9} bold>Next task</Copy>
               <Copy bold size={11} color={next ? c.blue : c.green}>
-                {next?.name || (total ? 'All done' : 'No tasks')}
+                {next?.title || (total ? 'All done' : 'No tasks')}
               </Copy>
-              <Copy size={9} color={c.muted}>
-                {next?.time || ' '}
-              </Copy>
+              <Copy size={9} color={c.muted}>{next?.duration || ' '}</Copy>
             </View>
             <View style={st.summaryItem}>
-              <Copy size={9} bold>
-                Routine source
-              </Copy>
-              <Copy bold size={11} color={c.green}>
-                Medivo
-              </Copy>
-              <Copy size={9} color={c.muted}>
-                {carePlan.planTitle || 'Active care plan'}
-              </Copy>
+              <Copy size={9} bold>Routine source</Copy>
+              <Copy bold size={11} color={c.green}>Medivo</Copy>
+              <Copy size={9} color={c.muted}>{displayRoutines.length} active {displayRoutines.length === 1 ? 'routine' : 'routines'}</Copy>
             </View>
           </Card>
 
-          {groups.map(({ period, tasks }) => {
-            const hidden = collapsedPeriods.includes(period);
-            const periodCompleted = tasks.filter((task) => task.status === 'Completed').length;
-            const isEvening = period === 'Evening';
-            const title =
-              period === 'Morning'
-                ? 'Morning Care Plan'
-                : period === 'Afternoon'
-                  ? 'Afternoon Care Plan'
-                  : 'Evening Care Plan';
+          {displayRoutines.length === 0 ? (
+            <Card>
+              <Copy color={c.muted}>No care routines are currently available for your account.</Copy>
+            </Card>
+          ) : null}
 
+          {displayRoutines.map((routine) => {
+            const hidden = collapsed.includes(routine.id);
+            const routineCompleted = routine.steps.filter((step) => step.completed).length;
+            const isEvening = routine.timing === 'Evening';
             return (
-              <View key={period} style={{ marginBottom: 14 }}>
+              <View key={routine.id} style={{ marginBottom: 14 }}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`${period} tasks`}
+                  accessibilityLabel={`${routine.name} tasks`}
                   accessibilityState={{ expanded: !hidden }}
                   aria-expanded={!hidden}
-                  onPress={() => togglePeriodCollapse(period)}
+                  onPress={() =>
+                    setCollapsed((current) =>
+                      hidden ? current.filter((id) => id !== routine.id) : [...current, routine.id],
+                    )
+                  }
                   style={[s.row, { marginBottom: 8 }]}
                 >
-                  <Tile
-                    name={isEvening ? 'moon' : 'sun'}
-                    tone={isEvening ? 'purple' : period === 'Afternoon' ? 'orange' : 'blue'}
-                    size={39}
-                  />
+                  <Tile name={isEvening ? 'moon' : 'sun'} tone={isEvening ? 'purple' : 'blue'} size={39} />
                   <View style={s.flex}>
-                    <Heading size={16}>{title}</Heading>
+                    <Heading size={16}>{routine.name}</Heading>
                     <Copy size={10} color={c.muted}>
-                      {period} · {tasks.length ? `${tasks.length} tasks` : 'No tasks scheduled'}
+                      {routine.timing}{routine.duration ? ` · ${routine.duration}` : ''}
                     </Copy>
                   </View>
-                  <Copy size={9} color={c.muted}>
-                    {periodCompleted} of {tasks.length} completed
-                  </Copy>
+                  <Copy size={9} color={c.muted}>{routineCompleted} of {routine.steps.length} completed</Copy>
                   <Icon name="down" size={15} />
                 </Pressable>
 
-                {!hidden && tasks.length === 0 ? (
-                  <Card style={{ padding: 12 }}>
-                    <Copy size={10} color={c.muted}>
-                      No {period.toLowerCase()} tasks scheduled. Your plan adapts automatically as health readings are logged.
-                    </Copy>
-                  </Card>
-                ) : null}
-
-                {!hidden &&
-                  tasks.map((task, index) => (
-                    <View key={task.id} style={st.timelineRow}>
-                      <Copy size={9} style={{ width: 26, textAlign: 'center' }}>
-                        {index + 1}
-                      </Copy>
-                      <View style={st.markerColumn}>
-                        {index < tasks.length - 1 && <View style={st.line} />}
-                        <View
-                          style={[
-                            st.marker,
-                            task.status === 'Completed' && {
-                              backgroundColor: c.green,
-                              borderColor: c.green,
-                            },
-                          ]}
-                        >
-                          {task.status === 'Completed' && <Icon name="check" size={9} color={c.white} />}
-                        </View>
-                      </View>
-                      <Card
-                        label={`${task.status === 'Completed' ? 'Undo completion of' : 'Complete'} ${task.name}`}
-                        onPress={() => void handleToggleTask(task)}
-                        style={[st.task, compact && { flexWrap: 'wrap' }]}
+                {!hidden && routine.steps.map((step, index) => (
+                  <View key={step.id} style={st.timelineRow}>
+                    <Copy size={9} style={{ width: 26, textAlign: 'center' }}>{step.step ?? index + 1}</Copy>
+                    <View style={st.markerColumn}>
+                      {index < routine.steps.length - 1 && <View style={st.line} />}
+                      <View
+                        style={[
+                          st.marker,
+                          step.completed && { backgroundColor: c.green, borderColor: c.green },
+                        ]}
                       >
-                        {updatingTaskId === task.id ? (
-                          <ActivityIndicator size="small" />
-                        ) : (
-                          <Tile
-                            name={task.icon || (task.status === 'Completed' ? 'done' : 'clock')}
-                            tone={task.status === 'Completed' ? 'green' : task.tone}
-                            size={29}
-                          />
-                        )}
-                        <View style={s.flex}>
-                          <Copy size={11} bold>
-                            {task.name}
-                          </Copy>
-                          <Copy size={9} color={c.muted}>
-                            {task.description}
-                          </Copy>
-                          <Copy size={8} color={c.muted} style={s.top4}>
-                            {task.time}
-                          </Copy>
-                        </View>
-                        <Chip
-                          tone={task.status === 'Completed' ? 'green' : task.status === 'Upcoming' ? 'orange' : 'blue'}
-                          icon={task.status === 'Completed' ? 'check' : 'clock'}
-                        >
-                          {task.status}
-                        </Chip>
-                      </Card>
+                        {step.completed && <Icon name="check" size={9} color={c.white} />}
+                      </View>
                     </View>
-                  ))}
+                    <Card
+                      label={`${step.completed ? 'Undo completion of' : 'Complete'} ${step.title}`}
+                      onPress={() => void toggleStep(routine.id, step.id, Boolean(step.completed))}
+                      style={[st.task, compact && { flexWrap: 'wrap' }]}
+                    >
+                      {togglingStepId === step.id ? (
+                        <ActivityIndicator size="small" />
+                      ) : (
+                        <Tile name={step.completed ? 'done' : 'clock'} tone={step.completed ? 'green' : 'blue'} size={29} />
+                      )}
+                      <View style={s.flex}>
+                        <Copy size={11} bold>{step.title}</Copy>
+                        <Copy size={9} color={c.muted}>{step.desc}</Copy>
+                        {step.duration ? <Copy size={8} color={c.muted} style={s.top4}>{step.duration}</Copy> : null}
+                      </View>
+                      <Chip tone={step.completed ? 'green' : 'blue'} icon={step.completed ? 'check' : 'clock'}>
+                        {step.completed ? 'Completed' : 'Pending'}
+                      </Chip>
+                    </Card>
+                  </View>
+                ))}
               </View>
             );
           })}
@@ -276,41 +325,19 @@ export default function Care() {
           {total > 0 ? (
             <Action
               disabled={completed === total || markingAll}
-              onPress={() => void handleMarkAll()}
+              onPress={() => void markAllDone()}
               style={{ marginTop: 4 }}
             >
               {markingAll ? 'Updating…' : completed === total ? 'All tasks completed' : 'Mark all done'}
             </Action>
           ) : null}
 
-          {carePlan.careTeamNotes.length > 0 ? (
-            <Card style={{ marginTop: 12 }}>
-              <View style={[s.row, { justifyContent: 'space-between' }]}>
-                <Heading size={15}>Care team notes</Heading>
-                <Copy size={9} color={c.blue}>
-                  {carePlan.careTeamNotes.length} notes
-                </Copy>
-              </View>
-              {carePlan.careTeamNotes.slice(0, 2).map((note, index) => (
-                <View key={`${note.doctor}-${index}`} style={{ marginTop: 10 }}>
-                  <Copy size={10} color={c.muted}>
-                    {note.note}
-                  </Copy>
-                  <Copy size={9} color={c.muted} style={s.top4}>
-                    — {note.doctor} · {note.date}
-                  </Copy>
-                </View>
-              ))}
-            </Card>
-          ) : null}
-
           <Card style={[s.panel, s.row, { marginTop: 12 }]}> 
             <Tile name="info" tone="blue" />
             <View style={s.flex}>
-              <Heading size={13}>{carePlan.whyItMatters.title || 'About this care plan'}</Heading>
+              <Heading size={13}>About this care plan</Heading>
               <Copy size={10} color={c.muted} style={s.top4}>
-                {carePlan.whyItMatters.description ||
-                  'Small daily steps make your plan easier to follow. Check off each task as you complete it to keep track of your progress.'}
+                Small daily steps make your plan easier to follow. Check off each task as you complete it to keep track of your progress.
               </Copy>
             </View>
           </Card>
@@ -322,27 +349,11 @@ export default function Care() {
 
 const st = StyleSheet.create({
   summary: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  summaryCompletion: {
-    flex: 1.4,
-    minWidth: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  summaryFull: {
-    flexBasis: '100%',
-    borderBottomWidth: 1,
-    borderBottomColor: c.border,
-    paddingBottom: 14,
-  },
+  summaryCompletion: { flex: 1.4, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 7 },
+  summaryFull: { flexBasis: '100%', borderBottomWidth: 1, borderBottomColor: c.border, paddingBottom: 14 },
   summaryItem: { flex: 1, minWidth: 0, gap: 4 },
   timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  markerColumn: {
-    width: 12,
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  markerColumn: { width: 12, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
   line: { position: 'absolute', top: '50%', bottom: -30, width: 1, backgroundColor: '#d4dfeb' },
   marker: {
     width: 11,
